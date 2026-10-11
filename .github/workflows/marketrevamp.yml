@@ -3,6 +3,9 @@ name: MarketRevamp Automation
 
 on:
   workflow_dispatch:
+  schedule:
+    - cron: '0 18 * * 1-5'
+      timezone: 'America/Toronto'
 
 jobs:
   test:
@@ -11,6 +14,6 @@ jobs:
     steps:
       - name: Test MarketRevamp workflow
         run: |
-          echo "MarketRevamp automation started successfully!"
-          echo "This is a safe test."
-          echo "No posts were published."
+          echo "MarketRevamp weekday automation started!"
+          echo "Toronto time: $(TZ=America/Toronto date)"
+          echo "No posts were created or published."
