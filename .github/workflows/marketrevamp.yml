@@ -8,12 +8,24 @@ on:
       timezone: 'America/Toronto'
 
 jobs:
-  test:
+  collect-news:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Test MarketRevamp workflow
-        run: |
-          echo "MarketRevamp weekday automation started!"
-          echo "Toronto time: $(TZ=America/Toronto date)"
-          echo "No posts were created or published."
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Collect latest news
+        run: python news_collector.py
+
+      - name: Upload news results
+        uses: actions/upload-artifact@v4
+        with:
+          name: marketrevamp-news
+          path: news_results.json
+          if-no-files-found: error
