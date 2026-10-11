@@ -61,6 +61,7 @@ def get_text(item, names):
     return ""
 
 
+
 def score_article(article):
     title = " " + article["title"].lower() + " "
 
@@ -83,22 +84,45 @@ def score_article(article):
     if not matched_categories:
         return 0
 
+    # Reward relevance to the article's source category.
     if article["category"] in matched_categories:
-        score += 3
+        score += 4
 
+    # Potential market or industry impact signals.
+    impact_keywords = [
+        "earnings", "revenue", "profit",
+        "interest rate", "federal reserve",
+        "inflation", "regulation", "regulator",
+        "sec ", "lawsuit", "antitrust",
+        "acquisition", "merger", "investment",
+        "launch", "breakthrough", "approval",
+        "ban", "tariff", "etf", "funding",
+        "billion", "trillion", "imf",
+    ]
+
+    impact_matches = sum(
+        1 for word in impact_keywords
+        if word in title
+    )
+
+    score += min(impact_matches * 3, 9)
+
+    # Reward freshness.
     age_hours = (
         datetime.now(timezone.utc)
         - datetime.fromisoformat(article["published"])
     ).total_seconds() / 3600
 
     if age_hours <= 12:
-        score += 3
+        score += 4
     elif age_hours <= 24:
         score += 2
     else:
         score += 1
 
     article["matched_categories"] = matched_categories
+    article["impact_signals"] = impact_matches
+
     return score
 
 
@@ -119,18 +143,19 @@ def select_top_five(articles):
     selected = []
     selected_urls = set()
 
-    # First, attempt to represent each news category.
+    # First: one relevant story from each source category.
     for category in FEEDS:
         for article in candidates:
             if (
-                category in article["matched_categories"]
+                article["category"] == category
+                and category in article["matched_categories"]
                 and article["url"] not in selected_urls
             ):
                 selected.append(article)
                 selected_urls.add(article["url"])
                 break
 
-    # Fill remaining slots with highest-scoring stories.
+    # Second: fill remaining slots with top-ranked stories.
     for article in candidates:
         if len(selected) >= 5:
             break
@@ -138,6 +163,15 @@ def select_top_five(articles):
         if article["url"] not in selected_urls:
             selected.append(article)
             selected_urls.add(article["url"])
+
+    # Display highest-scoring selected stories first.
+    selected.sort(
+        key=lambda item: (
+            item["score"],
+            item["published"],
+        ),
+        reverse=True,
+    )
 
     return selected[:5]
 
