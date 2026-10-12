@@ -199,6 +199,11 @@ def main():
         print("No Instagram API publishing requests were made.")
         return
 
+    if manifest.get("publish_enabled") is not True:
+        raise RuntimeError(
+            "Live publishing blocked: carousel manifest is disabled."
+        )
+
     if os.getenv("INSTAGRAM_PERSISTENCE_READY") != "true":
         raise RuntimeError(
             "Live publishing blocked: persistent history is not ready."
