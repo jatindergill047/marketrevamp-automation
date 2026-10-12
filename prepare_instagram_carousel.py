@@ -5,6 +5,7 @@ from urllib.parse import urlsplit, urlunsplit
 
 SOURCE = Path("cloudinary_uploads.json")
 OUTPUT = Path("instagram_carousel_manifest.json")
+NEWS_SOURCE = Path("news_results.json")
 
 data = json.loads(SOURCE.read_text(encoding="utf-8"))
 images = data["images"]
