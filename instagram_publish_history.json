@@ -1,2 +1,6 @@
 {
+  "persistence-test": {
+    "status": "test",
+    "note": "GitHub history persistence verified"
+  }
 }
