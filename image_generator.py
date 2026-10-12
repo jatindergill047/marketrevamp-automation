@@ -140,8 +140,7 @@ def draw_card(story, index, total, date_label):
               font=font(28, bold=True), fill=WHITE)
 
     draw.text((74, 395), "TODAY'S HEADLINE", font=font(24, bold=True), fill=accent)
-        title = story.get("title") or "News update"
-
+    title = story.get("title") or "News update"
     headline_font, lines, line_height = fit_headline(
         draw, title, max_height=300
     )
