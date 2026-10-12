@@ -1,6 +1,7 @@
 
 import json
 from pathlib import Path
+from datetime import datetime, timezone, timedelta
 from urllib.parse import urlsplit, urlunsplit
 
 SOURCE = Path("cloudinary_uploads.json")
@@ -19,11 +20,30 @@ if len(stories) != 5:
     raise ValueError(
         f"Expected 5 news stories, found {len(stories)}"
     )
-
+    
 for index, story in enumerate(stories, start=1):
     if story.get("summary_status") != "ready_for_review":
         raise ValueError(
             f"Story {index} failed summary quality screening."
+        )
+
+    try:
+        published = datetime.fromisoformat(story["published"])
+    except (KeyError, TypeError, ValueError):
+        raise ValueError(
+            f"Story {index} has an invalid publication date."
+        )
+
+    if published.tzinfo is None:
+        raise ValueError(
+            f"Story {index} has no publication timezone."
+        )
+
+    age = datetime.now(timezone.utc) - published
+
+    if not timedelta(0) <= age <= timedelta(hours=36):
+        raise ValueError(
+            f"Story {index} is outside the 36-hour news window."
         )
 
 if len(images) != 5:
