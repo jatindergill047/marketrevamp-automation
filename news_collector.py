@@ -79,41 +79,68 @@ def extract_article_text(url):
         print(f"Article extraction failed: {error}")
         return ""
 
+
 def generate_summary(article_text, min_words=40, max_words=60):
-    """Create a draft summary from original article sentences."""
+    """Extract a readable draft from article sentences."""
     if not article_text:
         return ""
 
-    # Clean whitespace without changing the article's wording.
+    import re
+
     text = re.sub(r"\s+", " ", article_text).strip()
 
-    # Split the article into sentences.
-    sentences = re.split(r"(?<=[.!?])\s+", text)
+    # Split at sentence boundaries.
+    sentences = re.split(r"(?<=[.!?])\s+(?=[A-Z“\"'])", text)
 
-    # Prefer the opening sentences, which often contain key facts.
     selected = []
-    word_count = 0
+    seen = set()
+    count = 0
 
     for sentence in sentences:
-        sentence = sentence.strip()
+        sentence = sentence.strip(" \t\n-•")
         words = sentence.split()
 
-        if not words or len(words) > max_words:
+        # Skip fragments, excessively long sentences,
+        # and sentences that do not end properly.
+        if not 8 <= len(words) <= 40:
             continue
 
-        if word_count + len(words) > max_words:
+        if not re.search(r'[.!?]["”\']?$', sentence):
+            continue
+
+        # Avoid obvious website navigation and promotions.
+        lower = sentence.lower()
+        unwanted = (
+            "subscribe", "newsletter", "advertisement",
+            "sign up", "read more", "click here",
+            "all rights reserved", "cookie policy",
+            "privacy policy", "follow us"
+        )
+
+        if any(term in lower for term in unwanted):
+            continue
+
+        # Remove exact duplicate sentences.
+        normalized = re.sub(r"\W+", "", lower)
+
+        if normalized in seen:
+            continue
+
+        if count + len(words) > max_words:
             continue
 
         selected.append(sentence)
-        word_count += len(words)
+        seen.add(normalized)
+        count += len(words)
 
-        if word_count >= min_words:
+        if count >= min_words:
             break
 
-    if word_count < min_words:
+    if not min_words <= count <= max_words:
         return ""
 
     return " ".join(selected)
+
 
 
 def clean_article_text(raw_text):
