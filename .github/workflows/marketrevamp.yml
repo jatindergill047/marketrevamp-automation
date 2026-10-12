@@ -22,6 +22,16 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+      - name: Checkout publishing history
+        uses: actions/checkout@v4
+        with:
+          ref: publishing-history
+          path: publishing-history
+          persist-credentials: false
+
+      - name: Restore Instagram publishing history
+        run: |
+          cp publishing-history/instagram_publish_history.json instagram_publish_history.json
 
       - name: Set up Python
         uses: actions/setup-python@v5
