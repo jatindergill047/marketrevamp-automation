@@ -320,8 +320,16 @@ def collect_news():
         article_url = story.get("url", "")
         article_text = fetch_article_text(article_url)
 
+        
         story["article_text"] = article_text
+
+        # Generate a 40–60-word draft from the source article.
+        draft_summary = generate_summary(article_text)
+
+        story["summary"] = draft_summary
         story["verified_summary"] = ""
+        story["summary_word_count"] = len(draft_summary.split())
+
         story["summary_status"] = (
             "ready_for_review"
             if len(article_text.split()) >= 100
