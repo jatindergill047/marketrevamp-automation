@@ -138,6 +138,11 @@ def main():
         print("No Instagram API publishing requests were made.")
         return
 
+    if os.getenv("INSTAGRAM_PERSISTENCE_READY") != "true":
+        raise RuntimeError(
+            "Live publishing blocked: persistent history is not ready."
+        )
+
     token = os.getenv("INSTAGRAM_ACCESS_TOKEN")
     account_id = os.getenv("INSTAGRAM_USER_ID")
 
