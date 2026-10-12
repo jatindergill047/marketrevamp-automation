@@ -20,7 +20,7 @@ jobs:
     environment: instagram-production
 
     env:
-      INSTAGRAM_PUBLISH_ENABLED: 'false'
+      INSTAGRAM_PUBLISH_ENABLED: 'true'
       INSTAGRAM_PERSISTENCE_READY: 'true'
 
     steps:
