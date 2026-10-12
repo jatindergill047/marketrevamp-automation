@@ -232,7 +232,12 @@ def collect_news():
             article["score"] = score_article(article)
             unique.append(article)
 
-    selected = select_top_five(unique)
+    selected = select_top_five(unique)    
+    # Prepare selected stories for verified summaries.
+    for story in selected:
+        story["verified_summary"] = ""
+        story["summary_status"] = "pending_verification"
+
     output = {
         "collected_at": datetime.now(timezone.utc).isoformat(),
         "article_count": len(unique),
