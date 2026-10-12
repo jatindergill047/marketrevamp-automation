@@ -125,6 +125,9 @@ manifest = {
     "editorial_approved": False,
     "media_type": "CAROUSEL",
     "caption": caption,
+    "article_urls": [
+        story["url"] for story in stories
+    ],
     "slides": slides
 }
 
