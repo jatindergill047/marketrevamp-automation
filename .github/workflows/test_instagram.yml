@@ -1,0 +1,49 @@
+
+name: Test Instagram API
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test-instagram:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Verify Instagram connection
+        env:
+          INSTAGRAM_ACCESS_TOKEN: ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
+          INSTAGRAM_USER_ID: ${{ vars.INSTAGRAM_USER_ID }}
+        run: |
+          python - <<'PY'
+          import os
+          import json
+          import urllib.request
+          import urllib.parse
+
+          user_id = os.environ["INSTAGRAM_USER_ID"]
+          token = os.environ["INSTAGRAM_ACCESS_TOKEN"]
+
+          params = urllib.parse.urlencode({
+              "fields": "id,username,account_type",
+              "access_token": token
+          })
+
+          url = (
+              "https://graph.instagram.com/v24.0/"
+              + user_id + "?" + params
+          )
+
+          try:
+              with urllib.request.urlopen(url, timeout=20) as response:
+                  data = json.load(response)
+
+              print("Instagram API connection successful!")
+              print("Username:", data.get("username"))
+              print("Account ID:", data.get("id"))
+              print("Account type:", data.get("account_type"))
+
+          except Exception as error:
+              print("Instagram API connection failed.")
+              print(type(error).__name__)
+              raise SystemExit(1)
+          PY
