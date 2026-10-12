@@ -6,6 +6,8 @@ import time
 import hashlib
 import subprocess
 from pathlib import Path
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
 import requests
 
@@ -176,6 +178,22 @@ def main():
         print("Skipping to prevent duplicate publishing.")
         return
 
+    today = datetime.now(
+        ZoneInfo("America/Toronto")
+    ).date().isoformat()
+
+    for record in history.values():
+        if not isinstance(record, dict):
+            raise RuntimeError("Invalid publishing history record.")
+
+        if record.get("toronto_date") == today:
+            if record.get("status") in ("pending", "published"):
+                print(
+                    "A publishing attempt already exists "
+                    "for today. Skipping."
+                )
+                return
+
     if not PUBLISH_ENABLED:
         print("DRY RUN: Instagram publishing is disabled.")
         print("No Instagram API publishing requests were made.")
@@ -197,8 +215,9 @@ def main():
     if not caption:
         raise RuntimeError("Instagram caption is missing.")
 
-    history[fingerprint] = {
+        history[fingerprint] = {
         "status": "pending",
+        "toronto_date": today,
         "created_at": int(time.time()),
     }
     save_history(history)
@@ -241,8 +260,9 @@ def main():
         {"creation_id": carousel_id},
     )
 
-    history[fingerprint] = {
+       history[fingerprint] = {
         "status": "published",
+        "toronto_date": today,
         "instagram_media_id": published["id"],
         "published_at": int(time.time()),
     }
