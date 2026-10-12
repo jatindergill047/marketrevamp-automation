@@ -334,6 +334,12 @@ def main():
     )
 
     carousel_id = result["id"]
+
+    history[fingerprint]["instagram_container_id"] = carousel_id
+    save_history(history)
+
+    print(f"Instagram carousel container recorded: {carousel_id}")
+
     wait_for_container(carousel_id, token)
 
     published = api_request(
