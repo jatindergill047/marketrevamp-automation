@@ -275,9 +275,9 @@ def main():
     if not caption:
         raise RuntimeError("Instagram caption is missing.")
 
-    if manifest.get("editorial_approved") is not True:
+    if manifest.get("automated_checks_passed") is not True:
         raise RuntimeError(
-            "Publishing blocked: editorial approval is required."
+            "Publishing blocked: automated validation has not passed."
         )
 
     if len(caption) > 2200:
