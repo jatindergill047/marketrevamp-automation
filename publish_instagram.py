@@ -215,7 +215,7 @@ def main():
     if not caption:
         raise RuntimeError("Instagram caption is missing.")
 
-        history[fingerprint] = {
+    history[fingerprint] = {
         "status": "pending",
         "toronto_date": today,
         "created_at": int(time.time()),
