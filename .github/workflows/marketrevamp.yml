@@ -10,7 +10,8 @@ on:
 concurrency:
   group: marketrevamp-instagram-publishing
   cancel-in-progress: false
-
+permissions:
+  contents: write
 
 jobs:
   collect-news:
