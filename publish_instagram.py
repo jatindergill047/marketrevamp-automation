@@ -345,6 +345,7 @@ def main():
         "toronto_date": today,
         "instagram_media_id": published["id"],
         "published_at": int(time.time()),
+        "article_urls": normalized_urls,
     }
     save_history(history)
 
