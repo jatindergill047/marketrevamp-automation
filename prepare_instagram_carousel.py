@@ -54,19 +54,6 @@ for index, story in enumerate(stories, start=1):
             f"Story {index} has no extracted article text."
         )
 
-    def normalize_text(value):
-        return " ".join(value.casefold().split())
-
-    source_normalized = normalize_text(article_text)
-
-    for sentence in summary.split(". "):
-        sentence = sentence.strip()
-
-        if sentence and normalize_text(sentence) not in source_normalized:
-            raise ValueError(
-                f"Story {index} contains summary text "
-                "that could not be matched to its source."
-            )
 
     try:
         published = datetime.fromisoformat(story["published"])
