@@ -6,6 +6,11 @@ on:
   schedule:
     - cron: '0 18 * * 1-5'
       timezone: 'America/Toronto'
+      
+concurrency:
+  group: marketrevamp-instagram-publishing
+  cancel-in-progress: false
+
 
 jobs:
   collect-news:
