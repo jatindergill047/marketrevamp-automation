@@ -60,20 +60,21 @@ def wrap_lines(draw, text, face, max_width):
     return lines
 
 
-def fit_headline(draw, text, max_width=902, max_lines=6):
-    for size in range(75, 43, -2):
+def fit_headline(draw, text, max_width=902, max_lines=6, max_height=300):
+    for size in range(75, 27, -2):
         face = font(size, bold=True)
         lines = wrap_lines(draw, text, face, max_width)
-        if len(lines) <= max_lines:
-            return face, lines, size + 17
-    face = font(44, bold=True)
-    lines = wrap_lines(draw, text, face, max_width)
-    if len(lines) > max_lines:
-        lines = lines[:max_lines]
-        while lines[-1] and draw.textbbox((0, 0), lines[-1] + "…", font=face)[2] > max_width:
-            lines[-1] = lines[-1][:-1]
-        lines[-1] += "…"
-    return face, lines, 61
+        line_height = size + 17
+
+        if (
+            len(lines) <= max_lines
+            and len(lines) * line_height <= max_height
+        ):
+            return face, lines, line_height
+
+    raise ValueError(
+        f"Headline cannot fit without truncation: {text}"
+    )
 
 
 def background(accent, index):
@@ -140,13 +141,21 @@ def draw_card(story, index, total, date_label):
 
     draw.text((74, 395), "TODAY'S HEADLINE", font=font(24, bold=True), fill=accent)
     title = story.get("title") or "News update"
-    headline_font, lines, line_height = fit_headline(draw, title)
-    y = 465
-    for line in lines:
-        if y + line_height > 785:
-            break
-        draw.text((69, y), line, font=headline_font, fill=WHITE, stroke_width=0)
-        y += line_height
+   headline_font, lines, line_height = fit_headline(
+    draw, title, max_height=300
+)
+
+y = 465
+
+for line in lines:
+    draw.text(
+        (69, y),
+        line,
+        font=headline_font,
+        fill=WHITE,
+        stroke_width=0
+    )
+    y += line_height
 
     # Readable 40-60 word summary. Never invent facts from RSS headlines.
     summary = (story.get("verified_summary") or story.get("summary") or "").strip()
