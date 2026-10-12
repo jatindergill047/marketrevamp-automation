@@ -64,6 +64,9 @@ jobs:
 
       - name: Test duplicate article protection
         run: python test_duplicate_articles.py
+
+      - name: Test Instagram container history
+        run: python test_container_history.py
         
       - name: Save Instagram carousel manifest
         uses: actions/upload-artifact@v4
