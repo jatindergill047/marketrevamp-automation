@@ -140,23 +140,23 @@ def draw_card(story, index, total, date_label):
               font=font(28, bold=True), fill=WHITE)
 
     draw.text((74, 395), "TODAY'S HEADLINE", font=font(24, bold=True), fill=accent)
-    title = story.get("title") or "News update"
-   headline_font, lines, line_height = fit_headline(
-    draw, title, max_height=300
-)
+        title = story.get("title") or "News update"
 
-y = 465
-
-for line in lines:
-    draw.text(
-        (69, y),
-        line,
-        font=headline_font,
-        fill=WHITE,
-        stroke_width=0
+    headline_font, lines, line_height = fit_headline(
+        draw, title, max_height=300
     )
-    y += line_height
 
+    y = 465
+
+    for line in lines:
+        draw.text(
+            (69, y),
+            line,
+            font=headline_font,
+            fill=WHITE,
+            stroke_width=0
+        )
+        y += line_height
     # Readable 40-60 word summary. Never invent facts from RSS headlines.
     summary = (story.get("verified_summary") or story.get("summary") or "").strip()
     valid_summary = 40 <= len(summary.split()) <= 60
