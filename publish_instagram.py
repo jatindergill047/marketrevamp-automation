@@ -183,6 +183,43 @@ def wait_for_container(container_id, token):
 def main():
     manifest, image_urls = load_manifest()
     history = load_history()
+    
+    article_urls = manifest.get("article_urls", [])
+
+    if len(article_urls) != 5:
+        raise RuntimeError(
+            "Exactly five article URLs are required."
+        )
+
+    normalized_urls = [
+        normalize_article_url(url)
+        for url in article_urls
+    ]
+
+    if len(set(normalized_urls)) != 5:
+        raise RuntimeError(
+            "Duplicate articles found in today's carousel."
+        )
+
+    previously_published = set()
+
+    for record in history.values():
+        if not isinstance(record, dict):
+            raise RuntimeError("Invalid publishing history record.")
+
+        if record.get("status") == "published":
+            for url in record.get("article_urls", []):
+                previously_published.add(
+                    normalize_article_url(url)
+                )
+
+    repeated = set(normalized_urls) & previously_published
+
+    if repeated:
+        raise RuntimeError(
+            f"Publishing blocked: {len(repeated)} "
+            "previously published article(s) detected."
+        )
 
     fingerprint = hashlib.sha256(
         json.dumps(image_urls, sort_keys=True).encode()
