@@ -215,6 +215,21 @@ def main():
     if not caption:
         raise RuntimeError("Instagram caption is missing.")
 
+    if len(caption) > 2200:
+        raise RuntimeError(
+            "Instagram caption exceeds 2,200 characters."
+        )
+
+    if not any(
+        word in caption.lower()
+        for word in ("source:", "sources:", "via:")
+    ):
+        raise RuntimeError(
+            "Instagram caption must include source attribution."
+        )
+
+    print("Caption safety checks passed.")
+
     history[fingerprint] = {
         "status": "pending",
         "toronto_date": today,
