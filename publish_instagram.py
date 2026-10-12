@@ -4,6 +4,7 @@ import os
 import sys
 import time
 import hashlib
+import subprocess
 from pathlib import Path
 
 import requests
@@ -31,14 +32,56 @@ def load_history():
     return history
 
 
-def save_history(history):
-    temporary = HISTORY_FILE.with_suffix(".tmp")
-    temporary.write_text(
-        json.dumps(history, indent=2),
-        encoding="utf-8",
-    )
-    temporary.replace(HISTORY_FILE)
 
+def save_history(history):
+    history_checkout = Path("publishing-history")
+    branch_file = history_checkout / HISTORY_FILE.name
+
+    if not history_checkout.is_dir():
+        raise RuntimeError(
+            "Publishing history checkout is missing."
+        )
+
+    content = json.dumps(history, indent=2) + "\n"
+
+    HISTORY_FILE.write_text(content, encoding="utf-8")
+    branch_file.write_text(content, encoding="utf-8")
+
+    def git(*args):
+        subprocess.run(
+            ["git", "-C", str(history_checkout), *args],
+            check=True,
+            timeout=60,
+        )
+
+    git("config", "user.name", "github-actions[bot]")
+    git(
+        "config",
+        "user.email",
+        "41898282+github-actions[bot]@users.noreply.github.com",
+    )
+
+    git("add", HISTORY_FILE.name)
+
+    changes = subprocess.run(
+        [
+            "git", "-C", str(history_checkout),
+            "diff", "--cached", "--quiet",
+        ],
+        check=False,
+        timeout=60,
+    )
+
+    if changes.returncode == 0:
+        return
+
+    if changes.returncode != 1:
+        raise RuntimeError("Could not inspect history changes.")
+
+    git("commit", "-m", "Update Instagram publishing history")
+    git("push", "origin", "HEAD:publishing-history")
+
+    print("Publishing history saved to GitHub.")
 
 def load_manifest():
     if not MANIFEST_FILE.exists():
