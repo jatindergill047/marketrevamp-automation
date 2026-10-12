@@ -90,6 +90,40 @@ def clean_article_text(raw_text):
 
     return text.strip()
 
+def fetch_article_text(url):
+    """Download and extract basic article text."""
+    if not url or not url.startswith(("https://", "http://")):
+        return ""
+
+    try:
+        request = urllib.request.Request(url, headers=HEADERS)
+
+        with urllib.request.urlopen(request, timeout=15) as response:
+            content_type = response.headers.get("Content-Type", "")
+            if "text/html" not in content_type.lower():
+                return ""
+
+            html = response.read(500_000).decode("utf-8", errors="replace")
+
+        html = re.sub(
+            r"<(script|style|nav|footer|header)\b[^>]*>.*?</\1>",
+            " ",
+            html,
+            flags=re.IGNORECASE | re.DOTALL,
+        )
+
+        paragraphs = re.findall(
+            r"<p\b[^>]*>(.*?)</p>",
+            html,
+            flags=re.IGNORECASE | re.DOTALL,
+        )
+
+        return clean_article_text(" ".join(paragraphs))[:12000]
+
+    except Exception as error:
+        print(f"Article download failed: {url} ({error})")
+        return ""
+
 def get_text(item, names):
     for name in names:
         element = item.find(name)
