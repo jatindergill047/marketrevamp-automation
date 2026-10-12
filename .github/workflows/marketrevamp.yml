@@ -58,7 +58,6 @@ jobs:
         run: python prepare_instagram_carousel.py
       - name: Validate Instagram carousel publishing
         env:
-          INSTAGRAM_PUBLISH_ENABLED: 'false'
           INSTAGRAM_ACCESS_TOKEN: ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
           INSTAGRAM_USER_ID: ${{ vars.INSTAGRAM_USER_ID }}
         run: python publish_instagram.py
