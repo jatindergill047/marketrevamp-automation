@@ -22,7 +22,7 @@ def main():
 
         # Enable publishing only inside this simulated test.
         manifest["publish_enabled"] = True
-        manifest["editorial_approved"] = True
+        manifest["automated_checks_passed"] = True
 
         manifest_path.write_text(
             json.dumps(manifest), encoding="utf-8"
