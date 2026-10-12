@@ -54,7 +54,45 @@ for number, item in enumerate(images, start=1):
         "image_url": jpeg_url,
         "is_carousel_item": True
     })
+from urllib.parse import urlsplit
 
+caption_lines = [
+    "🚀 MARKETREVAMP | DAILY NEWS BRIEF",
+    "",
+    "Today's top 5 stories in AI, Technology, Crypto & Markets:",
+    ""
+]
+
+for index, story in enumerate(stories, start=1):
+    title = story.get("title", "").strip()
+    url = story.get("url", "").strip()
+
+    if not title or not url.startswith("https://"):
+        raise ValueError(
+            f"Story {index} is missing a valid title or URL."
+        )
+
+    source = urlsplit(url).hostname or "Unknown source"
+    source = source.removeprefix("www.")
+
+    caption_lines.append(f"{index}. {title}")
+    caption_lines.append(f"Source: {source}")
+    caption_lines.append("")
+
+caption_lines.extend([
+    "Follow @marketrevampdaily for daily updates.",
+    "",
+    "#MarketRevamp #AI #Technology #Crypto #Bitcoin #StockMarket",
+    "",
+    "News and information only. Not investment advice."
+])
+
+caption = "\n".join(caption_lines)
+
+if len(caption) > 2200:
+    raise ValueError(
+        "Instagram caption exceeds 2,200 characters."
+    )
 manifest = {
     "instagram_user_id_env": "INSTAGRAM_USER_ID",
     "publish_enabled": False,
