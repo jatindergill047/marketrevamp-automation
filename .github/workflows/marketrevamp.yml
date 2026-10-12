@@ -6,10 +6,11 @@ on:
   schedule:
     - cron: '0 18 * * 1-5'
       timezone: 'America/Toronto'
-      
+
 concurrency:
   group: marketrevamp-instagram-publishing
   cancel-in-progress: false
+
 permissions:
   contents: write
 
@@ -17,6 +18,7 @@ jobs:
   collect-news:
     runs-on: ubuntu-latest
     environment: instagram-production
+
     env:
       INSTAGRAM_PUBLISH_ENABLED: 'false'
       INSTAGRAM_PERSISTENCE_READY: 'true'
@@ -24,6 +26,15 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Verify production branch
+        run: |
+          if [ "$GITHUB_REF" != "refs/heads/main" ]; then
+            echo "ERROR: Production workflow must run on main."
+            exit 1
+          fi
+          echo "Production branch verified."
+
       - name: Checkout publishing history
         uses: actions/checkout@v4
         with:
@@ -39,21 +50,21 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-          
+
       - name: Install dependencies
         run: pip install -r requirements.txt
-        
+
       - name: Collect latest news and generate images
         run: |
           python news_collector.py
           python image_generator.py
-        
+
       - name: Upload images to Cloudinary
         env:
           CLOUDINARY_CLOUD_NAME: ${{ vars.CLOUDINARY_CLOUD_NAME }}
           CLOUDINARY_UPLOAD_PRESET: ${{ vars.CLOUDINARY_UPLOAD_PRESET }}
         run: python upload_to_cloudinary.py
-        
+
       - name: Prepare Instagram carousel
         run: python prepare_instagram_carousel.py
 
@@ -71,7 +82,7 @@ jobs:
           INSTAGRAM_ACCESS_TOKEN: ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
           INSTAGRAM_USER_ID: ${{ vars.INSTAGRAM_USER_ID }}
         run: python publish_instagram.py
-        
+
       - name: Save Instagram carousel manifest
         uses: actions/upload-artifact@v4
         with:
@@ -92,7 +103,7 @@ jobs:
           name: marketrevamp-news
           path: news_results.json
           if-no-files-found: error
-          
+
       - name: Upload Instagram images
         uses: actions/upload-artifact@v4
         with:
