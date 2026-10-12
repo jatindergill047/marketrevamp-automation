@@ -260,7 +260,7 @@ def main():
         {"creation_id": carousel_id},
     )
 
-       history[fingerprint] = {
+    history[fingerprint] = {
         "status": "published",
         "toronto_date": today,
         "instagram_media_id": published["id"],
@@ -273,6 +273,7 @@ def main():
 
 if __name__ == "__main__":
     try:
+        
         main()
     except Exception as error:
         print(f"Publishing stopped: {error}", file=sys.stderr)
