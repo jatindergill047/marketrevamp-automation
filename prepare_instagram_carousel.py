@@ -27,6 +27,26 @@ for index, story in enumerate(stories, start=1):
             f"Story {index} failed summary quality screening."
         )
 
+    summary = story.get("summary", "").strip()
+
+    if not summary:
+        raise ValueError(
+            f"Story {index} has an empty summary."
+        )
+
+    word_count = len(summary.split())
+
+    if not 30 <= word_count <= 90:
+        raise ValueError(
+            f"Story {index} has {word_count} summary words. "
+            "Expected between 30 and 90."
+        )
+
+    if story.get("summary_word_count") != word_count:
+        raise ValueError(
+            f"Story {index} has an inconsistent summary word count."
+        )
+
     try:
         published = datetime.fromisoformat(story["published"])
     except (KeyError, TypeError, ValueError):
