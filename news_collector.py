@@ -88,6 +88,20 @@ def generate_summary(article_text, min_words=40, max_words=60):
     import re
 
     text = re.sub(r"\s+", " ", article_text).strip()
+    # Remove duplicate opening sentences.
+    sentences = re.split(r"(?<=[.!?])\s+", text)
+
+    deduplicated = []
+    seen = set()
+
+    for sentence in sentences:
+        normalized = re.sub(r"\W+", "", sentence).lower()
+
+        if normalized and normalized not in seen:
+        deduplicated.append(sentence)
+        seen.add(normalized)
+
+    text = " ".join(deduplicated)
 
     # Split at sentence boundaries.
     sentences = re.split(r"(?<=[.!?])\s+(?=[A-Z“\"'])", text)
