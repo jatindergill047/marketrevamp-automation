@@ -79,6 +79,17 @@ def extract_article_text(url):
         print(f"Article extraction failed: {error}")
         return ""
 
+def clean_article_text(raw_text):
+    """Clean HTML and whitespace from article text."""
+    if not raw_text:
+        return ""
+
+    text = re.sub(r"<[^>]+>", " ", raw_text)
+    text = unescape(text)
+    text = re.sub(r"\s+", " ", text)
+
+    return text.strip()
+
 def get_text(item, names):
     for name in names:
         element = item.find(name)
