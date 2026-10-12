@@ -2,5 +2,25 @@
   "persistence-test": {
     "status": "test",
     "note": "GitHub history persistence verified"
+  },
+  "e7aa7802f9fdeceb368c3d259b2e2fabf3249a323d41a19c292729ba902fa734": {
+    "status": "pending",
+    "toronto_date": "2026-10-12",
+    "created_at": 1791842234,
+    "article_urls": [
+      "https://www.coindesk.com/markets/2026/10/12/u-s-inflation-ethereum-upgrade-talks-crypto-week-ahead",
+      "https://www.cnbc.com/2026/10/07/here-comes-third-quarter-earnings-season-booming-profits-could-propel-the-sp-500-to-new-heights.html",
+      "https://www.cnbc.com/2026/10/12/ionq-elisity-acquisition-cybersecurity.html",
+      "https://www.cnbc.com/2026/10/12/unitedhealth-shares-are-doing-something-unusual-ahead-of-earnings.html",
+      "https://techcrunch.com/2026/10/12/microsoft-president-says-uk-is-best-placed-to-drive-ai-regulation"
+    ],
+    "image_urls": [
+      "https://res.cloudinary.com/y0ln6ixr/image/upload/f_jpg/v1791842231/bl2jxufyd9pyctx8gfuw.png",
+      "https://res.cloudinary.com/y0ln6ixr/image/upload/f_jpg/v1791842232/e7hfwg2qcehnpvh9b4jm.png",
+      "https://res.cloudinary.com/y0ln6ixr/image/upload/f_jpg/v1791842232/cbqn77uuf1qdpunftkgn.png",
+      "https://res.cloudinary.com/y0ln6ixr/image/upload/f_jpg/v1791842232/jcltsqod8peuuvxhakrg.png",
+      "https://res.cloudinary.com/y0ln6ixr/image/upload/f_jpg/v1791842233/sww3kisywnakgtpi2c5s.png"
+    ],
+    "instagram_container_id": null
   }
 }
