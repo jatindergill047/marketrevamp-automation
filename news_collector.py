@@ -277,11 +277,27 @@ def collect_news():
             article["score"] = score_article(article)
             unique.append(article)
 
-    selected = select_top_five(unique)    
-    # Prepare selected stories for verified summaries.
+    
+    selected = select_top_five(unique)
+
+    # Retrieve source content for the five selected stories.
     for story in selected:
+        article_url = story.get("url", "")
+        article_text = fetch_article_text(article_url)
+
+        story["article_text"] = article_text
         story["verified_summary"] = ""
-        story["summary_status"] = "pending_verification"
+        story["summary_status"] = (
+            "ready_for_review"
+            if len(article_text.split()) >= 100
+            else "insufficient_source_text"
+        )
+
+        print(
+            f"Article: {story.get('title', 'Untitled')} "
+            f"| Extracted words: {len(article_text.split())}"
+        )
+
 
     output = {
         "collected_at": datetime.now(timezone.utc).isoformat(),
