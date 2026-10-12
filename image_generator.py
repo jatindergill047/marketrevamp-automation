@@ -27,6 +27,8 @@ COLORS = {
     "Crypto": (245, 177, 66),
     "Markets": (67, 223, 161),
 }
+MIN_SUMMARY_WORDS = 30
+MAX_SUMMARY_WORDS = 90
 
 
 def font(size, bold=False):
@@ -44,6 +46,7 @@ def font(size, bold=False):
 
 
 def wrap_lines(draw, text, face, max_width):
+    """Wrap by measured pixel width, splitting exceptionally long tokens if needed."""
     words = re.sub(r"\s+", " ", str(text)).strip().split()
     lines = []
     current = ""
@@ -51,9 +54,22 @@ def wrap_lines(draw, text, face, max_width):
         candidate = f"{current} {word}".strip()
         if draw.textbbox((0, 0), candidate, font=face)[2] <= max_width:
             current = candidate
+            continue
+        if current:
+            lines.append(current)
+            current = ""
+        # Extremely long URLs/tokens should never spill outside the card.
+        if draw.textbbox((0, 0), word, font=face)[2] > max_width:
+            chunk = ""
+            for character in word:
+                test = chunk + character
+                if chunk and draw.textbbox((0, 0), test, font=face)[2] > max_width:
+                    lines.append(chunk)
+                    chunk = character
+                else:
+                    chunk = test
+            current = chunk
         else:
-            if current:
-                lines.append(current)
             current = word
     if current:
         lines.append(current)
@@ -65,16 +81,20 @@ def fit_headline(draw, text, max_width=902, max_lines=6, max_height=300):
         face = font(size, bold=True)
         lines = wrap_lines(draw, text, face, max_width)
         line_height = size + 17
-
-        if (
-            len(lines) <= max_lines
-            and len(lines) * line_height <= max_height
-        ):
+        if len(lines) <= max_lines and len(lines) * line_height <= max_height:
             return face, lines, line_height
+    raise ValueError(f"Headline cannot fit without truncation: {text}")
 
-    raise ValueError(
-        f"Headline cannot fit without truncation: {text}"
-    )
+
+def fit_summary(draw, text, max_width=865, max_height=235):
+    """Fit complete summary text, never silently crop or truncate it."""
+    for size in range(33, 15, -1):
+        face = font(size)
+        lines = wrap_lines(draw, text, face, max_width)
+        line_height = size + 9
+        if len(lines) * line_height <= max_height:
+            return face, lines, line_height
+    raise ValueError("Summary cannot fit inside the KEY DETAILS box without clipping")
 
 
 def background(accent, index):
@@ -86,7 +106,6 @@ def background(accent, index):
             int(6 + 4 * t), int(18 + 9 * t), int(38 + 15 * t)
         ))
 
-    # Abstract editorial illustration: layered orbital rings and glowing sphere.
     overlay = Image.new("RGBA", (WIDTH, HEIGHT), (0, 0, 0, 0))
     od = ImageDraw.Draw(overlay)
     cx, cy = 795, 435
@@ -112,15 +131,35 @@ def source_name(url):
     return host or "Source unavailable"
 
 
+def story_category(story):
+    """Editorial category takes precedence over the source feed category."""
+    for key in ("display_category", "selected_category", "category"):
+        value = story.get(key)
+        if value in COLORS:
+            return value
+    return "Technology"
+
+
+def summary_for_card(story):
+    """Return a draft summary and whether it passes basic length/status checks."""
+    summary = (story.get("verified_summary") or story.get("summary") or "").strip()
+    count = len(summary.split())
+    status = story.get("summary_status", "")
+    valid = MIN_SUMMARY_WORDS <= count <= MAX_SUMMARY_WORDS
+    if status in ("insufficient_source_text", "summary_needs_manual_review"):
+        valid = False
+    if not valid:
+        # Do not display a misleading, possibly invalid article summary.
+        return "Summary requires editorial review. Read the original article before publishing this slide.", False
+    return summary, True
+
+
 def draw_card(story, index, total, date_label):
-    category = story.get("display_category") or story.get("category") or "Technology"
-    if category not in COLORS:
-        category = "Technology"
+    category = story_category(story)
     accent = COLORS[category]
     image = background(accent, index)
     draw = ImageDraw.Draw(image)
 
-    # Top brand bar: use the actual uploaded MarketRevamp logo, not a drawn imitation.
     if not LOGO.exists():
         raise FileNotFoundError("Missing marketrevamp_logo.png in the repository root")
     with Image.open(LOGO) as original_logo:
@@ -133,7 +172,6 @@ def draw_card(story, index, total, date_label):
     draw.text((74, 177), "THE DAILY BRIEF", font=font(23, bold=True), fill=MUTED)
     draw.line((74, 219, 1006, 219), fill=(55, 77, 101), width=2)
 
-    # Small category label and story number.
     draw.rounded_rectangle((74, 285, 325, 346), radius=19, fill=accent)
     draw.text((98, 301), category.upper(), font=font(24, bold=True), fill=NAVY)
     draw.text((823, 298), f"{index:02d} / {total:02d}",
@@ -141,44 +179,26 @@ def draw_card(story, index, total, date_label):
 
     draw.text((74, 395), "TODAY'S HEADLINE", font=font(24, bold=True), fill=accent)
     title = story.get("title") or "News update"
-    headline_font, lines, line_height = fit_headline(
-        draw, title, max_height=300
-    )
-
+    headline_font, lines, line_height = fit_headline(draw, title, max_height=300)
     y = 465
-
     for line in lines:
-        draw.text(
-            (69, y),
-            line,
-            font=headline_font,
-            fill=WHITE,
-            stroke_width=0
-        )
+        draw.text((69, y), line, font=headline_font, fill=WHITE)
         y += line_height
-    # Readable 40-60 word summary. Never invent facts from RSS headlines.
-    summary = (story.get("verified_summary") or story.get("summary") or "").strip()
-    valid_summary = 40 <= len(summary.split()) <= 60
-    if not valid_summary:
-        summary = "Verified 40–60 word summary pending. Review the full source article before publishing this slide."
 
+    summary, valid_summary = summary_for_card(story)
     summary_top = 815
-    draw.rounded_rectangle((70, summary_top, 1010, 1110), radius=24,
+    summary_bottom = 1120
+    draw.rounded_rectangle((70, summary_top, 1010, summary_bottom), radius=24,
                            fill=(16, 35, 59), outline=(51, 79, 103), width=2)
-    draw.text((100, summary_top + 22), "KEY DETAILS", font=font(27, bold=True), fill=accent)
-    summary_size = 33
-    while summary_size >= 23:
-        summary_face = font(summary_size)
-        summary_lines = wrap_lines(draw, summary, summary_face, 865)
-        summary_line_height = summary_size + 12
-        if len(summary_lines) * summary_line_height <= 202:
-            break
-        summary_size -= 1
+    draw.text((100, summary_top + 22), "KEY DETAILS" if valid_summary else "REVIEW REQUIRED",
+              font=font(27, bold=True), fill=accent)
+    summary_face, summary_lines, summary_line_height = fit_summary(
+        draw, summary, max_width=865, max_height=summary_bottom - (summary_top + 79) - 12
+    )
     for i, line in enumerate(summary_lines):
         draw.text((100, summary_top + 79 + i * summary_line_height), line,
                   font=summary_face, fill=WHITE if valid_summary else MUTED)
 
-    # Footer separated from headline, with publisher attribution.
     draw.line((74, 1135, 1006, 1135), fill=(55, 77, 101), width=2)
     draw.text((74, 1160), "SOURCE", font=font(19, bold=True), fill=MUTED)
     draw.text((74, 1194), source_name(story.get("url", "")),
@@ -211,7 +231,9 @@ def main():
     for index, story in enumerate(stories, 1):
         path = OUTPUT / f"slide_{index:02d}.png"
         draw_card(story, index, len(stories), date_label).save(path, "PNG", optimize=True)
-        print(f"Created {path} | {story.get('display_category', story.get('category', ''))} | {story.get('title', '')}")
+        category = story_category(story)
+        summary, valid = summary_for_card(story)
+        print(f"Created {path} | {category} | Summary: {'draft_ready_for_review' if valid else 'REVIEW_REQUIRED'} | {story.get('title', '')}")
     print(f"Finished: {len(stories)} separate 1080x1350 images in {OUTPUT}/")
     print("Images are local files only. Nothing has been published or uploaded.")
 
