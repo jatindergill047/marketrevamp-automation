@@ -56,11 +56,6 @@ jobs:
         
       - name: Prepare Instagram carousel
         run: python prepare_instagram_carousel.py
-      - name: Validate Instagram carousel publishing
-        env:
-          INSTAGRAM_ACCESS_TOKEN: ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
-          INSTAGRAM_USER_ID: ${{ vars.INSTAGRAM_USER_ID }}
-        run: python publish_instagram.py
 
       - name: Test duplicate article protection
         run: python test_duplicate_articles.py
@@ -70,6 +65,12 @@ jobs:
 
       - name: Test full Instagram publishing simulation
         run: python test_publishing_flow.py
+
+      - name: Validate Instagram carousel publishing
+        env:
+          INSTAGRAM_ACCESS_TOKEN: ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
+          INSTAGRAM_USER_ID: ${{ vars.INSTAGRAM_USER_ID }}
+        run: python publish_instagram.py
         
       - name: Save Instagram carousel manifest
         uses: actions/upload-artifact@v4
