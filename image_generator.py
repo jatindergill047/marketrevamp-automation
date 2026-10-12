@@ -87,14 +87,19 @@ def fit_headline(draw, text, max_width=902, max_lines=6, max_height=300):
 
 
 def fit_summary(draw, text, max_width=865, max_height=235):
-    """Fit complete summary text, never silently crop or truncate it."""
-    for size in range(33, 15, -1):
+    """Use larger readable text without clipping or truncation."""
+    for size in range(36, 21, -1):
         face = font(size)
         lines = wrap_lines(draw, text, face, max_width)
-        line_height = size + 9
+        line_height = size + 10
+
         if len(lines) * line_height <= max_height:
             return face, lines, line_height
-    raise ValueError("Summary cannot fit inside the KEY DETAILS box without clipping")
+
+    raise ValueError(
+        "Summary is too long for readable text. "
+        "Shorten the summary or increase the available space."
+    )
 
 
 def background(accent, index):
