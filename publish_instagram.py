@@ -14,9 +14,30 @@ API_BASE = f"https://graph.instagram.com/{API_VERSION}"
 MANIFEST_FILE = Path("instagram_carousel_manifest.json")
 HISTORY_FILE = Path("instagram_publish_history.json")
 
-PUBLISH_ENABLED = os.getenv(
-    "INSTAGRAM_PUBLISH_ENABLED", "false"
-).lower() == "true"
+PUBLISH_ENABLED = (
+    os.getenv("INSTAGRAM_PUBLISH_ENABLED", "false").lower() == "true"
+)
+
+
+def load_history():
+    if not HISTORY_FILE.exists():
+        raise RuntimeError("Publishing history is missing.")
+
+    history = json.loads(HISTORY_FILE.read_text(encoding="utf-8"))
+
+    if not isinstance(history, dict):
+        raise RuntimeError("Invalid publishing history.")
+
+    return history
+
+
+def save_history(history):
+    temporary = HISTORY_FILE.with_suffix(".tmp")
+    temporary.write_text(
+        json.dumps(history, indent=2),
+        encoding="utf-8",
+    )
+    temporary.replace(HISTORY_FILE)
 
 
 def load_manifest():
@@ -27,7 +48,7 @@ def load_manifest():
     slides = data.get("slides", [])
 
     if len(slides) != 5:
-        raise RuntimeError("Exactly five carousel slides are required.")
+        raise RuntimeError("Exactly five slides are required.")
 
     urls = []
 
@@ -35,7 +56,7 @@ def load_manifest():
         url = slide.get("image_url") or slide.get("secure_url")
 
         if not url or not url.startswith("https://"):
-            raise RuntimeError("Invalid carousel image URL.")
+            raise RuntimeError("Invalid image URL.")
 
         if "res.cloudinary.com/" not in url:
             raise RuntimeError("Image must be hosted on Cloudinary.")
@@ -43,17 +64,15 @@ def load_manifest():
         urls.append(url)
 
     if len(set(urls)) != 5:
-        raise RuntimeError("Duplicate carousel images detected.")
+        raise RuntimeError("Duplicate images detected.")
 
     return data, urls
 
 
 def api_request(method, endpoint, token, payload=None):
-    url = f"{API_BASE}/{endpoint}"
-
     response = requests.request(
         method,
-        url,
+        f"{API_BASE}/{endpoint}",
         headers={"Authorization": f"Bearer {token}"},
         data=payload if method == "POST" else None,
         params=payload if method == "GET" else None,
@@ -64,14 +83,13 @@ def api_request(method, endpoint, token, payload=None):
         result = response.json()
     except ValueError:
         raise RuntimeError(
-            f"Instagram API returned HTTP {response.status_code}"
+            f"Instagram returned HTTP {response.status_code}"
         )
 
     if not response.ok or "error" in result:
         error = result.get("error", {})
         raise RuntimeError(
-            f"Instagram API error: "
-            f"{error.get('message', 'Unknown error')}"
+            f"Instagram API error: {error.get('message', 'Unknown error')}"
         )
 
     return result
@@ -96,17 +114,24 @@ def wait_for_container(container_id, token):
 
         time.sleep(15)
 
-    raise RuntimeError("Timed out waiting for Instagram media processing.")
+    raise RuntimeError("Timed out waiting for media processing.")
 
 
 def main():
     manifest, image_urls = load_manifest()
+    history = load_history()
 
     fingerprint = hashlib.sha256(
         json.dumps(image_urls, sort_keys=True).encode()
     ).hexdigest()
 
     print("Validated five unique Cloudinary image URLs.")
+
+    if fingerprint in history:
+        status = history[fingerprint].get("status")
+        print(f"Existing publishing record: {status}")
+        print("Skipping to prevent duplicate publishing.")
+        return
 
     if not PUBLISH_ENABLED:
         print("DRY RUN: Instagram publishing is disabled.")
@@ -119,16 +144,18 @@ def main():
     if not token or not account_id:
         raise RuntimeError("Instagram credentials are missing.")
 
-    if HISTORY_FILE.exists():
-        history = json.loads(HISTORY_FILE.read_text(encoding="utf-8"))
-        if fingerprint in history:
-            print("Duplicate carousel detected. Skipping.")
-            return
-
     caption = manifest.get("caption", "").strip()
 
     if not caption:
         raise RuntimeError("Instagram caption is missing.")
+
+    history[fingerprint] = {
+        "status": "pending",
+        "created_at": int(time.time()),
+    }
+    save_history(history)
+
+    print("Publishing attempt recorded as pending.")
 
     child_ids = []
 
@@ -142,7 +169,6 @@ def main():
                 "is_carousel_item": "true",
             },
         )
-
         child_ids.append(result["id"])
         print(f"Created carousel item {index}/5.")
 
@@ -160,7 +186,6 @@ def main():
     carousel_id = result["id"]
     wait_for_container(carousel_id, token)
 
-    # This is the only operation that publishes the post.
     published = api_request(
         "POST",
         f"{account_id}/media_publish",
@@ -168,21 +193,14 @@ def main():
         {"creation_id": carousel_id},
     )
 
-    print(f"Instagram carousel published: {published['id']}")
-
-    history = {}
-    if HISTORY_FILE.exists():
-        history = json.loads(HISTORY_FILE.read_text(encoding="utf-8"))
-
     history[fingerprint] = {
+        "status": "published",
         "instagram_media_id": published["id"],
         "published_at": int(time.time()),
     }
+    save_history(history)
 
-    HISTORY_FILE.write_text(
-        json.dumps(history, indent=2),
-        encoding="utf-8",
-    )
+    print(f"Instagram carousel published: {published['id']}")
 
 
 if __name__ == "__main__":
