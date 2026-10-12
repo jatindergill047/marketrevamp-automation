@@ -102,7 +102,7 @@ def generate_summary(article_text, min_words=40, max_words=60):
             continue
 
         if word_count + len(words) > max_words:
-            break
+            continue
 
         selected.append(sentence)
         word_count += len(words)
