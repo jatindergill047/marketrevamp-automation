@@ -295,7 +295,7 @@ def main():
 
     print("Caption safety checks passed.")
 
-     history[fingerprint] = {
+    history[fingerprint] = {
         "status": "pending",
         "toronto_date": today,
         "created_at": int(time.time()),
