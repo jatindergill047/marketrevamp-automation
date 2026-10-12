@@ -9,6 +9,16 @@ NEWS_SOURCE = Path("news_results.json")
 
 data = json.loads(SOURCE.read_text(encoding="utf-8"))
 images = data["images"]
+news_data = json.loads(
+    NEWS_SOURCE.read_text(encoding="utf-8")
+)
+
+stories = news_data.get("selected_stories", [])
+
+if len(stories) != 5:
+    raise ValueError(
+        f"Expected 5 news stories, found {len(stories)}"
+    )
 
 if len(images) != 5:
     raise ValueError(f"Expected 5 images, found {len(images)}")
