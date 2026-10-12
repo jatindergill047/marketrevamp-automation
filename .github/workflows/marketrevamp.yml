@@ -33,6 +33,16 @@ jobs:
           CLOUDINARY_CLOUD_NAME: ${{ vars.CLOUDINARY_CLOUD_NAME }}
           CLOUDINARY_UPLOAD_PRESET: ${{ vars.CLOUDINARY_UPLOAD_PRESET }}
         run: python upload_to_cloudinary.py
+        
+      - name: Prepare Instagram carousel
+        run: python prepare_instagram_carousel.py
+
+      - name: Save Instagram carousel manifest
+        uses: actions/upload-artifact@v4
+        with:
+          name: marketrevamp-instagram-carousel
+          path: instagram_carousel_manifest.json
+          if-no-files-found: error
 
       - name: Save Cloudinary URLs
         uses: actions/upload-artifact@v4
