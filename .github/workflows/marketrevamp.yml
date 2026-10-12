@@ -39,6 +39,10 @@ jobs:
         
       - name: Prepare Instagram carousel
         run: python prepare_instagram_carousel.py
+      - name: Validate Instagram carousel publishing
+        env:
+          INSTAGRAM_PUBLISH_ENABLED: 'false'
+        run: python publish_instagram.py
 
       - name: Save Instagram carousel manifest
         uses: actions/upload-artifact@v4
