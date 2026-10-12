@@ -27,6 +27,19 @@ jobs:
         run: |
           python news_collector.py
           python image_generator.py
+        
+      - name: Upload images to Cloudinary
+        env:
+          CLOUDINARY_CLOUD_NAME: ${{ vars.CLOUDINARY_CLOUD_NAME }}
+          CLOUDINARY_UPLOAD_PRESET: ${{ vars.CLOUDINARY_UPLOAD_PRESET }}
+        run: python upload_to_cloudinary.py
+
+      - name: Save Cloudinary URLs
+        uses: actions/upload-artifact@v4
+        with:
+          name: marketrevamp-cloudinary-urls
+          path: cloudinary_uploads.json
+          if-no-files-found: error
 
       - name: Upload news results
         uses: actions/upload-artifact@v4
