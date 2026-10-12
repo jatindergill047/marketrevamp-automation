@@ -1,0 +1,37 @@
+name: Test Publishing History
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  test-history:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Checkout publishing history
+        uses: actions/checkout@v4
+        with:
+          ref: publishing-history
+          path: publishing-history
+          persist-credentials: true
+
+      - name: Restore publishing history
+        run: |
+          cp publishing-history/instagram_publish_history.json instagram_publish_history.json
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Test history persistence
+        run: python test_history_persistence.py
