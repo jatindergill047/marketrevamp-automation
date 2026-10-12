@@ -7,7 +7,6 @@ Requires: Pillow>=11.0,<13.0
 """
 
 import json
-import math
 import re
 from datetime import datetime, timezone
 from pathlib import Path
@@ -18,6 +17,7 @@ from PIL import Image, ImageDraw, ImageFont, ImageFilter
 WIDTH, HEIGHT = 1080, 1350
 INPUT = Path("news_results.json")
 OUTPUT = Path("instagram_images")
+LOGO = Path("marketrevamp_logo.png")
 NAVY = (6, 18, 38)
 WHITE = (246, 250, 255)
 MUTED = (158, 181, 205)
@@ -119,11 +119,17 @@ def draw_card(story, index, total, date_label):
     image = background(accent, index)
     draw = ImageDraw.Draw(image)
 
-    # Top brand bar.
-    draw.rounded_rectangle((72, 75, 124, 127), radius=15, fill=accent)
-    draw.text((87, 83), "M", font=font(32, bold=True), fill=NAVY)
-    draw.text((144, 76), "MARKETREVAMP", font=font(32, bold=True), fill=WHITE)
-    draw.text((74, 160), "THE DAILY BRIEF", font=font(23, bold=True), fill=MUTED)
+    # Top brand bar: use the actual uploaded MarketRevamp logo, not a drawn imitation.
+    if not LOGO.exists():
+        raise FileNotFoundError("Missing marketrevamp_logo.png in the repository root")
+    with Image.open(LOGO) as original_logo:
+        logo = original_logo.convert("RGBA")
+        logo.thumbnail((112, 112), Image.Resampling.LANCZOS)
+        image.paste(logo, (65, 55), logo)
+    draw.text((192, 76), "MARKETREVAMP", font=font(32, bold=True), fill=WHITE)
+    draw.text((192, 126), "AI  •  TECH  •  MARKETS  •  BLOCKCHAIN",
+              font=font(17, bold=True), fill=MUTED)
+    draw.text((74, 177), "THE DAILY BRIEF", font=font(23, bold=True), fill=MUTED)
     draw.line((74, 219, 1006, 219), fill=(55, 77, 101), width=2)
 
     # Small category label and story number.
@@ -137,9 +143,32 @@ def draw_card(story, index, total, date_label):
     headline_font, lines, line_height = fit_headline(draw, title)
     y = 465
     for line in lines:
-        draw.text((69, y), line, font=headline_font, fill=WHITE,
-                  stroke_width=0)
+        if y + line_height > 785:
+            break
+        draw.text((69, y), line, font=headline_font, fill=WHITE, stroke_width=0)
         y += line_height
+
+    # Readable 40-60 word summary. Never invent facts from RSS headlines.
+    summary = (story.get("verified_summary") or story.get("summary") or "").strip()
+    valid_summary = 40 <= len(summary.split()) <= 60
+    if not valid_summary:
+        summary = "Verified 40–60 word summary pending. Review the full source article before publishing this slide."
+
+    summary_top = 815
+    draw.rounded_rectangle((70, summary_top, 1010, 1110), radius=24,
+                           fill=(16, 35, 59), outline=(51, 79, 103), width=2)
+    draw.text((100, summary_top + 22), "KEY DETAILS", font=font(27, bold=True), fill=accent)
+    summary_size = 33
+    while summary_size >= 23:
+        summary_face = font(summary_size)
+        summary_lines = wrap_lines(draw, summary, summary_face, 865)
+        summary_line_height = summary_size + 12
+        if len(summary_lines) * summary_line_height <= 202:
+            break
+        summary_size -= 1
+    for i, line in enumerate(summary_lines):
+        draw.text((100, summary_top + 79 + i * summary_line_height), line,
+                  font=summary_face, fill=WHITE if valid_summary else MUTED)
 
     # Footer separated from headline, with publisher attribution.
     draw.line((74, 1135, 1006, 1135), fill=(55, 77, 101), width=2)
@@ -154,6 +183,8 @@ def draw_card(story, index, total, date_label):
 
 
 def main():
+    if not LOGO.exists():
+        raise SystemExit("Missing marketrevamp_logo.png. Upload the official logo to the repository root.")
     if not INPUT.exists():
         raise SystemExit("Missing news_results.json. Run news_collector.py first.")
     data = json.loads(INPUT.read_text(encoding="utf-8"))
