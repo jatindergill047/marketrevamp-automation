@@ -295,10 +295,13 @@ def main():
 
     print("Caption safety checks passed.")
 
-    history[fingerprint] = {
+     history[fingerprint] = {
         "status": "pending",
         "toronto_date": today,
         "created_at": int(time.time()),
+        "article_urls": normalized_urls,
+        "image_urls": image_urls,
+        "instagram_container_id": None,
     }
     save_history(history)
 
