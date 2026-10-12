@@ -1,0 +1,33 @@
+
+name: Test Instagram Carousel
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test-carousel:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Download latest carousel manifest
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh run download \
+            --repo "$GITHUB_REPOSITORY" \
+            --name marketrevamp-instagram-carousel \
+            --dir . 
+
+      - name: Test carousel without publishing
+        env:
+          INSTAGRAM_ACCESS_TOKEN: ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
+          INSTAGRAM_USER_ID: "28265320583167958"
+        run: python test_instagram_carousel.py
