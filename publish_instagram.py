@@ -10,6 +10,7 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 
 import requests
+from urllib.parse import urlsplit, urlunsplit
 
 API_VERSION = "v24.0"
 API_BASE = f"https://graph.instagram.com/{API_VERSION}"
@@ -21,6 +22,23 @@ PUBLISH_ENABLED = (
     os.getenv("INSTAGRAM_PUBLISH_ENABLED", "false").lower() == "true"
 )
 
+def normalize_article_url(url):
+    """Normalize article URLs for duplicate detection."""
+    if not isinstance(url, str):
+        raise ValueError("Invalid article URL.")
+
+    parts = urlsplit(url.strip())
+
+    if parts.scheme != "https" or not parts.hostname:
+        raise ValueError("Invalid article URL.")
+
+    return urlunsplit((
+        "https",
+        parts.netloc.lower(),
+        parts.path.rstrip("/") or "/",
+        "",
+        ""
+    ))
 
 def load_history():
     if not HISTORY_FILE.exists():
