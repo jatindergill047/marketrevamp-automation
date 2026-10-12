@@ -79,6 +79,43 @@ def extract_article_text(url):
         print(f"Article extraction failed: {error}")
         return ""
 
+def generate_summary(article_text, min_words=40, max_words=60):
+    """Create a draft summary from original article sentences."""
+    if not article_text:
+        return ""
+
+    # Clean whitespace without changing the article's wording.
+    text = re.sub(r"\s+", " ", article_text).strip()
+
+    # Split the article into sentences.
+    sentences = re.split(r"(?<=[.!?])\s+", text)
+
+    # Prefer the opening sentences, which often contain key facts.
+    selected = []
+    word_count = 0
+
+    for sentence in sentences:
+        sentence = sentence.strip()
+        words = sentence.split()
+
+        if not words or len(words) > max_words:
+            continue
+
+        if word_count + len(words) > max_words:
+            break
+
+        selected.append(sentence)
+        word_count += len(words)
+
+        if word_count >= min_words:
+            break
+
+    if word_count < min_words:
+        return ""
+
+    return " ".join(selected)
+
+
 def clean_article_text(raw_text):
     """Clean HTML and whitespace from article text."""
     if not raw_text:
