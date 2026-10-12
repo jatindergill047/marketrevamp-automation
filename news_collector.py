@@ -1,3 +1,131 @@
+import json
+import urllib.request
+import xml.etree.ElementTree as ET
+from datetime import datetime, timedelta, timezone
+from email.utils import parsedate_to_datetime
+from pathlib import Path
+
+FEEDS = {
+    "AI": "https://techcrunch.com/category/artificial-intelligence/feed/",
+    "Technology": "https://feeds.arstechnica.com/arstechnica/index",
+    "Crypto": "https://www.coindesk.com/arc/outboundfeeds/rss/",
+    "Markets": "https://www.cnbc.com/id/100003114/device/rss/rss.html",
+}
+
+HEADERS = {"User-Agent": "MarketRevampNewsCollector/1.0"}
+
+KEYWORDS = {
+    "AI": [
+        "artificial intelligence", " ai ", "ai’s", "ai-", "openai", "chatgpt",
+        "anthropic", "claude", "gemini", "nvidia", "machine learning",
+        "llm", "gpu", "data center", "datacenter", "robotics",
+        "neural network", "ai model", "ai agent",
+    ],
+    "Technology": [
+        "apple", "google", "microsoft", "amazon", "meta", "tesla",
+        "semiconductor", "chipmaker", "microchip", "software",
+        "cybersecurity", "cloud computing", "quantum computing",
+        "startup", "technology", "smartphone", "iphone", "android",
+        "computing", "robot", "product launch",
+    ],
+    "Crypto": [
+        "bitcoin", "btc", "ethereum", "ether", "crypto", "blockchain",
+        "stablecoin", "tokenized", "tokenization", "defi", "solana",
+        "coinbase", "digital asset", "web3", "prediction market",
+    ],
+    "Markets": [
+        "stock", "shares", "nasdaq", "s&p 500", "dow jones",
+        "earnings", "inflation", "federal reserve", "interest rate",
+        "bond", "treasury", "fixed income", "jpmorgan", "goldman sachs",
+        "wall street", "investment", "investor", "401(k)",
+        "private funds", "retailers", "retail sales", "economic growth",
+        "recession", "oil prices", "gold prices", "commodities",
+        "tariff", "ipo", "equity market",
+    ],
+}
+
+EXCLUDE = [
+    "celebrity", "fashion", "football", "soccer", "recipe",
+    "wedding", "movie review", "press secretary", "houthi", "ceasefire",
+]
+
+
+def get_text(item, names):
+    for name in names:
+        element = item.find(name)
+        if element is not None and element.text:
+            return element.text.strip()
+    return ""
+
+
+def score_article(article):
+    title = " " + article["title"].lower() + " "
+
+    if any(word in title for word in EXCLUDE):
+        return 0
+
+    score = 0
+    matched_categories = []
+
+    for category, keywords in KEYWORDS.items():
+        matches = sum(1 for keyword in keywords if keyword in title)
+        if matches:
+            score += matches * 3
+            matched_categories.append(category)
+
+    if not matched_categories:
+        return 0
+
+    if article["category"] in matched_categories:
+        score += 4
+
+    impact_keywords = [
+        "earnings", "revenue", "profit", "interest rate",
+        "federal reserve", "inflation", "regulation", "regulator",
+        "sec ", "lawsuit", "antitrust", "acquisition", "merger",
+        "investment", "launch", "breakthrough", "approval", "ban",
+        "tariff", "etf", "funding", "billion", "trillion", "imf",
+    ]
+    impact_matches = sum(1 for word in impact_keywords if word in title)
+    score += min(impact_matches * 3, 9)
+
+    age_hours = (
+        datetime.now(timezone.utc)
+        - datetime.fromisoformat(article["published"])
+    ).total_seconds() / 3600
+
+    if age_hours <= 12:
+        score += 4
+    elif age_hours <= 24:
+        score += 2
+    else:
+        score += 1
+
+    article["matched_categories"] = matched_categories
+    article["impact_signals"] = impact_matches
+    return score
+
+
+def select_top_five(articles):
+    """Reserve one distinct eligible story per topic, then fill remaining slots."""
+    candidates = sorted(
+        (article for article in articles if article["score"] > 0),
+        key=lambda item: (item["score"], item["published"]),
+        reverse=True,
+    )
+
+    selected = []
+    selected_urls = set()
+
+    for category in ["AI", "Technology", "Crypto", "Markets"]:
+        for article in candidates:
+            if (
+                category in article.get("matched_categories", [])
+                and article["url"] not in selected_urls
+            ):
+                # Keep the source feed in 'category' and separately record
+                # which editorial category this story is representing.
+                chosen = {**article, "selected_category": category}
                 selected.append(chosen)
                 selected_urls.add(article["url"])
                 break
