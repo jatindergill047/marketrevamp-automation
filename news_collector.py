@@ -80,66 +80,114 @@ def extract_article_text(url):
         return ""
 
 
+# Flexible limits. The image generator also accepts 30–90 words.
+SUMMARY_MIN_WORDS = 30
+SUMMARY_MAX_WORDS = 90
+
+
 def _tokens(text):
-    """Words used for comparisons; keep numbers as useful news details."""
-    return re.findall(r"[a-z0-9]+(?:'[a-z0-9]+)?", text.casefold())
+    """Normalize words for comparing a headline with an extracted sentence."""
+    return re.findall(r"[a-z0-9]+(?:'[a-z0-9]+)?", text.casefold().replace("’", "'"))
+
+
+def _strip_headline_prefix(text, headline):
+    """Remove repeated article titles, including titles with no trailing period.
+
+    Trafilatura can return 'Headline First paragraph...' as one text block.
+    Without this step, sentence selection can reproduce the headline verbatim.
+    """
+    if not headline:
+        return text
+    title_words = _tokens(headline)
+    if not title_words:
+        return text
+    # Only strip at the beginning or a line boundary. Do not erase a later
+    # mention of the headline from the article body.
+    for _ in range(3):
+        match = re.match(r"^\s*(?:[^\w\n]*)([^\n]{0,300})", text)
+        if not match:
+            break
+        first_line = match.group(1)
+        word_matches = list(re.finditer(r"[A-Za-z0-9]+(?:['’][A-Za-z0-9]+)?", first_line))
+        if len(word_matches) < len(title_words):
+            break
+        prefix = first_line[:word_matches[len(title_words)-1].end()]
+        if _tokens(prefix) != title_words:
+            break
+        # Strip title punctuation too, but keep the first word of the body.
+        rest = first_line[len(prefix):]
+        rest = re.sub(r"^[\s:|–—\-]+", "", rest)
+        if rest.startswith((".", "!", "?")):
+            rest = rest[1:].lstrip()
+        text = rest + text[match.end():]
+        text = text.lstrip()
+    return text
 
 
 def _sentence_candidates(article_text, headline=""):
-    """Return article sentences after removing boilerplate and repetitions."""
+    """Get clean complete sentences; reject titles, boilerplate and duplicates."""
     if not article_text:
         return []
     text = unescape(re.sub(r"<[^>]+>", " ", article_text))
+    text = re.sub(r"[ \t]+", " ", text).strip()
+    text = _strip_headline_prefix(text, headline)
     text = re.sub(r"\s+", " ", text).strip()
-    # Split only on likely sentence boundaries (not decimal points or abbreviations).
+    # Splitting at punctuation is conservative: keep complete sentences.
     parts = re.split(r"(?<=[.!?])\s+(?=[\"'“‘(]*[A-Z0-9])", text)
-    headline_tokens = set(_tokens(headline))
+    headline_tokens = _tokens(headline)
+    headline_set = set(headline_tokens)
     unwanted = (
         "subscribe", "newsletter", "advertisement", "sign up", "read more",
         "click here", "all rights reserved", "cookie policy", "privacy policy",
         "follow us", "terms of service", "accept cookies", "share this article",
         "related articles", "download our app", "sign in", "log in",
     )
-    seen = []
     results = []
+    seen = []
     for position, part in enumerate(parts):
         sentence = part.strip(" \t\r\n-•")
         words = sentence.split()
-        if not 9 <= len(words) <= 38 or not re.search(r"[.!?][\"'”’)]?$", sentence):
+        if not 8 <= len(words) <= 45 or not re.search(r"[.!?][\"'”’)]?$", sentence):
             continue
         lower = sentence.casefold()
         if any(phrase in lower for phrase in unwanted):
             continue
-        tokens = set(_tokens(sentence))
-        if len(tokens) < 7:
+        tokens = _tokens(sentence)
+        token_set = set(tokens)
+        if len(token_set) < 7:
             continue
-        # Avoid repeating the headline verbatim or nearly verbatim.
-        if headline_tokens and len(tokens & headline_tokens) / max(len(tokens), 1) >= 0.88:
+        # A full headline or near-identical sentence adds no news value.
+        if headline_tokens:
+            overlap = len(token_set & headline_set)
+            precision = overlap / max(len(token_set), 1)
+            recall = overlap / max(len(headline_set), 1)
+            if (precision >= 0.82 and recall >= 0.80) or (
+                tokens[:len(headline_tokens)] == headline_tokens
+            ):
+                continue
+        if any(len(token_set & old) / max(min(len(token_set), len(old)), 1) >= 0.76
+               for old in seen):
             continue
-        if any(len(tokens & old) / max(min(len(tokens), len(old)), 1) >= 0.78 for old in seen):
-            continue
-        seen.append(tokens)
-        results.append((position, sentence, len(words), tokens))
+        seen.append(token_set)
+        results.append((position, sentence, len(words), token_set))
     return results
 
 
-def generate_summary(article_text, min_words=30, max_words=90, headline=""):
-    """Build a source-based draft, favoring 40–60 words but allowing 30–90.
+def generate_summary(article_text, min_words=SUMMARY_MIN_WORDS,
+                     max_words=SUMMARY_MAX_WORDS, headline=""):
+    """Select distinct, complete, relevant article sentences for human review.
 
-    This extracts intact sentences; it does not paraphrase or fact-check them.
-    Empty output means the story needs manual editorial attention.
+    Preferred length is 40–60 words; 30–90 is accepted. This is extractive,
+    not a verified or rewritten summary. Returns empty on insufficient quality.
     """
     if not 1 <= min_words <= max_words:
         raise ValueError("Invalid summary word limits")
-
     candidates = _sentence_candidates(article_text, headline)
     if not candidates:
         return ""
-
     headline_tokens = set(_tokens(headline))
     ranked = []
-    for position, sentence, count, tokens in candidates[:50]:
-        # Reward source relevance, concrete facts, and proximity to the lead.
+    for position, sentence, count, tokens in candidates[:60]:
         relevance = len(tokens & headline_tokens) / max(len(headline_tokens), 1)
         has_number = bool(re.search(r"\d", sentence))
         has_detail = bool(re.search(
@@ -147,30 +195,28 @@ def generate_summary(article_text, min_words=30, max_words=90, headline=""):
             r"however|million|billion|percent|regulation|research)\b",
             sentence, re.I,
         ))
-        score = 5 * relevance + 0.8 * has_number + 0.5 * has_detail - 0.09 * position
+        score = 5 * relevance + 0.8 * has_number + 0.5 * has_detail - 0.10 * position
         ranked.append((position, sentence, count, tokens, score))
 
-    # Choose up to four complete, distinct sentences. Preserve article order,
-    # prefer the 40–60-word target, and penalize distant jumps in the source.
+    # Beam search: favor source-relevant facts, coherent nearby sentences,
+    # and a natural length. Never shorten a sentence to hit a word count.
     beams = [(0, (), frozenset(), 0.0, None)]
     for index, (position, sentence, count, tokens, score) in enumerate(ranked):
         expanded = list(beams)
         for total, indices, used, quality, last_position in beams:
             if len(indices) >= 4 or total + count > max_words:
                 continue
-            if used and len(tokens & used) / max(len(tokens), 1) > 0.65:
+            if used and len(tokens & used) / max(len(tokens), 1) > 0.60:
                 continue
-            gap_penalty = 0 if last_position is None else 0.12 * max(0, position - last_position - 1)
+            gap_penalty = 0 if last_position is None else 0.18 * max(0, position - last_position - 1)
             expanded.append((total + count, indices + (index,), used | tokens,
                              quality + score - gap_penalty, position))
-        # Retain different word counts and sentence counts to avoid pruning
-        # the only path that reaches the flexible range.
         buckets = {}
         for state in expanded:
             key = (len(state[1]), state[0] // 5)
             buckets.setdefault(key, []).append(state)
         beams = [state for group in buckets.values()
-                 for state in sorted(group, key=lambda x: x[3], reverse=True)[:10]]
+                 for state in sorted(group, key=lambda x: x[3], reverse=True)[:12]]
 
     valid = [state for state in beams if min_words <= state[0] <= max_words
              and len(state[1]) >= 2]
@@ -179,14 +225,17 @@ def generate_summary(article_text, min_words=30, max_words=90, headline=""):
 
     def rank(state):
         total, indices, _, quality, _ = state
-        # Natural length preference, not a hard 40–60-word restriction.
         outside_preferred = max(0, 40 - total, total - 60)
         return (quality - 0.22 * outside_preferred - 0.02 * abs(total - 50),
                 -len(indices))
 
     best = max(valid, key=rank)
     chosen = sorted((ranked[i] for i in best[1]), key=lambda item: item[0])
-    return " ".join(item[1] for item in chosen)
+    summary = " ".join(item[1] for item in chosen)
+    # Final safety check: no exact title, even if it appeared as a fragment.
+    if headline and headline.casefold().strip(" .!?\n") in summary.casefold():
+        return ""
+    return summary
 
 
 def clean_article_text(raw_text):
@@ -419,7 +468,7 @@ def collect_news():
 
         story["summary_status"] = (
             "ready_for_review"
-            if draft_summary and 30 <= len(draft_summary.split()) <= 90
+            if draft_summary and SUMMARY_MIN_WORDS <= len(draft_summary.split()) <= SUMMARY_MAX_WORDS
             else ("insufficient_source_text" if len(article_text.split()) < 100 else "summary_needs_manual_review")
         )
 
