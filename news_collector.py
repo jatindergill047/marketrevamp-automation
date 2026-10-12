@@ -90,39 +90,37 @@ def clean_article_text(raw_text):
 
     return text.strip()
 
+
 def fetch_article_text(url):
-    """Download and extract basic article text."""
+    """Extract article text using Trafilatura."""
     if not url or not url.startswith(("https://", "http://")):
         return ""
 
     try:
-        request = urllib.request.Request(url, headers=HEADERS)
+        import trafilatura
 
-        with urllib.request.urlopen(request, timeout=15) as response:
-            content_type = response.headers.get("Content-Type", "")
-            if "text/html" not in content_type.lower():
-                return ""
+        downloaded = trafilatura.fetch_url(url)
+        if not downloaded:
+            print(f"Could not download article: {url}")
+            return ""
 
-            html = response.read(500_000).decode("utf-8", errors="replace")
-
-        html = re.sub(
-            r"<(script|style|nav|footer|header)\b[^>]*>.*?</\1>",
-            " ",
-            html,
-            flags=re.IGNORECASE | re.DOTALL,
+        article_text = trafilatura.extract(
+            downloaded,
+            include_comments=False,
+            include_tables=False,
+            favor_precision=True,
         )
 
-        paragraphs = re.findall(
-            r"<p\b[^>]*>(.*?)</p>",
-            html,
-            flags=re.IGNORECASE | re.DOTALL,
-        )
+        if not article_text:
+            print(f"Could not extract article text: {url}")
+            return ""
 
-        return clean_article_text(" ".join(paragraphs))[:12000]
+        return article_text[:12000]
 
     except Exception as error:
-        print(f"Article download failed: {url} ({error})")
+        print(f"Article extraction failed: {url} ({error})")
         return ""
+
 
 def get_text(item, names):
     for name in names:
