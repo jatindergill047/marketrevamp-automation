@@ -8,8 +8,8 @@ from email.utils import parsedate_to_datetime
 from pathlib import Path
 
 FEEDS = {
-    "AI": "https://techcrunch.com/category/artificial-intelligence/feed/",
-    "Technology": "https://feeds.arstechnica.com/arstechnica/index",
+    "AI": "https://techcrunch.com/category/artificial-intelligence/feed/",   
+    "Technology": "https://techcrunch.com/category/tech/feed/",
     "Crypto": "https://www.coindesk.com/arc/outboundfeeds/rss/",
     "Markets": "https://www.cnbc.com/id/100003114/device/rss/rss.html",
 }
@@ -18,33 +18,51 @@ HEADERS = {
     "User-Agent": "MarketRevampNewsCollector/1.0"
 }
 
+
 KEYWORDS = {
     "AI": [
-        "artificial intelligence", " ai ", "openai",
-        "chatgpt", "anthropic", "claude", "gemini",
-        "nvidia", "machine learning", "llm", "gpu",
-        "data center", "datacenter", "robotics",
+        "artificial intelligence", " ai ", "ai’s",
+        "ai-", "openai", "chatgpt", "anthropic",
+        "claude", "gemini", "nvidia",
+        "machine learning", "llm", "gpu",
+        "data center", "datacenter",
+        "robotics", "neural network",
+        "ai model", "ai agent",
     ],
     "Technology": [
         "apple", "google", "microsoft", "amazon",
-        "meta", "tesla", "semiconductor", "chip",
-        "software", "cybersecurity", "cloud",
-        "quantum", "startup", "technology",
+        "meta", "tesla", "semiconductor",
+        "chipmaker", "microchip", "software",
+        "cybersecurity", "cloud computing",
+        "quantum computing", "startup",
+        "technology", "smartphone",
+        "iphone", "android", "computing",
+        "robot", "product launch",
     ],
     "Crypto": [
         "bitcoin", "btc", "ethereum", "ether",
         "crypto", "blockchain", "stablecoin",
-        "token", "defi", "solana", "coinbase",
-        "etf", "digital asset",
+        "tokenized", "tokenization",
+        "defi", "solana", "coinbase",
+        "digital asset", "web3",
+        "prediction market",
     ],
     "Markets": [
         "stock", "shares", "nasdaq", "s&p 500",
         "dow jones", "earnings", "inflation",
-        "federal reserve", "fed rate", "interest rate",
-        "bond", "treasury", "oil price", "gold price",
-        "market", "investor", "tariff",
+        "federal reserve", "interest rate",
+        "bond", "treasury", "fixed income",
+        "jpmorgan", "goldman sachs",
+        "wall street", "investment",
+        "investor", "401(k)", "private funds",
+        "retailers", "retail sales",
+        "economic growth", "recession",
+        "oil prices", "gold prices",
+        "commodities", "tariff", "ipo",
+        "equity market",
     ],
 }
+
 
 EXCLUDE = [
     "celebrity", "fashion", "football", "soccer",
@@ -126,6 +144,7 @@ def score_article(article):
     return score
 
 
+
 def select_top_five(articles):
     candidates = [
         article for article in articles
@@ -143,19 +162,21 @@ def select_top_five(articles):
     selected = []
     selected_urls = set()
 
-    # First: one relevant story from each source category.
+    # Cover each category using the article's actual
+    # matched topics, regardless of its source feed.
     for category in FEEDS:
         for article in candidates:
             if (
-                article["category"] == category
-                and category in article["matched_categories"]
+                category in article.get(
+                    "matched_categories", []
+                )
                 and article["url"] not in selected_urls
             ):
                 selected.append(article)
                 selected_urls.add(article["url"])
                 break
 
-    # Second: fill remaining slots with top-ranked stories.
+    # Fill any remaining slots by relevance score.
     for article in candidates:
         if len(selected) >= 5:
             break
@@ -164,7 +185,6 @@ def select_top_five(articles):
             selected.append(article)
             selected_urls.add(article["url"])
 
-    # Display highest-scoring selected stories first.
     selected.sort(
         key=lambda item: (
             item["score"],
@@ -174,6 +194,7 @@ def select_top_five(articles):
     )
 
     return selected[:5]
+
 
 
 def collect_news():
