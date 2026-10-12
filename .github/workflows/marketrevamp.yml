@@ -67,6 +67,9 @@ jobs:
 
       - name: Test Instagram container history
         run: python test_container_history.py
+
+      - name: Test full Instagram publishing simulation
+        run: python test_publishing_flow.py
         
       - name: Save Instagram carousel manifest
         uses: actions/upload-artifact@v4
