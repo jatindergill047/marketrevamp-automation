@@ -20,6 +20,12 @@ if len(stories) != 5:
         f"Expected 5 news stories, found {len(stories)}"
     )
 
+for index, story in enumerate(stories, start=1):
+    if story.get("summary_status") != "ready_for_review":
+        raise ValueError(
+            f"Story {index} failed summary quality screening."
+        )
+
 if len(images) != 5:
     raise ValueError(f"Expected 5 images, found {len(images)}")
 
