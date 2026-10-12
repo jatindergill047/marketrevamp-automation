@@ -4,6 +4,9 @@ import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
 from pathlib import Path
+import re
+from html import unescape
+
 
 FEEDS = {
     "AI": "https://techcrunch.com/category/artificial-intelligence/feed/",
