@@ -147,10 +147,12 @@ if len(caption) > 2200:
     raise ValueError(
         "Instagram caption exceeds 2,200 characters."
     )
+
 manifest = {
     "instagram_user_id_env": "INSTAGRAM_USER_ID",
     "publish_enabled": True,
     "automated_checks_passed": True,
+    "editorial_approved": False,
     "media_type": "CAROUSEL",
     "caption": caption,
     "article_urls": [
@@ -158,6 +160,7 @@ manifest = {
     ],
     "slides": slides
 }
+
 
 OUTPUT.write_text(
     json.dumps(manifest, indent=2),
