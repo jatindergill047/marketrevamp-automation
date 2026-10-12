@@ -19,13 +19,25 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-
-      - name: Collect latest news
-        run: python news_collector.py
+          
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+        
+      - name: Collect latest news and generate images
+        run: |
+          python news_collector.py
+          python image_generator.py
 
       - name: Upload news results
         uses: actions/upload-artifact@v4
         with:
           name: marketrevamp-news
           path: news_results.json
+          if-no-files-found: error
+          
+      - name: Upload Instagram images
+        uses: actions/upload-artifact@v4
+        with:
+          name: marketrevamp-images
+          path: instagram_images/
           if-no-files-found: error
