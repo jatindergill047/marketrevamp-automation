@@ -9,7 +9,7 @@ from pathlib import Path
 
 FEEDS = {
     "AI": "https://techcrunch.com/category/artificial-intelligence/feed/",   
-    "Technology": "https://www.theverge.com/rss/index.xml",
+    "Technology": "https://feeds.arstechnica.com/arstechnica/index",
     "Crypto": "https://www.coindesk.com/arc/outboundfeeds/rss/",
     "Markets": "https://www.cnbc.com/id/100003114/device/rss/rss.html",
 }
