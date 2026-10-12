@@ -10,6 +10,9 @@ on:
 jobs:
   collect-news:
     runs-on: ubuntu-latest
+    environment: instagram-production
+    env:
+      INSTAGRAM_PUBLISH_ENABLED: 'false'
 
     steps:
       - name: Checkout repository
