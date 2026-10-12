@@ -98,8 +98,8 @@ def generate_summary(article_text, min_words=40, max_words=60):
         normalized = re.sub(r"\W+", "", sentence).lower()
 
         if normalized and normalized not in seen:
-        deduplicated.append(sentence)
-        seen.add(normalized)
+            deduplicated.append(sentence)
+            seen.add(normalized)
 
     text = " ".join(deduplicated)
 
