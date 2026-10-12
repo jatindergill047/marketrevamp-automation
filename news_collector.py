@@ -53,6 +53,32 @@ EXCLUDE = [
 ]
 
 
+def extract_article_text(url):
+    """Retrieve readable text from a news article."""
+    if not url or not url.startswith(("https://", "http://")):
+        return ""
+
+    try:
+        request = urllib.request.Request(
+            url,
+            headers={"User-Agent": "Mozilla/5.0"}
+        )
+        with urllib.request.urlopen(request, timeout=12) as response:
+            html = response.read(500_000).decode(
+                "utf-8", errors="replace"
+            )
+
+        html = re.sub(
+            r"<(script|style|nav|footer|header)\b[^>]*>.*?</\1>",
+            " ", html, flags=re.I | re.S
+        )
+        html = re.sub(r"<[^>]+>", " ", html)
+        return re.sub(r"\s+", " ", unescape(html)).strip()
+
+    except Exception as error:
+        print(f"Article extraction failed: {error}")
+        return ""
+
 def get_text(item, names):
     for name in names:
         element = item.find(name)
