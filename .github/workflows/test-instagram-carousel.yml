@@ -3,6 +3,10 @@ name: Test Instagram Carousel
 
 on:
   workflow_dispatch:
+  
+permissions:
+  contents: read
+  actions: read
 
 jobs:
   test-carousel:
@@ -21,10 +25,24 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh run download \
+          RUN_ID=$(gh run list \
+            --repo "$GITHUB_REPOSITORY" \
+            --workflow marketrevamp.yml \
+            --branch main \
+            --status success \
+            --limit 1 \
+            --json databaseId \
+            --jq '.[0].databaseId')
+
+          if [ -z "$RUN_ID" ]; then
+            echo "No successful MarketRevamp run found."
+            exit 1
+          fi
+
+          gh run download "$RUN_ID" \
             --repo "$GITHUB_REPOSITORY" \
             --name marketrevamp-instagram-carousel \
-            --dir . 
+            --dir .
 
       - name: Test carousel without publishing
         env:
