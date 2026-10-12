@@ -96,7 +96,9 @@ if len(caption) > 2200:
 manifest = {
     "instagram_user_id_env": "INSTAGRAM_USER_ID",
     "publish_enabled": False,
+    "editorial_approved": False,
     "media_type": "CAROUSEL",
+    "caption": caption,
     "slides": slides
 }
 
