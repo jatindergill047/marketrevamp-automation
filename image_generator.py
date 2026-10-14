@@ -77,7 +77,7 @@ def wrap_lines(draw, text, face, max_width):
 
 
 def fit_headline(draw, text, max_width=902, max_lines=6, max_height=300):
-    for size in range(75, 27, -2):
+    for size in range(70, 25, -2):
         face = font(size, bold=True)
         lines = wrap_lines(draw, text, face, max_width)
         line_height = size + 17
@@ -88,7 +88,7 @@ def fit_headline(draw, text, max_width=902, max_lines=6, max_height=300):
 
 def fit_summary(draw, text, max_width=865, max_height=235):
     """Use larger readable text without clipping or truncation."""
-    for size in range(36, 21, -1):
+    for size in range(36, 19, -1):
         face = font(size)
         lines = wrap_lines(draw, text, face, max_width)
         line_height = size + 10
@@ -103,31 +103,30 @@ def fit_summary(draw, text, max_width=865, max_height=235):
 
 
 def background(accent, index):
+    """Brighter electric-blue rings, directional rays and an understated navy base."""
     image = Image.new("RGB", (WIDTH, HEIGHT))
-    draw = ImageDraw.Draw(image)
+    base = ImageDraw.Draw(image)
     for y in range(HEIGHT):
         t = y / HEIGHT
-        draw.line([(0, y), (WIDTH, y)], fill=(
-            int(6 + 4 * t), int(18 + 9 * t), int(38 + 15 * t)
+        base.line([(0, y), (WIDTH, y)], fill=(
+            int(4 + 3 * t), int(18 + 9 * t), int(43 + 21 * t)
         ))
-
-    overlay = Image.new("RGBA", (WIDTH, HEIGHT), (0, 0, 0, 0))
-    od = ImageDraw.Draw(overlay)
-    cx, cy = 795, 435
-    for radius in range(290, 95, -9):
-        alpha = max(0, int(65 * (290 - radius) / 195))
-        od.ellipse((cx-radius, cy-radius, cx+radius, cy+radius),
-                   outline=(*accent, alpha), width=2)
-    for radius in range(160, 15, -5):
-        alpha = max(0, int(3 + (160-radius) / 160 * 8))
-        od.ellipse((cx-radius, cy-radius, cx+radius, cy+radius),
-                   fill=(*accent, alpha))
+    glow = Image.new("RGBA", (WIDTH, HEIGHT), (0, 0, 0, 0))
+    g = ImageDraw.Draw(glow)
+    cx, cy = 840, 435
+    for radius in range(300, 95, -10):
+        a = int(65 + (300 - radius) / 205 * 105)
+        g.ellipse((cx-radius, cy-radius, cx+radius, cy+radius),
+                  outline=(*accent, min(a, 210)), width=3)
+    for radius in range(235, 140, -15):
+        g.arc((cx-radius, cy-radius, cx+radius, cy+radius),
+              288, 83, fill=(255, 171, 45, 170), width=5)
     for j in range(11):
-        x = 680 + j * 31
-        od.line([(x, 80), (x-340, 820)], fill=(*accent, 13), width=2)
-    blur = overlay.filter(ImageFilter.GaussianBlur(12))
-    image = Image.alpha_composite(image.convert("RGBA"), blur)
-    image = Image.alpha_composite(image, overlay)
+        x = 710 + j * 38
+        g.line([(x, 0), (x - 445, 760)], fill=(*accent, 75), width=2)
+    soft = glow.filter(ImageFilter.GaussianBlur(20))
+    image = Image.alpha_composite(image.convert("RGBA"), soft)
+    image = Image.alpha_composite(image, glow)
     return image.convert("RGB")
 
 
@@ -160,6 +159,7 @@ def summary_for_card(story):
 
 
 def draw_card(story, index, total, date_label):
+    """1080x1350 approved layout: one header row, headline higher, roomy details."""
     category = story_category(story)
     accent = COLORS[category]
     image = background(accent, index)
@@ -169,49 +169,80 @@ def draw_card(story, index, total, date_label):
         raise FileNotFoundError("Missing marketrevamp_logo.png in the repository root")
     with Image.open(LOGO) as original_logo:
         logo = original_logo.convert("RGBA")
-        logo.thumbnail((112, 112), Image.Resampling.LANCZOS)
-        image.paste(logo, (65, 55), logo)
-    draw.text((192, 76), "MARKETREVAMP", font=font(32, bold=True), fill=WHITE)
-    draw.text((192, 126), "AI  •  TECH  •  MARKETS  •  BLOCKCHAIN",
-              font=font(17, bold=True), fill=MUTED)
-    draw.text((74, 177), "THE DAILY BRIEF", font=font(23, bold=True), fill=MUTED)
-    draw.line((74, 219, 1006, 219), fill=(55, 77, 101), width=2)
+        logo.thumbnail((102, 102), Image.Resampling.LANCZOS)
+        image.paste(logo, (42, 26), logo)
 
-    draw.rounded_rectangle((74, 285, 325, 346), radius=19, fill=accent)
-    draw.text((98, 301), category.upper(), font=font(24, bold=True), fill=NAVY)
-    draw.text((823, 298), f"{index:02d} / {total:02d}",
-              font=font(28, bold=True), fill=WHITE)
+    # Header: logo LEFT, brief label, category and position all INSIDE the header.
+    draw.text((151, 43), "MARKETREVAMP", font=font(32, bold=True), fill=WHITE)
+    draw.text((152, 89), "AI  •  TECH  •  MARKETS  •  BLOCKCHAIN",
+              font=font(15, bold=True), fill=MUTED)
+    draw.line((524, 34, 524, 128), fill=(84, 131, 161), width=2)
+    draw.text((549, 44), "TODAY'S", font=font(24, bold=True), fill=accent)
+    draw.text((549, 75), "HEADLINE", font=font(24, bold=True), fill=accent)
+    draw.rounded_rectangle((720, 40, 885, 113), radius=19, fill=accent)
+    cat_size = 22 if len(category) >= 9 else 27
+    draw.text((740, 61), category.upper(), font=font(cat_size, bold=True),
+              fill=NAVY)
+    draw.line((903, 39, 903, 116), fill=(84, 131, 161), width=2)
+    draw.text((922, 60), f"{index:02d}/{total:02d}",
+              font=font(27, bold=True), fill=WHITE)
+    draw.line((41, 148, 1038, 148), fill=accent, width=3)
 
-    draw.text((74, 395), "TODAY'S HEADLINE", font=font(24, bold=True), fill=accent)
-    title = story.get("title") or "News update"
-    headline_font, lines, line_height = fit_headline(draw, title, max_height=300)
-    y = 465
-    for line in lines:
-        draw.text((69, y), line, font=headline_font, fill=WHITE)
+    # Headlines move upward immediately under the header.
+    headline = story.get("title") or "News update"
+    headline_font, lines, line_height = fit_headline(
+        draw, headline, max_width=970, max_lines=7, max_height=485
+    )
+    y = 184
+    headline_bottom_limit = 716
+    if y + len(lines) * line_height > headline_bottom_limit:
+        raise ValueError("Headline exceeds allocated headline region")
+    for line_number, line in enumerate(lines):
+        color = accent if line_number == 0 else WHITE
+        draw.text((54, y), line, font=headline_font, fill=color)
         y += line_height
 
+    # Larger KEY DETAILS panel and more readable body text.
     summary, valid_summary = summary_for_card(story)
-    summary_top = 815
-    summary_bottom = 1120
-    draw.rounded_rectangle((70, summary_top, 1010, summary_bottom), radius=24,
-                           fill=(16, 35, 59), outline=(51, 79, 103), width=2)
-    draw.text((100, summary_top + 22), "KEY DETAILS" if valid_summary else "REVIEW REQUIRED",
-              font=font(27, bold=True), fill=accent)
-    summary_face, summary_lines, summary_line_height = fit_summary(
-        draw, summary, max_width=865, max_height=summary_bottom - (summary_top + 79) - 12
+    top, bottom = 750, 1174
+    border = Image.new("RGBA", (WIDTH, HEIGHT), (0, 0, 0, 0))
+    border_draw = ImageDraw.Draw(border)
+    border_draw.rounded_rectangle((43, top, 1037, bottom), radius=25,
+                                  outline=(*accent, 155), width=8)
+    image = Image.alpha_composite(image.convert("RGBA"),
+                                  border.filter(ImageFilter.GaussianBlur(13)))
+    image = image.convert("RGB")
+    draw = ImageDraw.Draw(image)
+    draw.rounded_rectangle((46, top, 1034, bottom), radius=25,
+                           fill=(10, 29, 56), outline=accent, width=4)
+    # Compact visual icon to leave most of the width for summary text.
+    draw.rounded_rectangle((79, 896, 183, 1005), radius=15,
+                           outline=accent, width=5)
+    for ypos in (924, 945, 966):
+        draw.line((101, ypos, 161, ypos), fill=accent, width=5)
+    draw.line((215, 784, 215, 1140), fill=accent, width=2)
+    draw.text((243, 778), "KEY DETAILS" if valid_summary else "REVIEW REQUIRED",
+              font=font(31, bold=True), fill=accent)
+    summary_face, summary_lines, summary_height = fit_summary(
+        draw, summary, max_width=745, max_height=bottom - 861 - 26
     )
-    for i, line in enumerate(summary_lines):
-        draw.text((100, summary_top + 79 + i * summary_line_height), line,
+    for line_index, line in enumerate(summary_lines):
+        draw.text((243, 861 + line_index * summary_height), line,
                   font=summary_face, fill=WHITE if valid_summary else MUTED)
 
-    draw.line((74, 1135, 1006, 1135), fill=(55, 77, 101), width=2)
-    draw.text((74, 1160), "SOURCE", font=font(19, bold=True), fill=MUTED)
-    draw.text((74, 1194), source_name(story.get("url", "")),
-              font=font(25, bold=True), fill=WHITE)
-    draw.text((1005, 1194), date_label.upper(), font=font(20, bold=True),
+    # Source, date and disclaimer remain inside the Instagram safe margin.
+    draw.line((55, 1210, 1026, 1210), fill=(101, 159, 192), width=2)
+    draw.text((57, 1228), "SOURCE", font=font(17, bold=True), fill=MUTED)
+    src = source_name(story.get("url", ""))
+    source_face = font(22, bold=True)
+    if draw.textbbox((0, 0), src, font=source_face)[2] > 600:
+        src = src[:42]
+    draw.text((57, 1255), src, font=source_face, fill=WHITE)
+    draw.text((1024, 1253), date_label.upper(), font=font(19, bold=True),
               fill=MUTED, anchor="ra")
-    draw.text((74, 1270), "MARKETREVAMP  •  NEWS, NOT INVESTMENT ADVICE",
+    draw.text((57, 1312), "MARKETREVAMP  •  NEWS, NOT INVESTMENT ADVICE",
               font=font(16, bold=True), fill=MUTED)
+    assert image.size == (1080, 1350)
     return image
 
 
