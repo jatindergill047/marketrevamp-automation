@@ -17,7 +17,8 @@ class ReliabilityTests(unittest.TestCase):
         for date in ("2026-01-14T18:00:00", "2026-07-14T18:00:00"):
             self.assertTrue(should_run("schedule", datetime.fromisoformat(date).replace(tzinfo=tz)))
         self.assertFalse(should_run("schedule", datetime(2026, 10, 14, 17, tzinfo=tz)))
-        self.assertFalse(should_run("schedule", datetime(2026, 10, 14, 19, tzinfo=tz)))
+        self.assertTrue(should_run("schedule", datetime(2026, 10, 14, 19, tzinfo=tz)))
+        self.assertFalse(should_run("schedule", datetime(2026, 10, 14, 22, tzinfo=tz)))
         self.assertTrue(should_run("workflow_dispatch", datetime(2026, 10, 14, 19, tzinfo=tz)))
 
     def test_published_urls(self):
