@@ -33,6 +33,7 @@ jobs:
         run: python schedule_guard.py
 
       - name: Verify production branch
+        if: steps.schedule.outputs.run == 'true'
         run: |
           if [ "$GITHUB_REF" != "refs/heads/main" ]; then
             echo "ERROR: Production workflow must run on main."
