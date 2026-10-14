@@ -1,4 +1,4 @@
-"""Allow manual runs, but run scheduled publishing only at 18:00 Toronto time."""
+"""Allow manual runs, but run scheduled publishing in the 18:00–21:59 Toronto publishing window."""
 import os
 from datetime import datetime
 from pathlib import Path
@@ -9,7 +9,7 @@ def should_run(event, now=None):
     if event != "schedule":
         return True
     now = now or datetime.now(ZoneInfo("America/Toronto"))
-    return now.weekday() < 5 and now.hour == 18
+    return now.weekday() < 5 and 18 <= now.hour <= 21
 
 
 if __name__ == "__main__":
