@@ -169,5 +169,5 @@ OUTPUT.write_text(
 
 print("Carousel manifest prepared successfully.")
 print("Images:", len(slides))
-print("Publishing: DISABLED")
+print("Publishing: manifest enabled; live publishing controlled by workflow")
 print("Saved:", OUTPUT)

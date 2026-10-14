@@ -4,8 +4,9 @@ name: MarketRevamp Automation
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 18 * * 1-5'
-      timezone: 'America/Toronto'
+    # 18:00 Toronto = 22:00 UTC (EDT) or 23:00 UTC (EST).
+    - cron: '0 22 * * 1-5'
+    - cron: '0 23 * * 1-5'
 
 concurrency:
   group: marketrevamp-instagram-publishing
@@ -27,7 +28,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Check Toronto publishing window
+        id: schedule
+        run: python schedule_guard.py
+
       - name: Verify production branch
+        if: steps.schedule.outputs.run == 'true'
         run: |
           if [ "$GITHUB_REF" != "refs/heads/main" ]; then
             echo "ERROR: Production workflow must run on main."
@@ -36,6 +42,7 @@ jobs:
           echo "Production branch verified."
 
       - name: Checkout publishing history
+        if: steps.schedule.outputs.run == 'true'
         uses: actions/checkout@v4
         with:
           ref: publishing-history
@@ -43,47 +50,62 @@ jobs:
           persist-credentials: true
 
       - name: Restore Instagram publishing history
+        if: steps.schedule.outputs.run == 'true'
         run: |
           cp publishing-history/instagram_publish_history.json instagram_publish_history.json
 
       - name: Set up Python
+        if: steps.schedule.outputs.run == 'true'
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
 
       - name: Install dependencies
+        if: steps.schedule.outputs.run == 'true'
         run: pip install -r requirements.txt
 
+      - name: Test scheduling and publishing-history safeguards
+        if: steps.schedule.outputs.run == 'true'
+        run: python -m unittest -v test_reliability.py
+
       - name: Collect latest news and generate images
+        if: steps.schedule.outputs.run == 'true'
         run: |
           python news_collector.py
           python image_generator.py
 
       - name: Upload images to Cloudinary
+        if: steps.schedule.outputs.run == 'true'
         env:
           CLOUDINARY_CLOUD_NAME: ${{ vars.CLOUDINARY_CLOUD_NAME }}
           CLOUDINARY_UPLOAD_PRESET: ${{ vars.CLOUDINARY_UPLOAD_PRESET }}
         run: python upload_to_cloudinary.py
 
       - name: Prepare Instagram carousel
+        if: steps.schedule.outputs.run == 'true'
         run: python prepare_instagram_carousel.py
 
       - name: Test duplicate article protection
+        if: steps.schedule.outputs.run == 'true'
         run: python test_duplicate_articles.py
 
       - name: Test Instagram container history
+        if: steps.schedule.outputs.run == 'true'
         run: python test_container_history.py
 
       - name: Test full Instagram publishing simulation
+        if: steps.schedule.outputs.run == 'true'
         run: python test_publishing_flow.py
 
       - name: Validate Instagram carousel publishing
+        if: steps.schedule.outputs.run == 'true'
         env:
           INSTAGRAM_ACCESS_TOKEN: ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
           INSTAGRAM_USER_ID: ${{ vars.INSTAGRAM_USER_ID }}
         run: python publish_instagram.py
 
       - name: Save Instagram carousel manifest
+        if: steps.schedule.outputs.run == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: marketrevamp-instagram-carousel
@@ -91,6 +113,7 @@ jobs:
           if-no-files-found: error
 
       - name: Save Cloudinary URLs
+        if: steps.schedule.outputs.run == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: marketrevamp-cloudinary-urls
@@ -98,6 +121,7 @@ jobs:
           if-no-files-found: error
 
       - name: Upload news results
+        if: steps.schedule.outputs.run == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: marketrevamp-news
@@ -105,6 +129,7 @@ jobs:
           if-no-files-found: error
 
       - name: Upload Instagram images
+        if: steps.schedule.outputs.run == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: marketrevamp-images
