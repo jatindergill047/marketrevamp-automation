@@ -6,6 +6,7 @@ from email.utils import parsedate_to_datetime
 from pathlib import Path
 import re
 from html import unescape
+from urllib.parse import urlsplit, urlunsplit
 
 
 FEEDS = {
@@ -395,6 +396,34 @@ def select_top_five(articles):
     return selected[:5]
 
 
+def normalize_article_url(url):
+    """Match publisher normalization, ignoring tracking query strings."""
+    parts = urlsplit(url.strip())
+    if parts.scheme != "https" or not parts.hostname:
+        return ""
+    return urlunsplit(("https", parts.netloc.lower(), parts.path.rstrip("/") or "/", "", ""))
+
+
+def published_article_urls(history_path=Path("instagram_publish_history.json")):
+    """Fail closed if publishing history cannot be read or is malformed."""
+    if not history_path.exists():
+        raise RuntimeError("Publishing history missing: cannot safely select fresh stories.")
+    history = json.loads(history_path.read_text(encoding="utf-8"))
+    if not isinstance(history, dict):
+        raise RuntimeError("Publishing history must be a JSON object.")
+    published = set()
+    for record in history.values():
+        if not isinstance(record, dict):
+            raise RuntimeError("Invalid publishing history record.")
+        if record.get("status") == "published":
+            for url in record.get("article_urls", []):
+                normalized = normalize_article_url(url)
+                if not normalized:
+                    raise RuntimeError("Invalid published article URL in history.")
+                published.add(normalized)
+    return published
+
+
 def collect_news():
     articles = []
     cutoff = datetime.now(timezone.utc) - timedelta(hours=36)
@@ -448,37 +477,49 @@ def collect_news():
             article["score"] = score_article(article)
             unique.append(article)
 
-    
-    selected = select_top_five(unique)
 
-    # Retrieve source content for the five selected stories.
-    for story in selected:
-        article_url = story.get("url", "")
-        article_text = fetch_article_text(article_url)
+    published_urls = published_article_urls()
+    eligible = [
+        article for article in unique
+        if article["score"] > 0
+        and normalize_article_url(article["url"]) not in published_urls
+    ]
+    print(f"Fresh eligible articles: {len(eligible)}")
 
-        
-        story["article_text"] = article_text
-
-        # Generate a flexible 30–90-word source-based draft (40–60 preferred).
+    # Prioritize topical diversity, then try backup candidates if an article
+    # cannot be extracted or its source-based summary is unusable.
+    preferred = select_top_five(eligible)
+    remaining = sorted(
+        (article for article in eligible if article["url"] not in {a["url"] for a in preferred}),
+        key=lambda article: (article["score"], article["published"]),
+        reverse=True,
+    )
+    candidates = preferred + remaining
+    selected = []
+    for article in candidates:
+        if len(selected) == 5:
+            break
+        story = {**article}
+        story.setdefault("selected_category", infer_category(story))
+        article_text = fetch_article_text(story["url"])
         draft_summary = generate_summary(article_text, headline=story["title"])
-
+        word_count = len(draft_summary.split())
+        if not article_text.strip() or not SUMMARY_MIN_WORDS <= word_count <= SUMMARY_MAX_WORDS:
+            print(f"Skipping unusable source: {story['title']}")
+            continue
+        story["article_text"] = article_text
         story["summary"] = draft_summary
         story["verified_summary"] = ""
-        story["summary_word_count"] = len(draft_summary.split())
+        story["summary_word_count"] = word_count
+        story["summary_status"] = "ready_for_review"
+        selected.append(story)
+        print(f"Selected: {story['title']} | summary words: {word_count}")
 
-        story["summary_status"] = (
-            "ready_for_review"
-            if draft_summary and SUMMARY_MIN_WORDS <= len(draft_summary.split()) <= SUMMARY_MAX_WORDS
-            else ("insufficient_source_text" if len(article_text.split()) < 100 else "summary_needs_manual_review")
+    if len(selected) != 5:
+        raise RuntimeError(
+            f"Only {len(selected)} fresh, usable articles available; "
+            "refusing to publish an incomplete carousel."
         )
-
-        print(
-            f"Article: {story.get('title', 'Untitled')} "
-            f"| Extracted words: {len(article_text.split())} "
-            f"| Summary words: {story['summary_word_count']} "
-            f"| Status: {story['summary_status']}"
-        )
-
 
     output = {
         "collected_at": datetime.now(timezone.utc).isoformat(),
