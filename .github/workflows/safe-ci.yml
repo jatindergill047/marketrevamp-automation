@@ -13,6 +13,7 @@ jobs:
         with:
           python-version: '3.12'
       - run: pip install -r requirements.txt
+      - run: python prepare_fonts.py
       - run: python -m compileall -q .
       - run: python -m unittest -v test_reliability.py
       - run: python test_image_layout.py

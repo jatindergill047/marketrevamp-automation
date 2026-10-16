@@ -17,6 +17,10 @@ SAMPLE = (
 
 def test():
     assert ig.WIDTH == 1080 and ig.HEIGHT == 1350
+    assert "Playfair Display" in ig.font(36, bold=False).getname()[0]
+    assert "Playfair Display" in ig.font(36, bold=True).getname()[0]
+    assert bytes(ig.font(36, bold=True).getmask("MARKETS")) != bytes(ig.font(36, bold=False).getmask("MARKETS"))
+
     with tempfile.TemporaryDirectory() as folder:
         logo = Path(folder) / "logo.png"
         sample_logo = Image.new("RGBA", (150, 150), (0, 0, 0, 0))
