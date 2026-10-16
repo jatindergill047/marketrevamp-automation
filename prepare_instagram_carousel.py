@@ -22,6 +22,11 @@ if len(stories) != 5:
     )
     
 for index, story in enumerate(stories, start=1):
+    # Defense in depth: speculative stories require a second independent
+    # publisher's matched coverage; this does not certify factual accuracy.
+    if story.get("requires_independent_support") and not story.get("corroborating_reports"):
+        raise ValueError(f"Story {index} lacks independent coverage for a speculative headline.")
+
     if story.get("summary_status") != "ready_for_review":
         raise ValueError(
             f"Story {index} failed summary quality screening."
