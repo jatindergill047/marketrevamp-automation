@@ -37,6 +37,9 @@ def test():
                 assert image.getpixel((945, 55)) == (0, 210, 235)
                 baseline = ig.background(ig.COLORS[category], 1)
                 assert image.getpixel((1010, 55)) == baseline.getpixel((1010, 55))
+                # Removed header wordmark and tagline must leave background intact.
+                assert image.getpixel((580, 62)) == baseline.getpixel((580, 62))
+                assert image.getpixel((610, 100)) == baseline.getpixel((610, 100))
     print("PASS: four categories render as 1080x1350 with transparent top-right PNG logo")
 
 if __name__ == "__main__":
