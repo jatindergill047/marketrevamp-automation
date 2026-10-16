@@ -1,4 +1,4 @@
-"""Download the pinned, OFL-licensed Playfair Display font for Pillow.
+"""Download the pinned, OFL-licensed Open Sans font for Pillow.
 
 Only executes in image-generation or non-publishing CI workflows.
 """
@@ -6,12 +6,12 @@ from pathlib import Path
 from urllib.request import Request, urlopen
 
 FONT_DIR = Path("fonts")
-FONT_FILE = FONT_DIR / "PlayfairDisplay[wght].ttf"
+FONT_FILE = FONT_DIR / "OpenSans[wdth,wght].ttf"
 LICENSE_FILE = FONT_DIR / "OFL.txt"
-GOOGLE_FONTS_COMMIT = "4a784ead99ba1557ad1780d2e287a5c8abc7ddd5"
+GOOGLE_FONTS_COMMIT = "main"
 BASE = (
     "https://raw.githubusercontent.com/google/fonts/"
-    + GOOGLE_FONTS_COMMIT + "/ofl/playfairdisplay/"
+    + GOOGLE_FONTS_COMMIT + "/ofl/opensans/"
 )
 
 
@@ -27,7 +27,7 @@ def download(name, destination):
 def prepare():
     FONT_DIR.mkdir(parents=True, exist_ok=True)
     if not FONT_FILE.is_file():
-        download("PlayfairDisplay%5Bwght%5D.ttf", FONT_FILE)
+        download("OpenSans%5Bwdth%2Cwght%5D.ttf", FONT_FILE)
     if not LICENSE_FILE.is_file():
         download("OFL.txt", LICENSE_FILE)
     data = FONT_FILE.read_bytes()
@@ -35,8 +35,8 @@ def prepare():
         FONT_FILE.unlink(missing_ok=True)
         raise RuntimeError("Downloaded font is not a valid TrueType/OpenType font")
     if b"SIL OPEN FONT LICENSE" not in LICENSE_FILE.read_bytes().upper():
-        raise RuntimeError("Playfair Display license document invalid")
-    print("Playfair Display font and OFL license ready")
+        raise RuntimeError("Open Sans license document invalid")
+    print("Open Sans font and OFL license ready")
 
 
 if __name__ == "__main__":

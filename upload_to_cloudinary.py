@@ -54,8 +54,8 @@ def main():
     if not cloud or not preset:
         raise SystemExit('Missing CLOUDINARY_CLOUD_NAME or CLOUDINARY_UPLOAD_PRESET environment variable')
     paths = sorted(IMAGES.glob('slide_*.png'))
-    if len(paths) != 5:
-        raise SystemExit(f'Expected exactly five slide PNGs, found {len(paths)}. No upload attempted.')
+    if len(paths) != 7:
+        raise SystemExit(f'Expected exactly seven slide PNGs, found {len(paths)}. No upload attempted.')
     uploaded = []
     try:
         for path in paths:

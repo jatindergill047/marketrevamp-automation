@@ -110,8 +110,8 @@ def load_manifest():
     data = json.loads(MANIFEST_FILE.read_text(encoding="utf-8"))
     slides = data.get("slides", [])
 
-    if len(slides) != 5:
-        raise RuntimeError("Exactly five slides are required.")
+    if len(slides) != 7:
+        raise RuntimeError("Exactly seven slides are required.")
 
     urls = []
 
@@ -126,7 +126,7 @@ def load_manifest():
 
         urls.append(url)
 
-    if len(set(urls)) != 5:
+    if len(set(urls)) != 7:
         raise RuntimeError("Duplicate images detected.")
 
     return data, urls
@@ -186,9 +186,9 @@ def main():
     
     article_urls = manifest.get("article_urls", [])
 
-    if len(article_urls) != 5:
+    if len(article_urls) != 7:
         raise RuntimeError(
-            "Exactly five article URLs are required."
+            "Exactly seven article URLs are required."
         )
 
     normalized_urls = [
@@ -196,7 +196,7 @@ def main():
         for url in article_urls
     ]
 
-    if len(set(normalized_urls)) != 5:
+    if len(set(normalized_urls)) != 7:
         raise RuntimeError(
             "Duplicate articles found in today's carousel."
         )
@@ -225,7 +225,7 @@ def main():
         json.dumps(image_urls, sort_keys=True).encode()
     ).hexdigest()
 
-    print("Validated five unique Cloudinary image URLs.")
+    print("Validated seven unique Cloudinary image URLs.")
 
     if fingerprint in history:
         status = history[fingerprint].get("status")

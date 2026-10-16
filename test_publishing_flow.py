@@ -88,13 +88,13 @@ def main():
 
         assert record["status"] == "published"
         assert record["instagram_media_id"] == "TEST_PUBLISHED_POST"
-        assert len(record["article_urls"]) == 5
-        assert record["instagram_container_id"] == "TEST_CONTAINER_6"
+        assert len(record["article_urls"]) == 7
+        assert record["instagram_container_id"] == "TEST_CONTAINER_8"
 
         assert sum(
             1 for method, endpoint in calls
             if method == "POST" and endpoint.endswith("/media")
-        ) == 6
+        ) == 8
 
         assert sum(
             1 for method, endpoint in calls
@@ -102,7 +102,7 @@ def main():
         ) == 1
 
         print("PASS: Full publishing flow simulated successfully.")
-        print("PASS: Five child containers and one carousel simulated.")
+        print("PASS: Seven child containers and one carousel simulated.")
         print("PASS: Pending and published history recorded.")
         print("PASS: No real Instagram API requests were made.")
 

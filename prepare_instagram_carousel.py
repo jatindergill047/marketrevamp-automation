@@ -16,9 +16,9 @@ news_data = json.loads(
 
 stories = news_data.get("selected_stories", [])
 
-if len(stories) != 5:
+if len(stories) != 7:
     raise ValueError(
-        f"Expected 5 news stories, found {len(stories)}"
+        f"Expected 7 news stories, found {len(stories)}"
     )
     
 for index, story in enumerate(stories, start=1):
@@ -79,8 +79,8 @@ for index, story in enumerate(stories, start=1):
             f"Story {index} is outside the 36-hour news window."
         )
 
-if len(images) != 5:
-    raise ValueError(f"Expected 5 images, found {len(images)}")
+if len(images) != 7:
+    raise ValueError(f"Expected 7 images, found {len(images)}")
 
 slides = []
 
@@ -118,7 +118,7 @@ from urllib.parse import urlsplit
 caption_lines = [
     "🚀 MARKETREVAMP | DAILY NEWS BRIEF",
     "",
-    "Today's top 5 stories in AI, Technology, Crypto & Markets:",
+    "Today's top 7 stories in AI, Technology, Crypto & Markets:",
     ""
 ]
 
