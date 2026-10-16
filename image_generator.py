@@ -1,8 +1,8 @@
-"""MarketRevamp: create five branded 1080x1350 Instagram news cards.
+"""MarketRevamp: create seven branded 1080x1350 Instagram news cards.
 
 Run: python image_generator.py
 Input: news_results.json from news_collector.py
-Output: instagram_images/slide_01.png ... slide_05.png
+Output: instagram_images/slide_01.png ... slide_07.png
 Requires: Pillow>=11.0,<13.0
 """
 
@@ -31,22 +31,22 @@ MIN_SUMMARY_WORDS = 30
 MAX_SUMMARY_WORDS = 90
 
 
-PLAYFAIR_FONT = Path("fonts/PlayfairDisplay[wght].ttf")
+OPEN_SANS_FONT = Path("fonts/OpenSans[wdth,wght].ttf")
 
 
 def font(size, bold=False):
-    """Use Playfair Display variable font for every slide text field.
+    """Use Open Sans variable font for every slide text field.
 
     Fail closed rather than silently publishing using a different font.
     prepare_fonts.py downloads the OFL-licensed font before rendering.
     """
-    if not PLAYFAIR_FONT.is_file():
+    if not OPEN_SANS_FONT.is_file():
         raise FileNotFoundError(
-            "Playfair Display is missing. Run python prepare_fonts.py before image generation."
+            "Open Sans is missing. Run python prepare_fonts.py before image generation."
         )
-    face = ImageFont.truetype(str(PLAYFAIR_FONT), size)
-    # Playfair Display's variable weight axis spans 400–900.
-    face.set_variation_by_axes([700 if bold else 400])
+    face = ImageFont.truetype(str(OPEN_SANS_FONT), size)
+    # Open Sans's variable weight axis spans 400–900.
+    face.set_variation_by_axes([100, 700 if bold else 400])
     return face
 
 
@@ -259,8 +259,8 @@ def main():
         raise SystemExit("Missing news_results.json. Run news_collector.py first.")
     data = json.loads(INPUT.read_text(encoding="utf-8"))
     stories = data.get("selected_stories", [])
-    if len(stories) != 5:
-        raise SystemExit(f"Expected exactly 5 selected stories; found {len(stories)}. No images created.")
+    if len(stories) != 7:
+        raise SystemExit(f"Expected exactly 7 selected stories; found {len(stories)}. No images created.")
 
     OUTPUT.mkdir(parents=True, exist_ok=True)
     collected = data.get("collected_at")
