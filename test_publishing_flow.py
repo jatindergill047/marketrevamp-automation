@@ -89,12 +89,12 @@ def main():
         assert record["status"] == "published"
         assert record["instagram_media_id"] == "TEST_PUBLISHED_POST"
         assert len(record["article_urls"]) == 7
-        assert record["instagram_container_id"] == "TEST_CONTAINER_6"
+        assert record["instagram_container_id"] == "TEST_CONTAINER_8"
 
         assert sum(
             1 for method, endpoint in calls
             if method == "POST" and endpoint.endswith("/media")
-        ) == 6
+        ) == 8
 
         assert sum(
             1 for method, endpoint in calls
