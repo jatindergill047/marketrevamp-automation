@@ -48,6 +48,7 @@ class NewsQualityTests(unittest.TestCase):
             article("OpenAI announces enterprise AI safety research", "AI", 5),
             article("Crypto exchanges see renewed inflows", "Crypto", 6),
             article("Microsoft introduces new cloud software", "Technology", 7),
+            article("Stock exchanges prepare new settlement system", "Markets", 8),
         ]
         # Highest-ranked AI article is unreadable; use the AI backup.
         def extract(url):
@@ -57,8 +58,8 @@ class NewsQualityTests(unittest.TestCase):
 
         result = select_usable(items, lambda s: s["category"],
                                extract, lambda t, headline: GOOD_SUMMARY)
-        self.assertEqual(len(result), 5)
-        self.assertEqual(len(set(s["url"] for s in result)), 5)
+        self.assertEqual(len(result), 7)
+        self.assertEqual(len(set(s["url"] for s in result)), 7)
         self.assertTrue({"AI", "Technology", "Crypto", "Markets"} <= {
             s["selected_category"] for s in result
         })
@@ -72,11 +73,13 @@ class NewsQualityTests(unittest.TestCase):
             article("Bitcoin advances as crypto markets stabilize", "Crypto", 4),
             article("Treasury yields rise after inflation numbers", "Markets", 5),
             article("Microsoft announces cloud update for developers", "Technology", 6),
+            article("OpenAI publishes new research benchmark", "AI", 7),
+            article("Ethereum developers ship blockchain upgrade", "Crypto", 8),
         ]
         result = select_usable(items, lambda s: s["category"],
                                lambda url: "Extracted article.",
                                lambda text, headline: GOOD_SUMMARY)
-        self.assertEqual(len(result), 5)
+        self.assertEqual(len(result), 7)
         self.assertFalse(any(s["url"].endswith("story-2") for s in result))
 
     def test_independent_source_corroboration(self):
