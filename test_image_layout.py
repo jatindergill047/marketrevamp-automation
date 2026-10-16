@@ -34,17 +34,19 @@ def test():
                     "summary_status": "ready_for_review",
                     "url": "https://example.com/market-news",
                     "selected_category": category,
-                }, 1, 5, "Oct 14, 2026")
+                }, 1, 7, "Oct 14, 2026")
                 assert image.size == (1080, 1350)
                 assert image.mode == "RGB"
-                # Top-right PNG logo retains its transparent half.
-                assert image.getpixel((945, 55)) == (0, 210, 235)
+                # Newspaper template is high-key, and the official logo
+                # remains alpha-composited at the top-left.
                 baseline = ig.background(ig.COLORS[category], 1)
-                assert image.getpixel((1010, 55)) == baseline.getpixel((1010, 55))
-                # Removed header wordmark and tagline must leave background intact.
-                assert image.getpixel((580, 62)) == baseline.getpixel((580, 62))
-                assert image.getpixel((610, 100)) == baseline.getpixel((610, 100))
-    print("PASS: four categories render as 1080x1350 with transparent top-right PNG logo")
+                assert all(channel > 225 for channel in baseline.getpixel((540, 520)))
+                assert image.getpixel((70, 70)) == (0, 210, 235)
+                assert image.getpixel((155, 70)) == baseline.getpixel((155, 70))
+                # Header, section ribbon, and source area are visibly rendered.
+                assert image.getpixel((100, 240)) == (245, 127, 19)
+                assert image.getpixel((100, 1201)) != baseline.getpixel((100, 1201))
+    print("PASS: four categories render as 1080x1350 white editorial cards with transparent top-left PNG logo")
 
 if __name__ == "__main__":
     test()
