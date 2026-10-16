@@ -31,7 +31,17 @@ def test():
                 }, 1, 5, "Oct 14, 2026")
                 assert image.size == (1080, 1350)
                 assert image.mode == "RGB"
-    print("PASS: four categories render as 1080x1350 RGB images")
+    assert ig.visual_theme({"title": "Bitcoin rises", "selected_category": "Crypto"}) == "bitcoin"
+    assert ig.visual_theme({"title": "Nvidia GPU launch", "selected_category": "Technology"}) == "chip"
+    assert ig.visual_theme({"title": "Security breach", "selected_category": "AI"}) == "security"
+    assert ig.visual_theme({"title": "Retail earnings", "selected_category": "Markets"}) == "markets"
+    assert ig.visual_theme({"title": "Other story", "selected_category": "AI"}) == "chip"
+    # Tight space intentionally omits the illustration, preserving text clarity.
+    assert ig.draw_story_visual(Image.new("RGB", (1080, 1350)),
+                                {"title": "Bitcoin", "category": "Crypto"}, 500, 620) is False
+    assert ig.draw_story_visual(Image.new("RGB", (1080, 1350)),
+                                {"title": "Bitcoin", "category": "Crypto"}, 390, 650) is True
+    print("PASS: responsive 4:5 rendering and six free-story-visual checks")
 
 
 if __name__ == "__main__":
