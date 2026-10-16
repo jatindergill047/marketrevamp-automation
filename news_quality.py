@@ -67,7 +67,7 @@ def prioritize_diversity(candidates, inferred_category):
 
 
 def select_usable(candidates, infer_category, extract, summarize, min_words=30, max_words=90):
-    """Return five distinct, extractable and source-derived articles or fail closed.
+    """Return seven distinct, extractable and source-derived articles or fail closed.
 
     Prefer uncovered categories throughout fallback selection. No AI rewriting.
     """
@@ -76,7 +76,7 @@ def select_usable(candidates, infer_category, extract, summarize, min_words=30, 
     used_categories = set()
     attempted = set()
 
-    while len(selected) < 5 and pending:
+    while len(selected) < 7 and pending:
         # Re-prioritize missing categories after any failed extraction.
         choice = next((s for s in pending if infer_category(s) not in used_categories), pending[0])
         pending.remove(choice)
@@ -106,7 +106,7 @@ def select_usable(candidates, infer_category, extract, summarize, min_words=30, 
         selected.append(story)
         used_categories.add(story["selected_category"])
 
-    if len(selected) != 5:
+    if len(selected) != 7:
         raise RuntimeError(
             f"Only {len(selected)} fresh, distinct, usable articles available; "
             "refusing to publish an incomplete carousel."
