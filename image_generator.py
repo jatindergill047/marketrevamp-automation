@@ -31,18 +31,23 @@ MIN_SUMMARY_WORDS = 30
 MAX_SUMMARY_WORDS = 90
 
 
+PLAYFAIR_FONT = Path("fonts/PlayfairDisplay[wght].ttf")
+
+
 def font(size, bold=False):
-    candidates = (
-        ["/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
-         "/usr/share/fonts/truetype/liberation2/LiberationSans-Bold.ttf"]
-        if bold else
-        ["/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
-         "/usr/share/fonts/truetype/liberation2/LiberationSans-Regular.ttf"]
-    )
-    for path in candidates:
-        if Path(path).exists():
-            return ImageFont.truetype(path, size)
-    return ImageFont.load_default()
+    """Use Playfair Display variable font for every slide text field.
+
+    Fail closed rather than silently publishing using a different font.
+    prepare_fonts.py downloads the OFL-licensed font before rendering.
+    """
+    if not PLAYFAIR_FONT.is_file():
+        raise FileNotFoundError(
+            "Playfair Display is missing. Run python prepare_fonts.py before image generation."
+        )
+    face = ImageFont.truetype(str(PLAYFAIR_FONT), size)
+    # Playfair Display's variable weight axis spans 400–900.
+    face.set_variation_by_axes([700 if bold else 400])
+    return face
 
 
 def wrap_lines(draw, text, face, max_width):
@@ -88,7 +93,7 @@ def fit_headline(draw, text, max_width=902, max_lines=6, max_height=300):
 
 def fit_summary(draw, text, max_width=865, max_height=235):
     """Use larger readable text without clipping or truncation."""
-    for size in range(36, 19, -1):
+    for size in range(36, 15, -1):
         face = font(size)
         lines = wrap_lines(draw, text, face, max_width)
         line_height = size + 10
