@@ -176,10 +176,8 @@ def draw_card(story, index, total, date_label):
     draw.text((140 - label_width / 2, 59), cat_label,
               font=category_face, fill=NAVY)
 
-    draw.text((567, 49), "MARKETREVAMP",
-              font=font(29, bold=True), fill=WHITE)
-    draw.text((568, 95), "AI • TECH • MARKETS • BLOCKCHAIN",
-              font=font(11, bold=True), fill=MUTED)
+    # Brand name/tagline intentionally omitted: the official PNG logo
+    # already contains branding, so the header stays uncluttered.
     if not LOGO.exists():
         raise FileNotFoundError("Missing marketrevamp_logo.png in the repository root")
     with Image.open(LOGO) as original_logo:
