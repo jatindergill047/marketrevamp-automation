@@ -7,6 +7,7 @@ from pathlib import Path
 import re
 from html import unescape
 from urllib.parse import urlsplit, urlunsplit
+from news_quality import select_usable, same_event
 
 
 FEEDS = {
@@ -486,45 +487,24 @@ def collect_news():
     ]
     print(f"Fresh eligible articles: {len(eligible)}")
 
-    # Prioritize topical diversity, then try backup candidates if an article
-    # cannot be extracted or its source-based summary is unusable.
-    preferred = select_top_five(eligible)
-    remaining = sorted(
-        (article for article in eligible if article["url"] not in {a["url"] for a in preferred}),
-        key=lambda article: (article["score"], article["published"]),
-        reverse=True,
+    # Apply source-aware near-duplicate screening and maintain coverage when
+    # one category's first article fails source extraction or summary checks.
+    selected = select_usable(
+        eligible,
+        infer_category,
+        fetch_article_text,
+        generate_summary,
+        SUMMARY_MIN_WORDS,
+        SUMMARY_MAX_WORDS,
     )
-    candidates = preferred + remaining
-    selected = []
-    for article in candidates:
-        if len(selected) == 5:
-            break
-        story = {**article}
-        story.setdefault("selected_category", infer_category(story))
-        article_text = fetch_article_text(story["url"])
-        draft_summary = generate_summary(article_text, headline=story["title"])
-        word_count = len(draft_summary.split())
-        if not article_text.strip() or not SUMMARY_MIN_WORDS <= word_count <= SUMMARY_MAX_WORDS:
-            print(f"Skipping unusable source: {story['title']}")
-            continue
-        story["article_text"] = article_text
-        story["summary"] = draft_summary
-        story["verified_summary"] = ""
-        story["summary_word_count"] = word_count
-        story["summary_status"] = "ready_for_review"
-        selected.append(story)
-        print(f"Selected: {story['title']} | summary words: {word_count}")
+    for story in selected:
+        print(f"Selected: {story['title']} | summary words: {story['summary_word_count']}")
 
-    if len(selected) != 5:
-        raise RuntimeError(
-            f"Only {len(selected)} fresh, usable articles available; "
-            "refusing to publish an incomplete carousel."
-        )
 
     output = {
         "collected_at": datetime.now(timezone.utc).isoformat(),
         "article_count": len(unique),
-        "eligible_count": sum(article["score"] > 0 for article in unique),
+        "eligible_count": len(eligible),
         "feed_status": feed_status,
         "selected_count": len(selected),
         "selected_stories": selected,

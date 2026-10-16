@@ -1,0 +1,92 @@
+"""Offline regression checks for MarketRevamp news scanner v2."""
+import unittest
+
+from news_quality import same_event, select_usable, source_domain
+
+
+def article(title, category, rank):
+    return {
+        "title": title,
+        "category": category,
+        "url": f"https://example.com/story-{rank}",
+        "published": "2026-10-16T15:00:00+00:00",
+        "score": 30 - rank,
+    }
+
+
+GOOD_SUMMARY = (
+    "The company's announcement described several changes affecting its "
+    "products and customers. Executives provided new information about "
+    "planned operations and explained the expected impact on the business. "
+    "The company also outlined its immediate priorities for future work."
+)
+
+
+class NewsQualityTests(unittest.TestCase):
+    def test_event_duplicates(self):
+        self.assertTrue(same_event(
+            "Nvidia unveils new AI chip for enterprise data centers",
+            "Nvidia unveils new AI chip for enterprise data centers today",
+        ))
+        self.assertFalse(same_event(
+            "Bitcoin rises after Federal Reserve rate decision",
+            "Bitcoin falls as exchange security breach emerges",
+        ))
+        self.assertFalse(same_event(
+            "Markets rise", "Markets fall",
+        ))
+
+    def test_url_source(self):
+        self.assertEqual(source_domain("https://www.cnbc.com/news"), "cnbc.com")
+
+    def test_fallback_preserves_categories(self):
+        items = [
+            article("OpenAI releases new AI safety model", "AI", 1),
+            article("Apple announces new smartphone chip", "Technology", 2),
+            article("Bitcoin gains as traders study exchange balances", "Crypto", 3),
+            article("Federal Reserve discusses Treasury yields", "Markets", 4),
+            article("OpenAI announces enterprise AI safety research", "AI", 5),
+            article("Crypto exchanges see renewed inflows", "Crypto", 6),
+            article("Microsoft introduces new cloud software", "Technology", 7),
+        ]
+        # Highest-ranked AI article is unreadable; use the AI backup.
+        def extract(url):
+            if url.endswith("story-1"):
+                return ""
+            return "Valid original article text."
+
+        result = select_usable(items, lambda s: s["category"],
+                               extract, lambda t, headline: GOOD_SUMMARY)
+        self.assertEqual(len(result), 5)
+        self.assertEqual(len(set(s["url"] for s in result)), 5)
+        self.assertTrue({"AI", "Technology", "Crypto", "Markets"} <= {
+            s["selected_category"] for s in result
+        })
+        self.assertTrue(all(s["summary_status"] == "ready_for_review" for s in result))
+
+    def test_different_urls_same_event_not_selected(self):
+        items = [
+            article("Nvidia unveils new AI chip for enterprise data centers", "AI", 1),
+            article("Nvidia unveils new AI chip for enterprise data centers today", "AI", 2),
+            article("Apple launches smartphone in major software event", "Technology", 3),
+            article("Bitcoin advances as crypto markets stabilize", "Crypto", 4),
+            article("Treasury yields rise after inflation numbers", "Markets", 5),
+            article("Microsoft announces cloud update for developers", "Technology", 6),
+        ]
+        result = select_usable(items, lambda s: s["category"],
+                               lambda url: "Extracted article.",
+                               lambda text, headline: GOOD_SUMMARY)
+        self.assertEqual(len(result), 5)
+        self.assertFalse(any(s["url"].endswith("story-2") for s in result))
+
+    def test_insufficient_stories_fail_closed(self):
+        with self.assertRaisesRegex(RuntimeError, "incomplete carousel"):
+            select_usable(
+                [article("Apple announces product", "Technology", 1)],
+                lambda x: x["category"],
+                lambda url: "article", lambda text, headline: GOOD_SUMMARY
+            )
+
+
+if __name__ == "__main__":
+    unittest.main()
