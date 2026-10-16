@@ -44,7 +44,7 @@ def test():
                 assert image.getpixel((70, 70)) == (0, 210, 235)
                 assert image.getpixel((155, 70)) == baseline.getpixel((155, 70))
                 # Header, section ribbon, and source area are visibly rendered.
-                assert image.getpixel((100, 240)) == (245, 127, 19)
+                assert image.getpixel((80, 260)) == (245, 127, 19)
                 assert image.getpixel((100, 1201)) != baseline.getpixel((100, 1201))
     print("PASS: four categories render as 1080x1350 white editorial cards with transparent top-left PNG logo")
 
