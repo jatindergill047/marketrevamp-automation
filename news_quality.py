@@ -83,6 +83,9 @@ def select_usable(candidates, infer_category, extract, summarize, min_words=30, 
         if choice["url"] in attempted or is_repeat_event(choice, selected):
             continue
         attempted.add(choice["url"])
+        screening = source_screen(choice, candidates)
+        if not screening["screening_passed"]:
+            continue
         text = extract(choice["url"])
         if not text or not text.strip():
             continue
@@ -99,6 +102,7 @@ def select_usable(candidates, infer_category, extract, summarize, min_words=30, 
         story["summary_status"] = "ready_for_review"
         # Recording source provenance is not a cross-source verification claim.
         story["source_domain"] = source_domain(story["url"])
+        story.update(screening)
         selected.append(story)
         used_categories.add(story["selected_category"])
 
@@ -108,3 +112,43 @@ def select_usable(candidates, infer_category, extract, summarize, min_words=30, 
             "refusing to publish an incomplete carousel."
         )
     return selected
+
+
+# A second independently published headline can corroborate that an event is
+# being reported, but it cannot independently verify every claim or figure.
+CAUTION_SIGNALS = (
+    "rumor", "rumour", "unconfirmed", "allegedly", "alleged",
+    "reportedly", "sources say", "anonymous sources",
+)
+
+
+def independent_coverage(story, candidates):
+    """Find distinct publisher domains reporting a closely matched event."""
+    original_domain = source_domain(story["url"])
+    corroborating = {}
+    for other in candidates:
+        if other["url"] == story["url"]:
+            continue
+        other_domain = source_domain(other["url"])
+        if not other_domain or other_domain == original_domain:
+            continue
+        if same_event(story["title"], other["title"]):
+            corroborating.setdefault(other_domain, {
+                "domain": other_domain,
+                "url": other["url"],
+                "title": other["title"],
+            })
+    return list(corroborating.values())
+
+
+def source_screen(story, candidates):
+    """Attach honest coverage metadata; hold uncorroborated speculative claims."""
+    supporting = independent_coverage(story, candidates)
+    cautious = any(term in story["title"].casefold() for term in CAUTION_SIGNALS)
+    return {
+        "corroboration_status": "multiple_independent_reports" if supporting else "single_source",
+        "corroborating_reports": supporting,
+        "requires_independent_support": cautious,
+        "screening_passed": not cautious or bool(supporting),
+        "fact_checked": False,
+    }

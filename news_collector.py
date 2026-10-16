@@ -15,7 +15,11 @@ FEEDS = {
     "Technology": "https://feeds.arstechnica.com/arstechnica/index",
     "Crypto": "https://www.coindesk.com/arc/outboundfeeds/rss/",
     "Markets": "https://www.cnbc.com/id/100003114/device/rss/rss.html",
+    "BBC Technology": "https://feeds.bbci.co.uk/news/technology/rss.xml",
+    "BBC Business": "https://feeds.bbci.co.uk/news/business/rss.xml",
 }
+
+FEED_CATEGORY = {"BBC Technology": "Technology", "BBC Business": "Markets"}
 
 HEADERS = {"User-Agent": "MarketRevampNewsCollector/1.0"}
 
@@ -456,7 +460,8 @@ def collect_news():
                     continue
 
                 articles.append({
-                    "category": category,
+                    "category": FEED_CATEGORY.get(category, category),
+                    "feed_name": category,
                     "title": title,
                     "url": link,
                     "published": date.isoformat(),
@@ -486,6 +491,8 @@ def collect_news():
         and normalize_article_url(article["url"]) not in published_urls
     ]
     print(f"Fresh eligible articles: {len(eligible)}")
+    # Multiple reports indicate independent coverage, not complete verification.
+    # All candidate headlines are supplied for independent-source matching.
 
     # Apply source-aware near-duplicate screening and maintain coverage when
     # one category's first article fails source extraction or summary checks.

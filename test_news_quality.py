@@ -1,7 +1,7 @@
 """Offline regression checks for MarketRevamp news scanner v2."""
 import unittest
 
-from news_quality import same_event, select_usable, source_domain
+from news_quality import same_event, select_usable, source_domain, source_screen, independent_coverage
 
 
 def article(title, category, rank):
@@ -78,6 +78,37 @@ class NewsQualityTests(unittest.TestCase):
                                lambda text, headline: GOOD_SUMMARY)
         self.assertEqual(len(result), 5)
         self.assertFalse(any(s["url"].endswith("story-2") for s in result))
+
+    def test_independent_source_corroboration(self):
+        one = {"title": "Nvidia unveils new AI chip for enterprise data centers",
+               "url": "https://techcrunch.com/ai/new-chip"}
+        two = {"title": "Nvidia unveils new AI chip for enterprise data centers today",
+               "url": "https://www.bbc.com/news/new-chip"}
+        same = {**two, "url": "https://techcrunch.com/another-new-chip"}
+        matches = independent_coverage(one, [one, two, same])
+        self.assertEqual(len(matches), 1)
+        self.assertEqual(matches[0]["domain"], "bbc.com")
+        self.assertFalse(source_screen(one, [one, two])["fact_checked"])
+
+    def test_speculative_headlines_require_second_report(self):
+        first = {"title": "Nvidia reportedly unveils new AI chip for data centers",
+                 "url": "https://techcrunch.com/ai/chip"}
+        second = {"title": "Nvidia reportedly unveils new AI chip for data centers today",
+                  "url": "https://bbc.com/news/chip"}
+        alone = source_screen(first, [first])
+        self.assertTrue(alone["requires_independent_support"])
+        self.assertFalse(alone["screening_passed"])
+        self.assertTrue(source_screen(first, [first, second])["screening_passed"])
+        confirmed = {"title": "Nvidia unveils new AI chip for data centers",
+                     "url": "https://techcrunch.com/ai/chip"}
+        self.assertTrue(source_screen(confirmed, [confirmed])["screening_passed"])
+        self.assertEqual(source_screen(confirmed, [confirmed])["corroboration_status"], "single_source")
+
+    def test_bbc_source_expansion(self):
+        from news_collector import FEEDS, FEED_CATEGORY
+        self.assertEqual(FEED_CATEGORY["BBC Technology"], "Technology")
+        self.assertEqual(FEED_CATEGORY["BBC Business"], "Markets")
+        self.assertTrue(FEEDS["BBC Technology"].startswith("https://feeds.bbci.co.uk/"))
 
     def test_insufficient_stories_fail_closed(self):
         with self.assertRaisesRegex(RuntimeError, "incomplete carousel"):
