@@ -1,4 +1,4 @@
-"""Safe end-to-end carousel count contract tests; no live publishing."""
+"""Safe seven-slide carousel contract tests; no live Instagram publishing."""
 import json
 import tempfile
 import unittest
