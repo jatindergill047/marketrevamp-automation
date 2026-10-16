@@ -64,6 +64,10 @@ jobs:
         if: steps.schedule.outputs.run == 'true'
         run: pip install -r requirements.txt
 
+      - name: Install Playfair Display font
+        if: steps.schedule.outputs.run == 'true'
+        run: python prepare_fonts.py
+
       - name: Test scheduling and publishing-history safeguards
         if: steps.schedule.outputs.run == 'true'
         run: python -m unittest -v test_reliability.py
