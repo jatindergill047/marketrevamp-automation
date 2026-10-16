@@ -18,3 +18,4 @@ jobs:
       - run: python -m unittest -v test_reliability.py
       - run: python test_image_layout.py
       - run: python -m unittest -v test_news_quality.py
+      - run: python -m unittest -v test_seven_pipeline.py
