@@ -45,8 +45,23 @@ def font(size, bold=False):
             "Open Sans is missing. Run python prepare_fonts.py before image generation."
         )
     face = ImageFont.truetype(str(OPEN_SANS_FONT), size)
-    # Open Sans's variable weight axis spans 400–900.
-    face.set_variation_by_axes([100, 700 if bold else 400])
+    # Detect axis order rather than assuming how the variable font is stored.
+    axes = face.get_variation_axes()
+    values = []
+    weight_found = False
+    for axis in axes:
+        name = axis["name"].decode("utf-8", errors="replace").lower()
+        if "weight" in name:
+            target = 700 if bold else 400
+            weight_found = True
+        elif "width" in name:
+            target = 100
+        else:
+            target = axis["default"]
+        values.append(max(axis["minimum"], min(axis["maximum"], target)))
+    if not weight_found:
+        raise RuntimeError("Open Sans variable font has no weight axis")
+    face.set_variation_by_axes(values)
     return face
 
 
