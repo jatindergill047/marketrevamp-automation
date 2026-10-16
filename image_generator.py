@@ -12,7 +12,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import urlparse
 
-from PIL import Image, ImageDraw, ImageFont, ImageFilter
+from PIL import Image, ImageDraw, ImageFont
+from newspaper_design import newspaper_background, INK, CYAN, ORANGE
 
 WIDTH, HEIGHT = 1080, 1350
 INPUT = Path("news_results.json")
@@ -123,31 +124,8 @@ def fit_summary(draw, text, max_width=865, max_height=235):
 
 
 def background(accent, index):
-    """Balanced electric-blue rings, restrained rays and a navy base."""
-    image = Image.new("RGB", (WIDTH, HEIGHT))
-    base = ImageDraw.Draw(image)
-    for y in range(HEIGHT):
-        t = y / HEIGHT
-        base.line([(0, y), (WIDTH, y)], fill=(
-            int(4 + 3 * t), int(18 + 9 * t), int(43 + 21 * t)
-        ))
-    glow = Image.new("RGBA", (WIDTH, HEIGHT), (0, 0, 0, 0))
-    g = ImageDraw.Draw(glow)
-    cx, cy = 840, 435
-    for radius in range(300, 95, -10):
-        a = int(30 + (300 - radius) / 205 * 80)
-        g.ellipse((cx-radius, cy-radius, cx+radius, cy+radius),
-                  outline=(*accent, min(a, 135)), width=3)
-    for radius in range(235, 140, -15):
-        g.arc((cx-radius, cy-radius, cx+radius, cy+radius),
-              288, 83, fill=(255, 171, 45, 90), width=5)
-    for j in range(11):
-        x = 710 + j * 38
-        g.line([(x, 0), (x - 445, 760)], fill=(*accent, 38), width=2)
-    soft = glow.filter(ImageFilter.GaussianBlur(15))
-    image = Image.alpha_composite(image.convert("RGBA"), soft)
-    image = Image.alpha_composite(image, glow)
-    return image.convert("RGB")
+    """Compatibility wrapper for the all-white 2D editorial background."""
+    return newspaper_background(index)
 
 
 def source_name(url):
@@ -178,92 +156,134 @@ def summary_for_card(story):
     return summary, True
 
 
+def _draw_lines(draw, lines, x, y, face, color, leading):
+    for line in lines:
+        draw.text((x, y), line, font=face, fill=color)
+        y += leading
+    return y
+
+
+def _fit_text(draw, text, width, max_height, largest, smallest, bold=False):
+    """Return complete wrapped copy that fits; never truncate article text."""
+    for size in range(largest, smallest - 1, -1):
+        face = font(size, bold=bold)
+        lines = wrap_lines(draw, text, face, width)
+        leading = size + (12 if bold else 10)
+        if len(lines) * leading <= max_height:
+            return face, lines, leading
+    raise ValueError("News text does not fit in the editorial card without clipping")
+
+
+def _summary_parts(summary):
+    """Extract intro and details from the supplied summary; invent nothing."""
+    sentences = re.split(r"(?<=[.!?])\\s+(?=[A-Z0-9])", summary.strip())
+    sentences = [s.strip() for s in sentences if s.strip()]
+    if len(sentences) <= 1:
+        words = summary.split()
+        split = min(len(words), max(10, len(words) // 3))
+        return " ".join(words[:split]), [" ".join(words[split:])]
+    return sentences[0], sentences[1:]
+
+
 def draw_card(story, index, total, date_label):
-    """1080x1350 approved layout: one header row, headline higher, roomy details."""
+    """White newspaper-inspired editorial layout; no external visual APIs.
+
+    All news text is taken from the selected story. Decorative 2D elements
+    never depict or assert a factual event.
+    """
     category = story_category(story)
-    accent = COLORS[category]
-    image = background(accent, index)
+    image = background(CYAN, index)
     draw = ImageDraw.Draw(image)
+    left, right = 67, 1013
 
-    # Simplified header: category LEFT, transparent PNG logo at the top RIGHT.
-    # No slide counter or "Today's Headline" label on published images.
-    draw.rounded_rectangle((46, 38, 234, 114), radius=18, fill=accent)
-    cat_label = category.upper()
-    cat_size = 21 if len(cat_label) >= 9 else 28
-    category_face = font(cat_size, bold=True)
-    label_box = draw.textbbox((0, 0), cat_label, font=category_face)
-    label_width = label_box[2] - label_box[0]
-    draw.text((140 - label_width / 2, 59), cat_label,
-              font=category_face, fill=NAVY)
-
-    # Brand name/tagline intentionally omitted: the official PNG logo
-    # already contains branding, so the header stays uncluttered.
+    # Official transparent PNG at top left; preserve original aspect ratio.
     if not LOGO.exists():
         raise FileNotFoundError("Missing marketrevamp_logo.png in the repository root")
     with Image.open(LOGO) as original_logo:
         if original_logo.format != "PNG":
             raise ValueError("MarketRevamp logo must be a PNG file")
         logo = original_logo.convert("RGBA")
-        logo.thumbnail((112, 112), Image.Resampling.LANCZOS)
-        # Alpha compositing preserves transparency instead of pasting an opaque box.
-        image.paste(logo, (WIDTH - 44 - logo.width, 20), logo)
-    draw.line((42, 149, 1038, 149), fill=accent, width=3)
-
-    # Headlines move upward immediately under the header.
-    headline = story.get("title") or "News update"
-    headline_font, lines, line_height = fit_headline(
-        draw, headline, max_width=970, max_lines=7, max_height=466
-    )
-    y = 174
-    headline_bottom_limit = 692
-    if y + len(lines) * line_height > headline_bottom_limit:
-        raise ValueError("Headline exceeds allocated headline region")
-    for line_number, line in enumerate(lines):
-        color = accent if line_number == 0 else WHITE
-        draw.text((54, y), line, font=headline_font, fill=color)
-        y += line_height
-
-    # Larger KEY DETAILS panel and more readable body text.
-    summary, valid_summary = summary_for_card(story)
-    top, bottom = 705, 1183
-    border = Image.new("RGBA", (WIDTH, HEIGHT), (0, 0, 0, 0))
-    border_draw = ImageDraw.Draw(border)
-    border_draw.rounded_rectangle((43, top, 1037, bottom), radius=25,
-                                  outline=(*accent, 155), width=8)
-    image = Image.alpha_composite(image.convert("RGBA"),
-                                  border.filter(ImageFilter.GaussianBlur(13)))
-    image = image.convert("RGB")
+        logo.thumbnail((425, 120), Image.Resampling.LANCZOS)
+        image.paste(logo, (left, 52), logo)
     draw = ImageDraw.Draw(image)
-    draw.rounded_rectangle((46, top, 1034, bottom), radius=25,
-                           fill=(10, 29, 56), outline=accent, width=4)
-    # Compact visual icon to leave most of the width for summary text.
-    draw.rounded_rectangle((79, 875, 183, 985), radius=15,
-                           outline=accent, width=5)
-    for ypos in (905, 927, 949):
-        draw.line((101, ypos, 161, ypos), fill=accent, width=5)
-    draw.line((215, 749, 215, 1150), fill=accent, width=2)
-    draw.text((243, 735), "KEY DETAILS" if valid_summary else "REVIEW REQUIRED",
-              font=font(31, bold=True), fill=accent)
-    summary_face, summary_lines, summary_height = fit_summary(
-        draw, summary, max_width=745, max_height=bottom - 812 - 28
-    )
-    for line_index, line in enumerate(summary_lines):
-        draw.text((243, 812 + line_index * summary_height), line,
-                  font=summary_face, fill=WHITE if valid_summary else MUTED)
 
-    # Source, date and disclaimer remain inside the Instagram safe margin.
-    draw.line((55, 1210, 1026, 1210), fill=(101, 159, 192), width=2)
-    draw.text((57, 1228), "SOURCE", font=font(17, bold=True), fill=MUTED)
+    # Small newspaper tagline and strong horizontal rule.
+    draw.text((left, 171), "GLOBAL NEWS  •  SMART INSIGHTS  •  BIGGER PERSPECTIVE",
+              font=font(17, bold=True), fill=INK)
+    draw.line((left, 203, right, 203), fill=(170, 176, 179), width=2)
+
+    # Orange section ribbon and seven-slide counter.
+    label = {"AI": "ARTIFICIAL INTELLIGENCE", "Technology": "TECHNOLOGY",
+             "Crypto": "CRYPTOCURRENCY", "Markets": "FINANCIAL MARKETS"}[category]
+    ribbon_x, ribbon_y = left, 220
+    ribbon_width = min(550, max(265, len(label) * 17 + 54))
+    draw.polygon([(ribbon_x + 17, ribbon_y), (ribbon_x + ribbon_width, ribbon_y),
+                  (ribbon_x + ribbon_width - 18, ribbon_y + 51),
+                  (ribbon_x, ribbon_y + 51)], fill=ORANGE)
+    draw.text((ribbon_x + 27, ribbon_y + 10), label,
+              font=font(25, bold=True), fill=(255, 255, 255))
+    draw.text((right, ribbon_y + 10), f"{index:02d}/{total:02d}",
+              font=font(26, bold=True), fill=INK, anchor="ra")
+
+    headline = story.get("title") or "News update"
+    headline_face, headline_lines, headline_leading = _fit_text(
+        draw, headline, 942, 305, 65, 31, bold=True)
+    headline_end = _draw_lines(draw, headline_lines, left, 296,
+                               headline_face, INK, headline_leading)
+
+    summary, valid = summary_for_card(story)
+    if not valid:
+        raise ValueError("Cannot render a news card with an invalid summary")
+    intro, details = _summary_parts(summary)
+    intro_y = headline_end + 14
+    # The lead paragraph gets up to 130px; fit it without shortening.
+    intro_face, intro_lines, intro_leading = _fit_text(
+        draw, intro, 930, 128, 28, 20)
+    intro_end = _draw_lines(draw, intro_lines, left, intro_y,
+                            intro_face, (54, 60, 67), intro_leading)
+
+    # Clean KEY DETAILS heading and horizontal editorial rule.
+    section_y = max(775, intro_end + 30)
+    if section_y > 906:
+        raise ValueError("Headline and intro exceed safe editorial layout area")
+    draw.rounded_rectangle((left, section_y, left + 245, section_y + 52),
+                           radius=22, fill=INK)
+    draw.text((left + 26, section_y + 10), "KEY DETAILS",
+              font=font(25, bold=True), fill=(255, 255, 255))
+    draw.line((left + 265, section_y + 28, right, section_y + 28),
+              fill=INK, width=2)
+
+    # Bullet list is sourced exclusively from extracted article sentences.
+    if not details or not any(d.strip() for d in details):
+        details = [intro]
+    details = [d for d in details if d.strip()]
+    detail_text = " ".join(details)
+    detail_top = section_y + 75
+    detail_height = 1180 - detail_top
+    # Wrapped prose remains fully source-derived, even for a one-sentence summary.
+    detail_face, detail_lines, detail_leading = _fit_text(
+        draw, detail_text, 875, detail_height, 29, 19)
+    draw.ellipse((left + 2, detail_top + 5, left + 32, detail_top + 35), fill=CYAN)
+    draw.text((left + 17, detail_top + 9), "•", font=font(20, bold=True),
+              fill=(255, 255, 255), anchor="mt")
+    _draw_lines(draw, detail_lines, left + 54, detail_top,
+                detail_face, INK, detail_leading)
+
+    # Fixed footer with source provenance, publication date, and swipe cue.
+    draw.line((left, 1200, right, 1200), fill=INK, width=2)
+    draw.text((left, 1216), "SOURCE:", font=font(18, bold=True), fill=INK)
     src = source_name(story.get("url", ""))
-    source_face = font(22, bold=True)
-    if draw.textbbox((0, 0), src, font=source_face)[2] > 600:
-        src = src[:42]
-    draw.text((57, 1255), src, font=source_face, fill=WHITE)
-    draw.text((1024, 1253), date_label.upper(), font=font(19, bold=True),
-              fill=MUTED, anchor="ra")
-    draw.text((57, 1312), "MARKETREVAMP  •  NEWS, NOT INVESTMENT ADVICE",
-              font=font(16, bold=True), fill=MUTED)
-    assert image.size == (1080, 1350)
+    src_face, src_lines, _ = _fit_text(draw, src, 530, 33, 21, 16, bold=True)
+    if len(src_lines) != 1:
+        raise ValueError("Source domain cannot fit in footer")
+    draw.text((left + 110, 1214), src_lines[0], font=src_face, fill=CYAN)
+    draw.text((left, 1252), f"PUBLISHED: {date_label.upper()}",
+              font=font(18), fill=(72, 75, 78))
+    draw.text((right, 1223), "SWIPE  ›", font=font(23, bold=True),
+              fill=INK, anchor="ra")
+    draw.text((left, 1303), "MARKETREVAMP  •  NEWS, NOT INVESTMENT ADVICE",
+              font=font(16, bold=True), fill=(85, 91, 95))
+    assert image.size == (WIDTH, HEIGHT)
     return image
 
 
