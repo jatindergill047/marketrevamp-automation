@@ -35,7 +35,7 @@ def test():
                 assert image.mode == "RGB"
                 # Top-right PNG logo retains its transparent half.
                 assert image.getpixel((945, 55)) == (0, 210, 235)
-                baseline = ig.background(ig.COLORS[category])
+                baseline = ig.background(ig.COLORS[category], 1)
                 assert image.getpixel((1010, 55)) == baseline.getpixel((1010, 55))
     assert ig.visual_theme({"title": "Bitcoin rises", "selected_category": "Crypto"}) == "bitcoin"
     assert ig.visual_theme({"title": "Nvidia GPU launch", "selected_category": "Technology"}) == "chip"
