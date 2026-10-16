@@ -158,6 +158,110 @@ def summary_for_card(story):
     return summary, True
 
 
+# Free, deterministic "3D-style" icons. These are illustration motifs, not live
+# charts, company trademarks, or AI-generated images.
+VISUAL_KEYWORDS = {
+    "bitcoin": ("bitcoin", "btc", "satoshi"),
+    "blockchain": ("ethereum", "crypto", "blockchain", "stablecoin", "token", "defi"),
+    "chip": ("nvidia", "semiconductor", "gpu", "chip", "processor", "data center"),
+    "security": ("cybersecurity", "security", "privacy", "hacker", "breach"),
+    "cloud": ("cloud", "software", "app", "google play", "developer"),
+    "markets": ("stock", "shares", "earnings", "nasdaq", "s&p", "investment", "market"),
+}
+
+
+def visual_theme(story):
+    """Select a relevant reusable motif from title/category without external APIs."""
+    title = (story.get("title") or "").casefold()
+    for theme, terms in VISUAL_KEYWORDS.items():
+        if any(term in title for term in terms):
+            return theme
+    return {"AI": "chip", "Crypto": "bitcoin", "Markets": "markets",
+            "Technology": "cloud"}.get(story_category(story), "cloud")
+
+
+def draw_story_visual(image, story, top, bottom):
+    """Draw an embossed/3D-style story motif only when the headline leaves room.
+
+    Returns False for a long headline: text always takes precedence.
+    Everything is confined to the area above KEY DETAILS and below the title.
+    """
+    available = bottom - top
+    if available < 148:
+        return False
+    theme = visual_theme(story)
+    accent = COLORS[story_category(story)]
+    cx = 800
+    cy = (top + bottom) // 2
+    size = min(120, max(55, available // 2 - 15))
+    layer = Image.new("RGBA", image.size, (0, 0, 0, 0))
+    d = ImageDraw.Draw(layer)
+    # Extruded shadow and a restrained floating halo.
+    d.ellipse((cx-size-30, cy-size//2, cx+size+30, cy+size//2),
+              fill=(*accent, 24))
+    d.ellipse((cx-size-14, cy-size-14, cx+size+14, cy+size+14),
+              outline=(*accent, 85), width=5)
+    d.ellipse((cx-size, cy-size+13, cx+size, cy+size+13),
+              fill=(2, 11, 31, 215), outline=(*accent, 95), width=7)
+    d.ellipse((cx-size, cy-size-8, cx+size, cy+size-8),
+              fill=(17, 55, 88, 235), outline=(*accent, 225), width=6)
+
+    if theme in ("bitcoin", "blockchain"):
+        symbol = "B" if theme == "bitcoin" else "◇"
+        face = font(int(size * 1.10), bold=True)
+        box = d.textbbox((0, 0), symbol, font=face)
+        d.text((cx - (box[2]-box[0])/2, cy-(box[3]-box[1])/2-18),
+               symbol, font=face, fill=(*accent, 255))
+        if theme == "bitcoin":
+            for offset in (-21, 21):
+                d.line((cx+offset, cy-size//2-16, cx+offset, cy+size//2-2),
+                       fill=(*accent, 220), width=3)
+    elif theme == "markets":
+        for i, level in enumerate((0.28, 0.52, 0.78, 0.97)):
+            x = cx-size//2-32+i*39
+            h = int(size * level)
+            d.rounded_rectangle((x, cy+43-h, x+25, cy+43), radius=4,
+                                fill=(*accent, 175+i*20))
+        d.line([(cx-size//2-40, cy+10), (cx-30, cy-18),
+                (cx+17, cy-3), (cx+size//2+45, cy-70)],
+               fill=(250, 244, 255, 235), width=6, joint="curve")
+    elif theme in ("chip", "security", "cloud"):
+        side = int(size * 1.10)
+        left = cx-side//2
+        upper = cy-side//2-8
+        if theme == "security":
+            d.polygon([(cx, upper-10), (left, upper+25),
+                       (left+15, upper+side-20), (cx, upper+side+8),
+                       (left+side-15, upper+side-20),
+                       (left+side, upper+25)],
+                      fill=(*accent, 190), outline=(233, 249, 255, 235),
+                      width=4)
+            d.line([(cx-22, cy), (cx-4, cy+18), (cx+31, cy-26)],
+                   fill=(9, 36, 63, 255), width=8)
+        elif theme == "cloud":
+            for x, y, rad in ((cx-35,cy+2,25),(cx+8,cy-27,38),(cx+44,cy+4,25)):
+                d.ellipse((x-rad,y-rad,x+rad,y+rad), fill=(*accent,210))
+            d.rounded_rectangle((cx-69,cy-9,cx+67,cy+35), radius=18,
+                                fill=(*accent,220))
+        else:
+            d.rounded_rectangle((left, upper, left+side, upper+side),
+                                radius=14, fill=(*accent,220),
+                                outline=(230,249,255,235), width=4)
+            d.rounded_rectangle((left+21, upper+21,
+                                 left+side-21, upper+side-21),
+                                radius=6, fill=(10,36,71,255), width=3)
+            for tick in range(-2,3):
+                d.line((left-13,cy+tick*20,left,cy+tick*20),
+                       fill=(*accent,230), width=5)
+                d.line((left+side,cy+tick*20,left+side+13,cy+tick*20),
+                       fill=(*accent,230), width=5)
+
+    image.paste(Image.alpha_composite(
+        layer.filter(ImageFilter.GaussianBlur(3)), layer).convert("RGB"),
+        (0, 0), layer.getchannel("A"))
+    return True
+
+
 def draw_card(story, index, total, date_label):
     """1080x1350 approved layout: one header row, headline higher, roomy details."""
     category = story_category(story)
@@ -204,6 +308,10 @@ def draw_card(story, index, total, date_label):
         color = accent if line_number == 0 else WHITE
         draw.text((54, y), line, font=headline_font, fill=color)
         y += line_height
+
+    # Spend genuinely unused headline space on a contextual reusable visual.
+    # No external APIs and no extra cost; long headlines remain uncluttered.
+    draw_story_visual(image, story, y + 12, 684)
 
     # Larger KEY DETAILS panel and more readable body text.
     summary, valid_summary = summary_for_card(story)
