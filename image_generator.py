@@ -269,30 +269,30 @@ def draw_card(story, index, total, date_label):
     image = background(accent, index)
     draw = ImageDraw.Draw(image)
 
-    # Header: category LEFT, slide count alongside it, logo on far RIGHT.
-    draw.rounded_rectangle((46, 38, 211, 114), radius=18, fill=accent)
-    cat_size = 22 if len(category) >= 9 else 28
-    category_face = font(cat_size, bold=True)
+    # Simplified header: category LEFT, transparent PNG logo at the top RIGHT.
+    # No slide counter or "Today's Headline" label on published images.
+    draw.rounded_rectangle((46, 38, 234, 114), radius=18, fill=accent)
     cat_label = category.upper()
-    category_width = draw.textbbox((0, 0), cat_label, font=category_face)[2]
-    draw.text((128 - category_width / 2, 58), cat_label,
+    cat_size = 21 if len(cat_label) >= 9 else 28
+    category_face = font(cat_size, bold=True)
+    label_box = draw.textbbox((0, 0), cat_label, font=category_face)
+    label_width = label_box[2] - label_box[0]
+    draw.text((140 - label_width / 2, 59), cat_label,
               font=category_face, fill=NAVY)
-    draw.line((230, 36, 230, 123), fill=(80, 129, 164), width=2)
-    draw.text((251, 60), f"{index:02d}/{total:02d}",
-              font=font(27, bold=True), fill=WHITE)
-    draw.line((362, 36, 362, 123), fill=(80, 129, 164), width=2)
-    draw.text((382, 43), "TODAY'S", font=font(23, bold=True), fill=accent)
-    draw.text((382, 75), "HEADLINE", font=font(23, bold=True), fill=accent)
-    draw.line((546, 36, 546, 123), fill=(80, 129, 164), width=2)
-    draw.text((569, 53), "MARKETREVAMP", font=font(27, bold=True), fill=WHITE)
-    draw.text((571, 98), "AI • TECH • MARKETS • BLOCKCHAIN",
+
+    draw.text((567, 49), "MARKETREVAMP",
+              font=font(29, bold=True), fill=WHITE)
+    draw.text((568, 95), "AI • TECH • MARKETS • BLOCKCHAIN",
               font=font(11, bold=True), fill=MUTED)
     if not LOGO.exists():
         raise FileNotFoundError("Missing marketrevamp_logo.png in the repository root")
     with Image.open(LOGO) as original_logo:
+        if original_logo.format != "PNG":
+            raise ValueError("MarketRevamp logo must be a PNG file")
         logo = original_logo.convert("RGBA")
-        logo.thumbnail((98, 98), Image.Resampling.LANCZOS)
-        image.paste(logo, (940, 24), logo)
+        logo.thumbnail((112, 112), Image.Resampling.LANCZOS)
+        # Alpha compositing preserves transparency instead of pasting an opaque box.
+        image.paste(logo, (WIDTH - 44 - logo.width, 20), logo)
     draw.line((42, 149, 1038, 149), fill=accent, width=3)
 
     # Headlines move upward immediately under the header.

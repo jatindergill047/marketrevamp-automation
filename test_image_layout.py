@@ -3,7 +3,7 @@ import tempfile
 from pathlib import Path
 from unittest.mock import patch
 
-from PIL import Image
+from PIL import Image, ImageDraw
 import image_generator as ig
 
 SAMPLE = (
@@ -19,7 +19,9 @@ def test():
     assert ig.WIDTH == 1080 and ig.HEIGHT == 1350
     with tempfile.TemporaryDirectory() as folder:
         logo = Path(folder) / "logo.png"
-        Image.new("RGBA", (150, 150), (0, 210, 235, 255)).save(logo)
+        sample_logo = Image.new("RGBA", (150, 150), (0, 0, 0, 0))
+        ImageDraw.Draw(sample_logo).rectangle((0, 0, 74, 149), fill=(0, 210, 235, 255))
+        sample_logo.save(logo)
         with patch.object(ig, "LOGO", logo):
             for category in ("AI", "Technology", "Crypto", "Markets"):
                 image = ig.draw_card({
@@ -31,6 +33,10 @@ def test():
                 }, 1, 5, "Oct 14, 2026")
                 assert image.size == (1080, 1350)
                 assert image.mode == "RGB"
+                # Top-right PNG logo retains its transparent half.
+                assert image.getpixel((945, 55)) == (0, 210, 235)
+                baseline = ig.background(ig.COLORS[category], 1)
+                assert image.getpixel((1010, 55)) == baseline.getpixel((1010, 55))
     assert ig.visual_theme({"title": "Bitcoin rises", "selected_category": "Crypto"}) == "bitcoin"
     assert ig.visual_theme({"title": "Nvidia GPU launch", "selected_category": "Technology"}) == "chip"
     assert ig.visual_theme({"title": "Security breach", "selected_category": "AI"}) == "security"
