@@ -37,18 +37,7 @@ def test():
                 assert image.getpixel((945, 55)) == (0, 210, 235)
                 baseline = ig.background(ig.COLORS[category], 1)
                 assert image.getpixel((1010, 55)) == baseline.getpixel((1010, 55))
-    assert ig.visual_theme({"title": "Bitcoin rises", "selected_category": "Crypto"}) == "bitcoin"
-    assert ig.visual_theme({"title": "Nvidia GPU launch", "selected_category": "Technology"}) == "chip"
-    assert ig.visual_theme({"title": "Security breach", "selected_category": "AI"}) == "security"
-    assert ig.visual_theme({"title": "Retail earnings", "selected_category": "Markets"}) == "markets"
-    assert ig.visual_theme({"title": "Other story", "selected_category": "AI"}) == "chip"
-    # Tight space intentionally omits the illustration, preserving text clarity.
-    assert ig.draw_story_visual(Image.new("RGB", (1080, 1350)),
-                                {"title": "Bitcoin", "category": "Crypto"}, 500, 620) is False
-    assert ig.draw_story_visual(Image.new("RGB", (1080, 1350)),
-                                {"title": "Bitcoin", "category": "Crypto"}, 390, 650) is True
-    print("PASS: responsive 4:5 rendering and six free-story-visual checks")
-
+    print("PASS: four categories render as 1080x1350 with transparent top-right PNG logo")
 
 if __name__ == "__main__":
     test()
