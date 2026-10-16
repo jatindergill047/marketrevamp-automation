@@ -281,7 +281,7 @@ def draw_card(story, index, total, date_label):
               font=category_face, fill=NAVY)
 
     draw.text((567, 49), "MARKETREVAMP",
-              font=font(29, bold=True), fill=WHITE)
+              font=font(29, bold=True), fill=RED)
     draw.text((568, 95), "AI • TECH • MARKETS • BLOCKCHAIN",
               font=font(11, bold=True), fill=MUTED)
     if not LOGO.exists():
