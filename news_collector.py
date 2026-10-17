@@ -60,38 +60,6 @@ EXCLUDE = [
 ]
 
 
-def extract_article_text(url):
-    """Retrieve readable text from a news article."""
-    if not url or not url.startswith(("https://", "http://")):
-        return ""
-
-    try:
-        request = urllib.request.Request(
-            url,
-            headers={"User-Agent": "Mozilla/5.0"}
-        )
-        with urllib.request.urlopen(request, timeout=12) as response:
-            html = response.read(500_000).decode(
-                "utf-8", errors="replace"
-            )
-
-        html = re.sub(
-            r"<(script|style|nav|footer|header)\b[^>]*>.*?</\1>",
-            " ", html, flags=re.I | re.S
-        )
-        html = re.sub(r"<[^>]+>", " ", html)
-        return re.sub(r"\s+", " ", unescape(html)).strip()
-
-    except Exception as error:
-        print(f"Article extraction failed: {error}")
-        return ""
-
-
-# Flexible limits. The image generator also accepts 30–90 words.
-SUMMARY_MIN_WORDS = 30
-SUMMARY_MAX_WORDS = 90
-
-
 def _tokens(text):
     """Normalize words for comparing a headline with an extracted sentence."""
     return re.findall(r"[a-z0-9]+(?:'[a-z0-9]+)?", text.casefold().replace("’", "'"))
@@ -249,18 +217,6 @@ def generate_summary(article_text, min_words=SUMMARY_MIN_WORDS,
     return summary
 
 
-def clean_article_text(raw_text):
-    """Clean HTML and whitespace from article text."""
-    if not raw_text:
-        return ""
-
-    text = re.sub(r"<[^>]+>", " ", raw_text)
-    text = unescape(text)
-    text = re.sub(r"\s+", " ", text)
-
-    return text.strip()
-
-
 def fetch_article_text(url):
     """Extract article text using Trafilatura."""
     if not url or not url.startswith(("https://", "http://")):
@@ -391,48 +347,6 @@ def infer_category(article):
     if category in matched:
         return category
     return matched[0] if matched else (category or "Technology")
-
-
-def select_top_five(articles):
-    """Reserve one distinct eligible story per topic, then fill remaining slots."""
-    candidates = sorted(
-        (article for article in articles if article["score"] > 0),
-        key=lambda item: (item["score"], item["published"]),
-        reverse=True,
-    )
-
-    selected = []
-    selected_urls = set()
-
-    for category in ["AI", "Technology", "Crypto", "Markets"]:
-        for article in candidates:
-            if (
-                infer_category(article) == category
-                and article["url"] not in selected_urls
-            ):
-                # Keep the source feed in 'category' and separately record
-                # which editorial category this story is representing.
-                chosen = {**article, "selected_category": category}
-                selected.append(chosen)
-                selected_urls.add(article["url"])
-                break
-
-    for article in candidates:
-        if len(selected) >= 5:
-            break
-        if article["url"] not in selected_urls:
-            chosen = {
-                **article,
-                "selected_category": infer_category(article),
-            }
-            selected.append(chosen)
-            selected_urls.add(article["url"])
-
-    selected.sort(
-        key=lambda item: (item["score"], item["published"]),
-        reverse=True,
-    )
-    return selected[:5]
 
 
 def normalize_article_url(url):
