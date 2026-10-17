@@ -5,7 +5,7 @@ Status is based on merged code and CI evidence, not commit-message wording. **DO
 | Backlog item | Status | Notes |
 | --- | --- | --- |
 | P0 seven-slide logging | DONE | PR #21 |
-| P0 explicit per-carousel publication approval | DONE (gate) | PR #32; unapproved package makes zero Instagram API requests. Approved artifact re-use workflow is NOT DONE |
+| P0 explicit per-carousel publication approval | DONE (code; no live test) | PRs #32, #33 and #36; scheduled runs prepare only, exact caption/images/sources require manual approved-artifact dispatch; live Meta API path not verified |
 | P0 pre-publish failed retry | DONE | PR #27; only safe pre-publication failures retry, ambiguous final requests remain pending |
 | P0 Instagram token refresh and persistence | BLOCKED | Requires confirming Meta token flow and secure write-capable secret storage; 401 warning is not refresh |
 | P0 invalid-summary fallback | DONE | PR #21 |
@@ -36,4 +36,4 @@ Status is based on merged code and CI evidence, not commit-message wording. **DO
 
 ## Production safety
 
-Do not manually dispatch production to test. Unknown `pending` states may represent a successful Instagram publication; reconcile before retry. No automatic token or Cloudinary secret rotation without a secure persistence mechanism.
+Do not manually dispatch the preparation workflow to test. The dedicated approved-artifact workflow is for actual explicitly approved publishing only. Unknown `pending` states may represent a successful Instagram publication; reconcile before retry. No automatic token or Cloudinary secret rotation without a secure persistence mechanism.
