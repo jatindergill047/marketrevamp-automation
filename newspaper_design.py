@@ -26,54 +26,104 @@ def _serif(size):
 
 
 def newspaper_background(index=1):
-    """Quiet high-key newspaper stock, with decoration confined to margins.
+    """White archival paper, with intentional editorial texture at the edges.
 
-    The central headline and details column remains clear for readability.
+    Content areas remain bright; artwork is original 2D Pillow geometry.
     """
     image = Image.new("RGB", (WIDTH, HEIGHT), PAPER)
     draw = ImageDraw.Draw(image)
     rng = random.Random(20261016 + index)
 
-    # Paper fiber / ink speckles: visible at full resolution, never on top
-    # of content as large decorative words.
-    for _ in range(18000):
+    # Reproducible fine-grain paper stock, never an external image.
+    for _ in range(22000):
         x, y = rng.randrange(WIDTH), rng.randrange(HEIGHT)
-        tone = rng.choice((226, 232, 239, 245))
+        tone = rng.choice((230, 235, 240, 245))
         draw.point((x, y), fill=(tone, tone, min(255, tone + 1)))
 
-    # Newspaper top and bottom bands, not behind article copy.
     draw.rectangle((0, 0, WIDTH, 34), fill=(239, 238, 233))
     draw.rectangle((0, 1325, WIDTH, HEIGHT), fill=(238, 237, 232))
-    for y in (32, 191, 1330):
-        draw.line((0, y, WIDTH, y), fill=(205, 207, 206), width=1)
+    for y in (32, 191, 1326):
+        draw.line((0, y, WIDTH, y), fill=(203, 207, 208), width=1)
+    for x in (22, 1058):
+        draw.line((x, 36, x, 1324), fill=(219, 222, 223), width=1)
 
-    # Editorial microprint confined to a thin strip at the bottom edge.
-    micro = "GLOBAL MARKETS  •  TECHNOLOGY  •  BUSINESS  •  CRYPTO  •  ECONOMY"
-    draw.text((30, 1330), micro, font=_serif(11), fill=(150, 156, 159))
+    # Decorative dot-matrix globe at the masthead edge.
+    # This is abstract artwork, not geographic or financial data.
+    for row in range(10):
+        for col in range(18):
+            u, v = (col - 8.5) / 9.2, (row - 4.5) / 5.3
+            if u * u + v * v <= 1:
+                x, y = 828 + col * 12, 52 + row * 12
+                dot = 2 if (col + row) % 3 else 3
+                draw.ellipse((x, y, x + dot, y + dot),
+                             fill=(205, 216, 222))
+    for k in range(3):
+        draw.arc((815 + k * 8, 42 + k * 5, 1053 - k * 8, 172 - k * 5),
+                 185, 345, fill=(217, 223, 224), width=1)
 
-    # Very subtle vertical margins and clipped corner dot-grid accents.
-    for x in (23, 1057):
-        draw.line((x, 40, x, 1320), fill=(223, 224, 221), width=1)
-    for row in range(8):
-        for col in range(15):
-            x, y = 830 + col * 15, 49 + row * 15
-            draw.ellipse((x, y, x + 2, y + 2), fill=(218, 221, 222))
+    # Subtle fine rules near the footer, but no tiny illegible text.
+    draw.line((38, 1321, 1042, 1321), fill=(203, 209, 212), width=1)
+    return image
 
-    # 2D financial chart watermark only at far right, kept behind a wash.
-    pts = [(840 + i * 9, 1065 - (i * 9 + 14 * math.sin(i * .9)))
-           for i in range(24)]
-    draw.line(pts, fill=(217, 223, 226), width=2, joint="curve")
-    for i in range(11):
-        x = 865 + i * 18
-        h = 22 + (i * 19) % 64
-        draw.line((x, 1165 - h, x, 1173), fill=(223, 227, 228), width=2)
-        draw.rectangle((x - 3, 1152 - h, x + 3, 1160 - h),
-                       fill=(223, 227, 228))
 
-    # Strong white reading surface, faintly translucent at the outer edges.
-    wash = Image.new("RGBA", (WIDTH, HEIGHT), (255, 255, 255, 0))
-    w = ImageDraw.Draw(wash)
-    w.rounded_rectangle((44, 280, 1035, 1195), radius=18,
-                        fill=(255, 255, 255, 208))
-    wash = wash.filter(ImageFilter.GaussianBlur(16))
-    return Image.alpha_composite(image.convert("RGBA"), wash).convert("RGB")
+def draw_editorial_illustration(image, top, index=1, category="AI"):
+    """Add a premium 2D newspaper engraving ONLY in genuinely unused space.
+
+    Top is the rendered summary panel's bottom edge. The drawing is skipped
+    for long articles, and never overlaps the footer at y=1200.
+    No simulated financial figures, charts with implied actual data, or API.
+    """
+    top = int(top) + 30
+    bottom = 1174
+    available = bottom - top
+    if available < 155:
+        return False
+
+    draw = ImageDraw.Draw(image)
+    left, right = 67, 1013
+    muted = (174, 191, 198)
+    soft = (213, 224, 229)
+    draw.line((left, top, right, top), fill=(191, 201, 204), width=2)
+    draw.text((left + 2, top + 13), "THE BIGGER PICTURE",
+              font=_serif(19), fill=(67, 87, 102))
+    draw.line((left + 280, top + 26, right, top + 26),
+              fill=(211, 218, 221), width=1)
+
+    center_y = top + 65 + max(0, (available - 145) // 2)
+    center_x = 820
+    radius = min(91, max(53, (available - 78) // 2))
+    # Stylized globe engraving: concentric circles, meridians and parallels.
+    draw.ellipse((center_x - radius, center_y - radius,
+                  center_x + radius, center_y + radius),
+                 outline=(144, 178, 192), width=3)
+    for fraction in (.34, .68):
+        rx = int(radius * fraction)
+        draw.ellipse((center_x - rx, center_y - radius,
+                      center_x + rx, center_y + radius),
+                     outline=soft, width=2)
+    for fraction in (.35, .70):
+        ry = int(radius * fraction)
+        draw.ellipse((center_x - radius, center_y - ry,
+                      center_x + radius, center_y + ry),
+                     outline=soft, width=2)
+    draw.arc((center_x - radius - 11, center_y - radius - 11,
+              center_x + radius + 11, center_y + radius + 11),
+             205, 315, fill=CYAN, width=4)
+    draw.arc((center_x - radius - 11, center_y - radius - 11,
+              center_x + radius + 11, center_y + radius + 11),
+             30, 87, fill=ORANGE, width=4)
+
+    # A restrained newspaper column motif. Lines are deliberately decorative
+    # and cannot be mistaken for fabricated reporting.
+    col_x = left + 8
+    col_y = top + 61
+    max_y = min(bottom - 9, col_y + 115)
+    lengths = (390, 480, 440, 465, 355)
+    for i, width in enumerate(lengths):
+        y = col_y + i * 21
+        if y + 3 >= max_y:
+            break
+        draw.rounded_rectangle((col_x, y, col_x + width, y + 4),
+                               radius=2, fill=soft)
+    draw.rectangle((col_x, max_y + 2, col_x + 72, max_y + 6), fill=CYAN)
+    return True

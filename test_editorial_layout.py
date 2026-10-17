@@ -69,6 +69,25 @@ class EditorialRegressionTests(unittest.TestCase):
                     }, 6, 7, "Oct 17, 2026")
                     self.assertEqual(image.size, (1080, 1350))
 
+    def test_decorative_engraving_only_uses_available_space(self):
+        from newspaper_design import draw_editorial_illustration
+        image = Image.new("RGB", (1080, 1350), (249, 248, 245))
+        before = image.copy()
+        self.assertTrue(draw_editorial_illustration(image, 848, 6, "AI"))
+        # Header, summary and source/footer are untouched by the illustration.
+        for point in ((100, 500), (100, 800), (200, 1201), (800, 1270)):
+            self.assertEqual(image.getpixel(point), before.getpixel(point))
+        self.assertNotEqual(image.getpixel((67, 878)), before.getpixel((67, 878)))
+        dense = Image.new("RGB", (1080, 1350), (249, 248, 245))
+        self.assertFalse(draw_editorial_illustration(dense, 1050, 6, "AI"))
+        self.assertEqual(dense.tobytes(), before.tobytes())
+
+    def test_newspaper_background_is_deterministic(self):
+        from newspaper_design import newspaper_background
+        first = newspaper_background(6)
+        second = newspaper_background(6)
+        self.assertEqual(first.tobytes(), second.tobytes())
+
     def test_no_publishing_with_invalid_summary(self):
         with self.assertRaisesRegex(ValueError, "invalid summary"):
             ig.draw_card({"title": "Test", "summary": "Too short."}, 1, 7, "Oct 17, 2026")

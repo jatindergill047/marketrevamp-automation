@@ -13,7 +13,7 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 from PIL import Image, ImageDraw, ImageFont
-from newspaper_design import newspaper_background, INK, CYAN, ORANGE
+from newspaper_design import newspaper_background, draw_editorial_illustration, INK, CYAN, ORANGE
 
 WIDTH, HEIGHT = 1080, 1350
 INPUT = Path("news_results.json")
@@ -280,6 +280,11 @@ def draw_card(story, index, total, date_label):
     draw.rectangle((left, text_y - 14, left + 7, panel_bottom),
                    fill=CYAN)
     _draw_lines(draw, slines, left + 34, text_y, sface, INK, slead)
+
+    # Use the empty lower region as tasteful newspaper art, but never
+    # compete with the summary or the fixed publication/source footer.
+    draw_editorial_illustration(image, panel_bottom, index=index,
+                                category=category)
 
     draw.line((left, 1200, right, 1200), fill=INK, width=2)
     draw.text((left, 1216), "SOURCE:", font=font(18, bold=True), fill=INK)
