@@ -23,6 +23,7 @@ def main():
         # Enable publishing only inside this simulated test.
         manifest["publish_enabled"] = True
         manifest["automated_checks_passed"] = True
+        manifest["first_comment"] = "#MarketRevamp #AI"
 
         image_urls = [slide.get("image_url") or slide.get("secure_url")
                       for slide in manifest["slides"]]
@@ -46,6 +47,9 @@ def main():
 
             if endpoint.endswith("/media_publish"):
                 return {"id": "TEST_PUBLISHED_POST"}
+
+            if endpoint.endswith("/comments"):
+                return {"id": "TEST_HASHTAG_COMMENT"}
 
             if endpoint.endswith("/media"):
                 count = sum(
@@ -84,7 +88,7 @@ def main():
         ):
             publisher.main()
 
-        assert len(saved_history) == 3
+        assert len(saved_history) == 5
 
         records = list(saved_history[-1].values())
         assert len(records) == 1
@@ -95,6 +99,8 @@ def main():
         assert record["instagram_media_id"] == "TEST_PUBLISHED_POST"
         assert len(record["article_urls"]) == 7
         assert record["instagram_container_id"] == "TEST_CONTAINER_8"
+        assert record["first_comment_status"] == "posted"
+        assert record["first_comment_id"] == "TEST_HASHTAG_COMMENT"
 
         assert sum(
             1 for method, endpoint in calls
@@ -109,6 +115,10 @@ def main():
         print("PASS: Full publishing flow simulated successfully.")
         print("PASS: Seven child containers and one carousel simulated.")
         print("PASS: Pending and published history recorded.")
+        assert sum(
+            1 for method, endpoint in calls
+            if method == "POST" and endpoint.endswith("/comments")
+        ) == 1
         print("PASS: No real Instagram API requests were made.")
 
 

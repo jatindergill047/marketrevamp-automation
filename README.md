@@ -31,6 +31,12 @@ The manifest's `publish_enabled` flag and successful automated tests are additio
 
 **Never commit credentials or paste them into logs.** Instagram access tokens may expire; arrange secure rotation/monitoring in the Meta developer account. The pipeline does not currently persist a refreshed token.
 
+## Hashtags in the first comment
+
+New carousel manifests keep the caption's sources and disclosure but move the six hashtag labels to a separate `first_comment` field. **Review the first comment together with the caption and slides**: it is included in the approval fingerprint. After successful `media_publish`, the publisher checkpoints `first_comment_status=pending`, then submits a top-level comment to the published Instagram media ID. When Meta confirms success it records the comment ID and status `posted`.
+
+This requires the Instagram comment-management permission for the chosen Meta login flow (for Instagram Login, `instagram_business_manage_comments`). If the first-comment request times out or its result is otherwise unknown, the carousel stays marked `published` and the comment remains `pending`: **inspect Instagram and reconcile manually, never republish the carousel to retry a comment**. The code is covered by offline mocks, but live comment permissions and behavior must be verified with an explicitly approved real publication.
+
 ## Persistent publishing history
 
 The `publishing-history` Git branch holds `instagram_publish_history.json`, restored into the workflow before collecting news. Each carousel is keyed by a fingerprint and marked `pending` before Instagram calls, then `published` on confirmed success. An unresolved `pending` is deliberately blocking: the API may have published successfully even if the response was lost. **Never delete pending records, force-push history, or rerun production to fix a timeout without reconciling Instagram first.** Publishing history is written to both the worktree and history checkout.

@@ -198,6 +198,7 @@ def approval_fingerprint(manifest, image_urls):
         "image_urls": image_urls,
         "article_urls": manifest.get("article_urls", []),
         "caption": manifest.get("caption", ""),
+        "first_comment": manifest.get("first_comment", ""),
         "slides": [
             {"slide": slide.get("slide"), "alt_text": slide.get("alt_text", "")}
             for slide in manifest.get("slides", [])
@@ -363,12 +364,6 @@ def main():
 
     repeated = set(normalized_urls) & previously_published
 
-    if repeated:
-        raise RuntimeError(
-            f"Publishing blocked: {len(repeated)} "
-            "previously published article(s) detected."
-        )
-
     fingerprint = hashlib.sha256(
         json.dumps(image_urls, sort_keys=True).encode()
     ).hexdigest()
@@ -384,6 +379,14 @@ def main():
         if history[fingerprint].get("publish_attempted_at"):
             raise RuntimeError("Failed record includes a publish attempt; reconciliation required.")
         print("Retrying a confirmed pre-publication failure.")
+
+    # Existing exact-fingerprint records are idempotent. Different image
+    # packages still cannot re-use articles from earlier published posts.
+    if repeated:
+        raise RuntimeError(
+            f"Publishing blocked: {len(repeated)} "
+            "previously published article(s) detected."
+        )
 
     today = datetime.now(
         ZoneInfo("America/Toronto")
@@ -456,6 +459,13 @@ def main():
             "Instagram caption must include source attribution."
         )
 
+    first_comment = manifest.get("first_comment", "")
+    if not isinstance(first_comment, str) or len(first_comment) > 1000:
+        raise RuntimeError("Invalid first-comment text.")
+    first_comment = first_comment.strip()
+    if first_comment and not first_comment.startswith("#"):
+        raise RuntimeError("First comment must begin with a hashtag.")
+
     print("Caption safety checks passed.")
 
     history[fingerprint] = {
@@ -501,6 +511,27 @@ def main():
     save_history(history)
 
     print(f"Instagram carousel published: {published['id']}")
+
+    if first_comment:
+        # A failed or timed-out comments request may still have succeeded.
+        # Save this checkpoint before the irreversible call. Never
+        # automatically retry unknown comment outcomes.
+        history[fingerprint]["first_comment_status"] = "pending"
+        save_history(history)
+        try:
+            comment = api_request(
+                "POST", f"{published['id']}/comments", token,
+                {"message": first_comment},
+            )
+        except Exception as error:
+            raise RuntimeError(
+                "Carousel was published, but first-comment outcome is unknown. "
+                "Inspect Instagram and reconcile the history; do NOT republish."
+            ) from error
+        history[fingerprint]["first_comment_status"] = "posted"
+        history[fingerprint]["first_comment_id"] = comment["id"]
+        save_history(history)
+        print("First hashtag comment posted and recorded.")
 
 
 if __name__ == "__main__":
