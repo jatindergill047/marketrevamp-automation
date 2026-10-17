@@ -11,6 +11,7 @@ class ApprovedWorkflowTests(unittest.TestCase):
                 "https://res.cloudinary.com/demo/image/upload/b.jpg"]
         manifest = {
             "caption": "Sources: example.com",
+            "first_comment": "#MarketRevamp #AI",
             "article_urls": ["https://example.com/1", "https://example.com/2"],
             "slides": [{"slide": 1, "alt_text": "First"},
                        {"slide": 2, "alt_text": "Second"}],
@@ -19,6 +20,7 @@ class ApprovedWorkflowTests(unittest.TestCase):
         self.assertEqual(len(original), 64)
         for field, changed in (
             ("caption", "Sources: another.com"),
+            ("first_comment", "#MarketRevamp #Blockchain"),
             ("article_urls", ["https://example.com/3", "https://example.com/2"]),
             ("slides", [{"slide": 1, "alt_text": "Edited"},
                         {"slide": 2, "alt_text": "Second"}]),
