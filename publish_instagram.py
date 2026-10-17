@@ -1,3 +1,5 @@
+"""Fail-closed Instagram carousel publishing with persistent history."""
+
 from carousel_config import CAROUSEL_SIZE
 
 import json
