@@ -77,7 +77,7 @@ def illustration_topic(headline, category):
     def mentions(*terms):
         return any(re.search(r"\b" + re.escape(t) + r"\b", title) for t in terms)
     if mentions("regulation", "regulator", "regulators", "lawmakers",
-                "legislation", "policy", "lawsuit", "court", "ban",
+                "legislation", "policy", "lawsuit", "court", "banned", "prohibition",
                 "antitrust", "compliance", "safety rules"):
         return "policy"
     if mentions("glasses", "smart glasses", "ray ban", "headset", "wearable"):
