@@ -174,65 +174,32 @@ def _fit_text(draw, text, width, max_height, largest, smallest, bold=False):
     raise ValueError("News text does not fit in the editorial card without clipping")
 
 
-def _summary_parts(summary):
-    """Split on real sentence boundaries, never at an arbitrary word count.
+def _fit_editorial(draw, headline, summary):
+    """Fit an entire summary in ONE compact section directly below headline.
 
-    A single sentence is displayed in full under Key Details, not broken
-    mid-sentence or duplicated as an introduction.
+    Preserve the complete original extractive text in its original order.
+    No separate lead paragraph, artificial bullets, or giant empty panel.
     """
-    sentences = re.split(r'(?<=[.!?])\s+(?=[A-Z0-9"“])', summary.strip())
-    sentences = [part.strip() for part in sentences if part.strip()]
-    if not sentences:
-        raise ValueError("Empty article summary")
-    if len(sentences) == 1:
-        return "", sentences
-    # Keep all original sentences without inventing or dropping facts.
-    return sentences[0], sentences[1:]
-
-
-def _fit_editorial(draw, headline, intro, details):
-    """Fit source text with a balanced 1-, 2- or 3-detail editorial layout."""
-    groups = details if len(details) <= 3 else details[:2] + [" ".join(details[2:])]
     for headline_size in range(56, 31, -2):
         hface = font(headline_size, bold=True)
         hlines = wrap_lines(draw, headline, hface, 930)
         hlead = headline_size + 11
         hbottom = 300 + len(hlines) * hlead
-        if hbottom > 665:
-            continue
-        if intro:
-            try:
-                iface, ilines, ilead = _fit_text(draw, intro, 930, 160, 27, 19)
-            except ValueError:
-                continue
-            ibottom = hbottom + 14 + len(ilines) * ilead
-        else:
-            iface, ilines, ilead = None, [], 0
-            ibottom = hbottom
-
-        # A single detail is a featured editorial callout; 2–3 details
-        # form a compact numbered list. Never synthesize filler bullets.
-        preferred = {1: 780, 2: 720, 3: 665}[min(len(groups), 3)]
-        section_y = max(ibottom + 32, preferred)
-        if section_y > 870:
-            continue
-        detail_top = section_y + 76
-        available = 1172 - detail_top
-        if available < 200:
+        if hbottom > 680:
             continue
 
-        largest = 34 if len(groups) == 1 else 28
-        for detail_size in range(largest, 17, -1):
-            dface = font(detail_size)
-            dlead = detail_size + 11
-            wrapped = [wrap_lines(draw, part, dface, 854) for part in groups]
-            # Include explicit gaps between separate facts.
-            spacing = 25 if len(groups) > 1 else 0
-            needed = sum(len(lines) * dlead for lines in wrapped) + spacing * (len(groups) - 1)
-            if needed <= available - (24 if len(groups) == 1 else 0):
-                return (hface, hlines, hlead, iface, ilines, ilead,
-                        section_y, dface, wrapped, dlead, spacing)
-    raise ValueError("Headline and complete source-derived details cannot fit safely")
+        section_y = hbottom + 35
+        text_y = section_y + 77
+        for summary_size in range(29, 18, -1):
+            sface = font(summary_size)
+            slines = wrap_lines(draw, summary, sface, 860)
+            slead = summary_size + 12
+            text_bottom = text_y + len(slines) * slead
+            panel_bottom = text_bottom + 28
+            if panel_bottom <= 1170:
+                return (hface, hlines, hlead, section_y, sface,
+                        slines, slead, text_y, panel_bottom)
+    raise ValueError("Complete source summary cannot fit in the unified editorial section")
 
 
 def _article_date(story, edition_date):
@@ -256,7 +223,6 @@ def draw_card(story, index, total, date_label):
     summary, valid = summary_for_card(story)
     if not valid:
         raise ValueError("Cannot render a news card with an invalid summary")
-    intro, details = _summary_parts(summary)
     headline = (story.get("title") or "").strip()
     if not headline:
         raise ValueError("Missing article headline")
@@ -295,13 +261,13 @@ def draw_card(story, index, total, date_label):
     draw.text((right, 230), f"{index:02d}/{total:02d}",
               font=font(26, bold=True), fill=INK, anchor="ra")
 
-    (hface, hlines, hlead, iface, ilines, ilead,
-     section_y, dface, wrapped, dlead, detail_spacing) = _fit_editorial(draw, headline, intro, details)
-    hbottom = _draw_lines(draw, hlines, left, 300, hface, INK, hlead)
-    if ilines:
-        _draw_lines(draw, ilines, left, hbottom + 14, iface,
-                    (53, 61, 69), ilead)
+    (hface, hlines, hlead, section_y, sface, slines,
+     slead, text_y, panel_bottom) = _fit_editorial(draw, headline, summary)
+    _draw_lines(draw, hlines, left, 300, hface, INK, hlead)
 
+    # All original summary sentences live together in one compact card.
+    # The section begins just below the headline; the background ends
+    # just below the last text line instead of filling an empty fixed area.
     draw.rounded_rectangle((left, section_y, left + 245, section_y + 52),
                            radius=22, fill=INK)
     draw.text((left + 26, section_y + 10), "KEY DETAILS",
@@ -309,24 +275,11 @@ def draw_card(story, index, total, date_label):
     draw.line((left + 265, section_y + 28, right, section_y + 28),
               fill=INK, width=2)
 
-    y = section_y + 76
-    if len(wrapped) == 1:
-        # A large, source-derived single-fact panel fills the available area
-        # without inventing a second or third bullet.
-        panel_bottom = 1155
-        draw.rounded_rectangle((left, y - 13, right, panel_bottom),
-                               radius=18, fill=(239, 246, 249))
-        draw.rectangle((left, y - 13, left + 7, panel_bottom), fill=CYAN)
-        draw.text((left + 25, y + 3), "01", font=font(22, bold=True), fill=CYAN)
-        y = _draw_lines(draw, wrapped[0], left + 75, y + 3, dface, INK, dlead)
-    else:
-        for number, lines in enumerate(wrapped, 1):
-            draw.ellipse((left + 1, y + 4, left + 32, y + 35), fill=CYAN)
-            draw.text((left + 16, y + 5), str(number),
-                      font=font(18, bold=True), fill=(255, 255, 255), anchor="mt")
-            y = _draw_lines(draw, lines, left + 54, y, dface, INK, dlead) + detail_spacing
-    if y > 1175:
-        raise ValueError("Details overlap the source footer")
+    draw.rounded_rectangle((left, text_y - 14, right, panel_bottom),
+                           radius=17, fill=(239, 246, 249))
+    draw.rectangle((left, text_y - 14, left + 7, panel_bottom),
+                   fill=CYAN)
+    _draw_lines(draw, slines, left + 34, text_y, sface, INK, slead)
 
     draw.line((left, 1200, right, 1200), fill=INK, width=2)
     draw.text((left, 1216), "SOURCE:", font=font(18, bold=True), fill=INK)

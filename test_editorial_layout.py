@@ -1,46 +1,54 @@
-"""Offline regression tests for complete sentences and adaptive editorial layout."""
+"""Offline regression tests for unified summary and responsive editorial cards."""
 import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
-from PIL import Image
+from PIL import Image, ImageDraw
 import image_generator as ig
 
 
+FIRST = (
+    "Elorian, the Palo Alto AI startup that raised a $55 million seed round "
+    "at a $300 million valuation before it launched a product, released its "
+    "first model on Friday, TechCrunch has exclusively learned."
+)
+SECOND = (
+    "The model, Glimpse, is launching as a research preview with API access "
+    "and a chat interface."
+)
+SUMMARY = FIRST + " " + SECOND
+
+
 class EditorialRegressionTests(unittest.TestCase):
-    def test_sentences_never_split_at_arbitrary_words(self):
-        intro, details = ig._summary_parts(
-            "Agents accessed confidential materials during testing. "
-            "The regulator issued a warning on Thursday. "
-            "Researchers described safeguards for affected teams."
-        )
-        self.assertEqual(intro, "Agents accessed confidential materials during testing.")
-        self.assertEqual(len(details), 2)
-        self.assertTrue(all(x.endswith(".") for x in details))
-
-    def test_single_sentence_not_repeated_or_chopped(self):
-        sentence = "A complete article sentence remains intact without an artificial cut."
-        intro, details = ig._summary_parts(sentence)
-        self.assertEqual(intro, "")
-        self.assertEqual(details, [sentence])
-
     def test_article_date_not_collection_date(self):
         story = {"published": "2026-10-15T21:30:00+00:00"}
-        self.assertEqual(ig._article_date(story, "Oct 17, 2026"), "ARTICLE DATE: OCT 15, 2026")
-        self.assertEqual(ig._article_date({}, "Oct 17, 2026"), "EDITION: OCT 17, 2026")
+        self.assertEqual(ig._article_date(story, "Oct 17, 2026"),
+                         "ARTICLE DATE: OCT 15, 2026")
+        self.assertEqual(ig._article_date({}, "Oct 17, 2026"),
+                         "EDITION: OCT 17, 2026")
         self.assertEqual(ig._article_date({"published": "invalid"}, "Oct 17, 2026"),
                          "EDITION: OCT 17, 2026")
 
+    def test_complete_summary_is_one_unbroken_block(self):
+        draw = ImageDraw.Draw(Image.new("RGB", (1080, 1350), "white"))
+        fit = ig._fit_editorial(
+            draw,
+            "Elorian’s first AI model wants to reason with images, not just about them",
+            SUMMARY,
+        )
+        headline_face, headline_lines, headline_leading, section_y, summary_face, lines, leading, text_y, bottom = fit
+        self.assertEqual(" ".join(lines), SUMMARY)
+        self.assertGreater(section_y, 300 + len(headline_lines) * headline_leading)
+        self.assertEqual(text_y, section_y + 77)
+        self.assertLess(bottom, 1170)
+        self.assertLess(bottom - text_y, 400)  # no huge empty card
+
+    def test_one_sentence_remains_in_same_summary_section(self):
+        draw = ImageDraw.Draw(Image.new("RGB", (1080, 1350), "white"))
+        fit = ig._fit_editorial(draw, "AI startup launches new model", FIRST)
+        self.assertEqual(" ".join(fit[5]), FIRST)
+
     def test_varied_headlines_and_full_summary_render(self):
-        summaries = [
-            ("A first complete sentence explains the market development. "
-             "A second sentence reports the regulator's response. "
-             "A third sentence provides the date and background. "
-             "A fourth sentence describes what market participants expect."),
-            ("The company said its newest systems were being evaluated across multiple regions. "
-             "Researchers reviewed the safety and operational results and described a plan "
-             "for monitoring deployment in the months ahead.")
-        ]
         with tempfile.TemporaryDirectory() as folder:
             logo = Path(folder) / "logo.png"
             Image.new("RGBA", (100, 100), (0, 150, 200, 255)).save(logo)
@@ -49,46 +57,17 @@ class EditorialRegressionTests(unittest.TestCase):
                     "Bitcoin market update",
                     "International regulators announce extensive new technology guidelines "
                     "as major companies prepare for substantial changes",
+                    "Elorian’s first AI model wants to reason with images, not just about them",
                 ):
-                    for summary in summaries:
-                        image = ig.draw_card({
-                            "title": headline,
-                            "summary": summary,
-                            "summary_status": "ready_for_review",
-                            "selected_category": "Markets",
-                            "url": "https://example.com/article",
-                            "published": "2026-10-15T21:30:00+00:00",
-                        }, 1, 7, "Oct 17, 2026")
-                        self.assertEqual(image.size, (1080, 1350))
-
-    def test_single_detail_uses_feature_panel_not_fake_bullets(self):
-        from PIL import ImageDraw
-        sample = ("OpenAI said its models accessed two websites during an internal evaluation "
-                  "and bypassed several company browsing restrictions. "
-                  "The company disclosed the incidents in a public report on Thursday "
-                  "and described how it was reviewing additional safeguards.")
-        intro, details = ig._summary_parts(sample)
-        self.assertEqual(len(details), 1)
-        with tempfile.TemporaryDirectory() as folder:
-            logo = Path(folder) / "logo.png"
-            Image.new("RGBA", (100, 100), (0, 150, 200, 255)).save(logo)
-            with patch.object(ig, "LOGO", logo):
-                image = ig.draw_card({
-                    "title": "OpenAI models hacked a crypto wallet and breached more websites",
-                    "summary": sample,
-                    "summary_status": "ready_for_review",
-                    "selected_category": "AI",
-                    "url": "https://example.com/story",
-                }, 3, 7, "Oct 16, 2026")
-        self.assertEqual(image.size, (1080, 1350))
-        draw = ImageDraw.Draw(image)
-        fit = ig._fit_editorial(draw,
-                "OpenAI models hacked a crypto wallet and breached more websites",
-                intro, details)
-        section_y = fit[6]
-        self.assertGreaterEqual(section_y, 780)
-        self.assertEqual(image.getpixel((75, section_y + 80)), (239, 246, 249))
-        self.assertEqual(image.getpixel((70, section_y + 90)), ig.CYAN)
+                    image = ig.draw_card({
+                        "title": headline,
+                        "summary": SUMMARY,
+                        "summary_status": "ready_for_review",
+                        "selected_category": "AI",
+                        "url": "https://example.com/article",
+                        "published": "2026-10-15T21:30:00+00:00",
+                    }, 6, 7, "Oct 17, 2026")
+                    self.assertEqual(image.size, (1080, 1350))
 
     def test_no_publishing_with_invalid_summary(self):
         with self.assertRaisesRegex(ValueError, "invalid summary"):
