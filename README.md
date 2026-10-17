@@ -14,7 +14,13 @@ GitHub production environment: `instagram-production`.
 
 Secrets: `INSTAGRAM_ACCESS_TOKEN`, Cloudinary upload credentials/preset used by `upload_to_cloudinary.py`; optional `FAILURE_WEBHOOK_URL` (a JSON webhook endpoint for workflow failures).
 
-Variables: `INSTAGRAM_USER_ID` and Cloudinary variables used in the upload step. See workflow `env:` blocks for exact names.
+Variables: `INSTAGRAM_USER_ID`, `INSTAGRAM_APPROVED_FINGERPRINT` and Cloudinary variables used in the upload step. See workflow `env:` blocks for exact names.
+
+### Explicit per-carousel approval
+
+The scheduled workflow may prepare and upload assets, but **must not publish without human approval for that exact seven-image carousel**. The publishing script computes a SHA-256 fingerprint of the sorted JSON list of seven image URLs. If the production environment variable `INSTAGRAM_APPROVED_FINGERPRINT` is missing or differs, the workflow logs `REVIEW REQUIRED` with the fingerprint and exits before any Instagram API requests. Review the seven generated images, caption, and sources in the GitHub Actions artifacts. Only after approval, set `INSTAGRAM_APPROVED_FINGERPRINT` to that exact fingerprint and run a controlled publication using the *same manifest and images*. A new workflow run that generates different Cloudinary URLs will have a different fingerprint, even when the source stories are unchanged. A separate approved-artifact publication workflow has **not yet been implemented**, so setting the variable by itself does not publish the held carousel. Never use a reusable generic value such as `true`.
+
+The manifest's `publish_enabled` flag and successful automated tests are additional safety checks, **not** human approval.
 
 **Never commit credentials or paste them into logs.** Instagram access tokens may expire; arrange secure rotation/monitoring in the Meta developer account. The pipeline does not currently persist a refreshed token.
 

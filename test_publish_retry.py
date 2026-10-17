@@ -1,4 +1,5 @@
 """Offline regression tests for safe Instagram retry boundaries."""
+import hashlib
 import json
 import tempfile
 import unittest
@@ -26,6 +27,11 @@ class PublishRetryTests(unittest.TestCase):
             "automated_checks_passed": True,
         }), encoding="utf-8")
         self.history.write_text("{}", encoding="utf-8")
+        image_urls = [f"https://res.cloudinary.com/demo/image/upload/test{i}.jpg"
+                      for i in range(7)]
+        self.fingerprint = hashlib.sha256(
+            json.dumps(image_urls, sort_keys=True).encode()
+        ).hexdigest()
         self.saved = []
         def save(history):
             snapshot = json.loads(json.dumps(history))
@@ -41,11 +47,21 @@ class PublishRetryTests(unittest.TestCase):
                 "INSTAGRAM_PERSISTENCE_READY": "true",
                 "INSTAGRAM_ACCESS_TOKEN": "FAKE",
                 "INSTAGRAM_USER_ID": "FAKE_ACCOUNT",
+                "INSTAGRAM_APPROVED_FINGERPRINT": self.fingerprint,
             }),
         ]
         for item in patches:
             item.start()
             self.addCleanup(item.stop)
+
+    def test_unapproved_carousel_makes_no_api_requests(self):
+        with patch.dict(publisher.os.environ, {
+            "INSTAGRAM_APPROVED_FINGERPRINT": "not-the-current-carousel",
+        }):
+            with patch.object(publisher, "api_request") as api:
+                publisher.main()
+                api.assert_not_called()
+        self.assertEqual(self.saved, [])
 
     def test_prepublication_error_marks_failed_and_retry_succeeds(self):
         attempts = []
