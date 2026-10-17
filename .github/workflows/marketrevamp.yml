@@ -62,7 +62,7 @@ jobs:
 
       - name: Install dependencies
         if: steps.schedule.outputs.run == 'true'
-        run: pip install -r requirements.txt
+        run: pip install -r requirements.lock
 
       - name: Install Playfair Display font
         if: steps.schedule.outputs.run == 'true'
