@@ -5,6 +5,7 @@ import sys
 import time
 import hashlib
 import subprocess
+import tempfile
 from pathlib import Path
 from datetime import datetime
 from zoneinfo import ZoneInfo
@@ -64,8 +65,20 @@ def save_history(history):
 
     content = json.dumps(history, indent=2) + "\n"
 
-    HISTORY_FILE.write_text(content, encoding="utf-8")
-    branch_file.write_text(content, encoding="utf-8")
+    for destination in (HISTORY_FILE, branch_file):
+        with tempfile.NamedTemporaryFile(
+            mode="w", encoding="utf-8", dir=destination.parent,
+            prefix=".history-", suffix=".tmp", delete=False,
+        ) as temporary:
+            temporary.write(content)
+            temporary.flush()
+            os.fsync(temporary.fileno())
+            temp_path = temporary.name
+        try:
+            os.replace(temp_path, destination)
+        finally:
+            if os.path.exists(temp_path):
+                os.unlink(temp_path)
 
     def git(*args):
         subprocess.run(
