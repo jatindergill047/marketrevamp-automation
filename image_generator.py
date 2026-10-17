@@ -69,63 +69,6 @@ def font(size, bold=False):
     return face
 
 
-def wrap_lines(draw, text, face, max_width):
-    """Wrap by measured pixel width, splitting exceptionally long tokens if needed."""
-    words = re.sub(r"\s+", " ", str(text)).strip().split()
-    lines = []
-    current = ""
-    for word in words:
-        candidate = f"{current} {word}".strip()
-        if draw.textbbox((0, 0), candidate, font=face)[2] <= max_width:
-            current = candidate
-            continue
-        if current:
-            lines.append(current)
-            current = ""
-        # Extremely long URLs/tokens should never spill outside the card.
-        if draw.textbbox((0, 0), word, font=face)[2] > max_width:
-            chunk = ""
-            for character in word:
-                test = chunk + character
-                if chunk and draw.textbbox((0, 0), test, font=face)[2] > max_width:
-                    lines.append(chunk)
-                    chunk = character
-                else:
-                    chunk = test
-            current = chunk
-        else:
-            current = word
-    if current:
-        lines.append(current)
-    return lines
-
-
-def fit_headline(draw, text, max_width=902, max_lines=6, max_height=300):
-    for size in range(70, 25, -2):
-        face = font(size, bold=True)
-        lines = wrap_lines(draw, text, face, max_width)
-        line_height = size + 17
-        if len(lines) <= max_lines and len(lines) * line_height <= max_height:
-            return face, lines, line_height
-    raise ValueError(f"Headline cannot fit without truncation: {text}")
-
-
-def fit_summary(draw, text, max_width=865, max_height=235):
-    """Use larger readable text without clipping or truncation."""
-    for size in range(36, 15, -1):
-        face = font(size)
-        lines = wrap_lines(draw, text, face, max_width)
-        line_height = size + 10
-
-        if len(lines) * line_height <= max_height:
-            return face, lines, line_height
-
-    raise ValueError(
-        "Summary is too long for readable text. "
-        "Shorten the summary or increase the available space."
-    )
-
-
 def background(index):
     """Compatibility wrapper for the all-white 2D editorial background."""
     return newspaper_background(index)
