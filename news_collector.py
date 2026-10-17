@@ -6,7 +6,6 @@ from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
 from pathlib import Path
 import re
-from html import unescape
 from urllib.parse import urlsplit, urlunsplit
 from news_quality import select_usable, CLAIM_TERMS, ATTRIBUTION, strip_section_heading
 
@@ -58,6 +57,11 @@ EXCLUDE = [
     "celebrity", "fashion", "football", "soccer", "recipe",
     "wedding", "movie review", "press secretary", "houthi", "ceasefire",
 ]
+
+
+# Summary length is shared with editorial validation.
+SUMMARY_MIN_WORDS = 30
+SUMMARY_MAX_WORDS = 90
 
 
 def _tokens(text):
