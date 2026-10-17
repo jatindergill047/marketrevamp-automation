@@ -5,6 +5,7 @@ Status is based on merged code and CI evidence, not commit-message wording. **DO
 | Backlog item | Status | Notes |
 | --- | --- | --- |
 | P0 seven-slide logging | DONE | PR #21 |
+| P0 explicit per-carousel publication approval | DONE (gate) | PR #32; unapproved package makes zero Instagram API requests. Approved artifact re-use workflow is NOT DONE |
 | P0 pre-publish failed retry | DONE | PR #27; only safe pre-publication failures retry, ambiguous final requests remain pending |
 | P0 Instagram token refresh and persistence | BLOCKED | Requires confirming Meta token flow and secure write-capable secret storage; 401 warning is not refresh |
 | P0 invalid-summary fallback | DONE | PR #21 |
