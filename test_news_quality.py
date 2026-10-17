@@ -59,8 +59,16 @@ class NewsQualityTests(unittest.TestCase):
     def test_selection_skips_unattributed_story_and_uses_backup(self):
         items = [
             article("Ray-Ban Meta glasses record conversations without consent", "Technology", 1),
-        ] + [article(f"AI software launch update number {i}", "AI", i)
-             for i in range(2, 10)]
+        ] + [article(title, "AI", i) for i, title in enumerate((
+            "Nvidia introduces new chip architecture",
+            "Microsoft expands cloud data center capacity",
+            "Apple announces accessibility software",
+            "Google releases developer tools",
+            "Anthropic publishes research evaluation",
+            "Amazon announces robotics investment",
+            "Tesla upgrades autonomous driving systems",
+            "OpenAI releases education product",
+        ), start=2)]
         risky = ("Some Ray-Ban Meta glasses were recording private conversations "
                  "without the wearer knowing.")
         def extract(url):
