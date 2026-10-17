@@ -11,6 +11,31 @@ from schedule_guard import should_run
 from news_collector import normalize_article_url, published_article_urls
 
 
+class AtomicHistoryTests(unittest.TestCase):
+    def test_history_writes_complete_json_in_both_worktrees(self):
+        import os
+        from unittest.mock import patch
+        import publish_instagram
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "publishing-history").mkdir()
+            with patch.object(publish_instagram, "HISTORY_FILE", root / "instagram_publish_history.json"), \
+                 patch("publish_instagram.subprocess.run") as run, \
+                 patch("publish_instagram.Path", wraps=Path):
+                run.return_value.returncode = 0
+                original = Path.cwd()
+                try:
+                    os.chdir(root)
+                    publish_instagram.save_history({"test": {"status": "pending"}})
+                finally:
+                    os.chdir(original)
+            expected = {"test": {"status": "pending"}}
+            self.assertEqual(json.loads((root / "instagram_publish_history.json").read_text()), expected)
+            self.assertEqual(json.loads((root / "publishing-history" / "instagram_publish_history.json").read_text()), expected)
+            self.assertFalse(list(root.glob(".history-*")))
+            self.assertFalse(list((root / "publishing-history").glob(".history-*")))
+
+
 class ReliabilityTests(unittest.TestCase):
     def test_dst_window(self):
         tz = ZoneInfo("America/Toronto")
