@@ -77,7 +77,7 @@ class EditorialRegressionTests(unittest.TestCase):
         # Header, summary and source/footer are untouched by the illustration.
         for point in ((100, 500), (100, 800), (200, 1201), (800, 1270)):
             self.assertEqual(image.getpixel(point), before.getpixel(point))
-        self.assertNotEqual(image.getpixel((67, 878)), before.getpixel((67, 878)))
+        self.assertNotEqual(image.getpixel((67, 875)), before.getpixel((67, 875)))
         dense = Image.new("RGB", (1080, 1350), (249, 248, 245))
         self.assertFalse(draw_editorial_illustration(dense, 1050, 6, "AI"))
         self.assertEqual(dense.tobytes(), before.tobytes())
