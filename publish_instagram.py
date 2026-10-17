@@ -1,3 +1,4 @@
+from carousel_config import CAROUSEL_SIZE
 
 import json
 import os
@@ -131,7 +132,7 @@ def load_manifest():
     data = json.loads(MANIFEST_FILE.read_text(encoding="utf-8"))
     slides = data.get("slides", [])
 
-    if len(slides) != 7:
+    if len(slides) != CAROUSEL_SIZE:
         raise RuntimeError("Exactly seven slides are required.")
 
     urls = []
@@ -147,7 +148,7 @@ def load_manifest():
 
         urls.append(url)
 
-    if len(set(urls)) != 7:
+    if len(set(urls)) != CAROUSEL_SIZE:
         raise RuntimeError("Duplicate images detected.")
 
     return data, urls
@@ -209,7 +210,7 @@ def main():
     
     article_urls = manifest.get("article_urls", [])
 
-    if len(article_urls) != 7:
+    if len(article_urls) != CAROUSEL_SIZE:
         raise RuntimeError(
             "Exactly seven article URLs are required."
         )
@@ -219,7 +220,7 @@ def main():
         for url in article_urls
     ]
 
-    if len(set(normalized_urls)) != 7:
+    if len(set(normalized_urls)) != CAROUSEL_SIZE:
         raise RuntimeError(
             "Duplicate articles found in today's carousel."
         )
