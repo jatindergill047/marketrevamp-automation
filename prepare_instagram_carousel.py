@@ -1,3 +1,4 @@
+from carousel_config import CAROUSEL_SIZE
 
 import json
 from pathlib import Path
@@ -17,7 +18,7 @@ news_data = json.loads(
 
 stories = news_data.get("selected_stories", [])
 
-if len(stories) != 7:
+if len(stories) != CAROUSEL_SIZE:
     raise ValueError(
         f"Expected 7 news stories, found {len(stories)}"
     )
@@ -90,7 +91,7 @@ for index, story in enumerate(stories, start=1):
             f"Story {index} is outside the 36-hour news window."
         )
 
-if len(images) != 7:
+if len(images) != CAROUSEL_SIZE:
     raise ValueError(f"Expected 7 images, found {len(images)}")
 
 slides = []
@@ -122,7 +123,8 @@ for number, item in enumerate(images, start=1):
     slides.append({
         "slide": number,
         "image_url": jpeg_url,
-        "is_carousel_item": True
+        "is_carousel_item": True,
+        "alt_text": ("MarketRevamp news slide: " + stories[number - 1]["title"])[:950]
     })
 caption_lines = [
     "🚀 MARKETREVAMP | DAILY NEWS BRIEF",

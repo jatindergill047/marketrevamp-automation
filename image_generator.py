@@ -1,3 +1,4 @@
+from carousel_config import CAROUSEL_SIZE
 """MarketRevamp: create seven branded 1080x1350 Instagram news cards.
 
 Run: python image_generator.py
@@ -218,7 +219,7 @@ def _article_date(story, edition_date):
 
 def draw_card(story, index, total, date_label):
     """Adaptive editorial news layout; no generated factual imagery or paid APIs."""
-    if not 1 <= index <= total == 7:
+    if not 1 <= index <= total == CAROUSEL_SIZE:
         raise ValueError("Expected slide index 1–7 of 7")
     summary, valid = summary_for_card(story)
     if not valid:
@@ -310,7 +311,7 @@ def main():
         raise SystemExit("Missing news_results.json. Run news_collector.py first.")
     data = json.loads(INPUT.read_text(encoding="utf-8"))
     stories = data.get("selected_stories", [])
-    if len(stories) != 7:
+    if len(stories) != CAROUSEL_SIZE:
         raise SystemExit(f"Expected exactly 7 selected stories; found {len(stories)}. No images created.")
 
     OUTPUT.mkdir(parents=True, exist_ok=True)
