@@ -1,3 +1,4 @@
+from carousel_config import CAROUSEL_SIZE
 """Conservative source-aware quality checks for MarketRevamp news selection.
 
 This is heuristic screening, NOT independent fact-checking or confirmation.
@@ -140,13 +141,13 @@ def select_usable(candidates, infer_category, extract, summarize, min_words=30, 
     from collections import Counter
     candidate_domains = Counter(source_domain(item["url"]) for item in candidates)
     available_slots = sum(min(3, count) for count in candidate_domains.values())
-    per_domain_cap = 3 if available_slots >= 7 else 7
+    per_domain_cap = 3 if available_slots >= CAROUSEL_SIZE else CAROUSEL_SIZE
     domain_counts = {}
     selected = []
     used_categories = set()
     attempted = set()
 
-    while len(selected) < 7 and pending:
+    while len(selected) < CAROUSEL_SIZE and pending:
         # Re-prioritize missing categories after any failed extraction.
         choice = next((s for s in pending if infer_category(s) not in used_categories), pending[0])
         pending.remove(choice)
@@ -184,7 +185,7 @@ def select_usable(candidates, infer_category, extract, summarize, min_words=30, 
         domain_counts[domain] = domain_counts.get(domain, 0) + 1
         used_categories.add(story["selected_category"])
 
-    if len(selected) != 7:
+    if len(selected) != CAROUSEL_SIZE:
         raise RuntimeError(
             f"Only {len(selected)} fresh, distinct, usable articles available; "
             "refusing to publish an incomplete carousel."
