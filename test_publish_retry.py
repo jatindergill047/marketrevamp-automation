@@ -84,7 +84,6 @@ class PublishRetryTests(unittest.TestCase):
 
     def test_unknown_existing_status_blocks(self):
         with patch.object(publisher, "api_request") as api:
-            publisher.main() if False else None
             import hashlib
             images = json.loads(self.manifest.read_text())["slides"]
             urls = [x["image_url"] for x in images]
