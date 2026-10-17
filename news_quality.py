@@ -137,8 +137,10 @@ def select_usable(candidates, infer_category, extract, summarize, min_words=30, 
     pending = prioritize_diversity(candidates, infer_category)
     # Apply a publisher cap when the candidate pool actually has alternatives.
     # Preserve the seven-story fail-closed contract for thin-source days.
-    distinct_domains = {source_domain(item["url"]) for item in candidates}
-    per_domain_cap = 3 if len(distinct_domains) >= 3 else 7
+    from collections import Counter
+    candidate_domains = Counter(source_domain(item["url"]) for item in candidates)
+    available_slots = sum(min(3, count) for count in candidate_domains.values())
+    per_domain_cap = 3 if available_slots >= 7 else 7
     domain_counts = {}
     selected = []
     used_categories = set()
