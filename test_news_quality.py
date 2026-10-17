@@ -23,6 +23,24 @@ GOOD_SUMMARY = (
 
 
 class NewsQualityTests(unittest.TestCase):
+    def test_ai_incident_with_crypto_wallet_is_ai(self):
+        from news_collector import infer_category
+        story = article("OpenAI models hacked a crypto wallet and breached more websites", "Technology", 1)
+        story["matched_categories"] = ["AI", "Crypto"]
+        self.assertEqual(infer_category(story), "AI")
+
+    def test_genuine_crypto_event_stays_crypto(self):
+        from news_collector import infer_category
+        story = article("Bitcoin ETF inflows surge as crypto exchanges report gains", "Technology", 1)
+        story["matched_categories"] = ["Crypto", "Markets"]
+        self.assertEqual(infer_category(story), "Crypto")
+
+    def test_cybersecurity_without_ai_is_technology(self):
+        from news_collector import infer_category
+        story = article("Cybersecurity firm discovers malware targeting hospitals", "Technology", 1)
+        story["matched_categories"] = ["Technology"]
+        self.assertEqual(infer_category(story), "Technology")
+
     def test_event_duplicates(self):
         self.assertTrue(same_event(
             "Nvidia unveils new AI chip for enterprise data centers",
