@@ -111,6 +111,34 @@ class NewsQualityTests(unittest.TestCase):
         self.assertNotIn("Unanswered questions", summary)
         self.assertTrue(screen_summary(summary, raw)["passed"])
 
+    def test_publisher_diversity_when_sources_available(self):
+        titles = [
+            "Nvidia introduces next generation chip platform",
+            "Microsoft launches cloud computing service",
+            "Apple reveals new mobile operating system",
+            "Google expands enterprise search features",
+            "Amazon unveils logistics robotics platform",
+            "Tesla releases new battery technology",
+            "Bitcoin exchange adds custody safeguards",
+            "Ethereum developers approve network proposal",
+            "Federal Reserve updates inflation forecast",
+            "European markets respond to economic report",
+        ]
+        items = []
+        for i, title in enumerate(titles):
+            item = article(title, "Technology", i + 1)
+            domain = ("first.com" if i < 5 else
+                      "second.com" if i < 8 else "third.com")
+            item["url"] = f"https://{domain}/story-{i}"
+            items.append(item)
+        chosen = select_usable(items, lambda x: x["category"],
+                               lambda url: GOOD_SUMMARY,
+                               lambda text, headline: GOOD_SUMMARY)
+        from collections import Counter
+        counts = Counter(source_domain(x["url"]) for x in chosen)
+        self.assertEqual(len(chosen), 7)
+        self.assertLessEqual(max(counts.values()), 3)
+
     def test_event_duplicates(self):
         self.assertTrue(same_event(
             "Nvidia unveils new AI chip for enterprise data centers",
