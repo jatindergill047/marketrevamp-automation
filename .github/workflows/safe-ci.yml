@@ -15,7 +15,7 @@ jobs:
       - run: pip install -r requirements.lock
       - run: python prepare_fonts.py
       - run: python -m compileall -q .
-      - run: python -m unittest -v test_reliability.py test_publish_retry.py test_news_quality.py test_seven_pipeline.py test_editorial_layout.py test_cloudinary_signing.py
+      - run: python -m unittest -v test_reliability.py test_history_reconcile.py test_publish_retry.py test_news_quality.py test_seven_pipeline.py test_editorial_layout.py test_cloudinary_signing.py
       - run: python test_image_layout.py
       - run: python -m unittest -v test_news_quality.py
       - run: python -m unittest -v test_seven_pipeline.py
