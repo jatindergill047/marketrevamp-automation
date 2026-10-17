@@ -325,6 +325,14 @@ def main():
         print("No Instagram API publishing requests were made.")
         return
 
+    # Explicit human approval applies to the exact seven-image package,
+    # never merely to a date, workflow run, or reusable manifest flag.
+    approved = os.getenv("INSTAGRAM_APPROVED_FINGERPRINT", "").strip()
+    if not approved or approved != fingerprint:
+        print(f"REVIEW REQUIRED: carousel fingerprint {fingerprint}")
+        print("No Instagram API publishing requests were made.")
+        return
+
     if manifest.get("publish_enabled") is not True:
         raise RuntimeError(
             "Live publishing blocked: carousel manifest is disabled."
