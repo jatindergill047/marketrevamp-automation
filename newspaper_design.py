@@ -67,63 +67,100 @@ def newspaper_background(index=1):
 
 
 def draw_editorial_illustration(image, top, index=1, category="AI"):
-    """Add a premium 2D newspaper engraving ONLY in genuinely unused space.
+    """Draw category-specific 2D editorial line art in otherwise unused space.
 
-    Top is the rendered summary panel's bottom edge. The drawing is skipped
-    for long articles, and never overlaps the footer at y=1200.
-    No simulated financial figures, charts with implied actual data, or API.
+    These are explicitly illustrative symbols, never photographs, claims,
+    market-price charts, fake metrics, or generic loading-placeholder lines.
+    Do not draw anything if the summary leaves insufficient room.
     """
-    top = int(top) + 30
-    bottom = 1174
-    available = bottom - top
-    if available < 155:
+    top = int(top) + 27
+    bottom = 1174  # Footer begins at y=1200.
+    height = bottom - top
+    if height < 155:
         return False
 
     draw = ImageDraw.Draw(image)
     left, right = 67, 1013
-    muted = (174, 191, 198)
-    soft = (213, 224, 229)
-    draw.line((left, top, right, top), fill=(191, 201, 204), width=2)
-    draw.text((left + 2, top + 13), "THE BIGGER PICTURE",
-              font=_serif(19), fill=(67, 87, 102))
-    draw.line((left + 280, top + 26, right, top + 26),
-              fill=(211, 218, 221), width=1)
+    navy = (37, 70, 95)
+    muted = (142, 177, 191)
+    pale = (210, 226, 232)
+    category = category if category in ("AI", "Technology", "Crypto", "Markets") else "Technology"
 
-    center_y = top + 65 + max(0, (available - 145) // 2)
-    center_x = 820
-    radius = min(91, max(53, (available - 78) // 2))
-    # Stylized globe engraving: concentric circles, meridians and parallels.
-    draw.ellipse((center_x - radius, center_y - radius,
-                  center_x + radius, center_y + radius),
-                 outline=(144, 178, 192), width=3)
-    for fraction in (.34, .68):
-        rx = int(radius * fraction)
-        draw.ellipse((center_x - rx, center_y - radius,
-                      center_x + rx, center_y + radius),
-                     outline=soft, width=2)
-    for fraction in (.35, .70):
-        ry = int(radius * fraction)
-        draw.ellipse((center_x - radius, center_y - ry,
-                      center_x + radius, center_y + ry),
-                     outline=soft, width=2)
-    draw.arc((center_x - radius - 11, center_y - radius - 11,
-              center_x + radius + 11, center_y + radius + 11),
-             205, 315, fill=CYAN, width=4)
-    draw.arc((center_x - radius - 11, center_y - radius - 11,
-              center_x + radius + 11, center_y + radius + 11),
-             30, 87, fill=ORANGE, width=4)
+    # One modest section label, not a pretend additional news paragraph.
+    draw.line((left, top, right, top), fill=(197, 208, 212), width=2)
+    label = {"AI": "AI & INTELLIGENCE", "Technology": "TECHNOLOGY & DEVICES",
+             "Crypto": "DIGITAL ASSETS", "Markets": "GLOBAL MARKETS"}[category]
+    draw.text((left + 3, top + 13), label, font=_serif(19), fill=navy)
+    draw.line((left + 330, top + 26, right, top + 26),
+              fill=(214, 224, 226), width=1)
 
-    # A restrained newspaper column motif. Lines are deliberately decorative
-    # and cannot be mistaken for fabricated reporting.
-    col_x = left + 8
-    col_y = top + 61
-    max_y = min(bottom - 9, col_y + 115)
-    lengths = (390, 480, 440, 465, 355)
-    for i, width in enumerate(lengths):
-        y = col_y + i * 21
-        if y + 3 >= max_y:
-            break
-        draw.rounded_rectangle((col_x, y, col_x + width, y + 4),
-                               radius=2, fill=soft)
-    draw.rectangle((col_x, max_y + 2, col_x + 72, max_y + 6), fill=CYAN)
+    # Restrict all illustrations to a rectangle strictly below the label
+    # and above the source footer. Geometry scales for short empty spaces.
+    art_top, art_bottom = top + 55, bottom - 9
+    cx = 770
+    cy = (art_top + art_bottom) // 2
+    scale = min(1.0, (art_bottom - art_top) / 150)
+    def point(x, y):
+        return (round(cx + x * scale), round(cy + y * scale))
+    def line(points, color=muted, width=3):
+        draw.line([point(x, y) for x, y in points], fill=color,
+                  width=max(1, round(width * scale)), joint="curve")
+    def circle(x, y, radius, outline=muted, width=3, fill=None):
+        a = point(x - radius, y - radius)
+        b = point(x + radius, y + radius)
+        draw.ellipse((*a, *b), outline=outline,
+                     width=max(1, round(width * scale)), fill=fill)
+    def rect(x0, y0, x1, y1, outline=muted, width=3, radius=0):
+        coords = (*point(x0, y0), *point(x1, y1))
+        if radius:
+            draw.rounded_rectangle(coords, radius=max(1, round(radius * scale)),
+                                   outline=outline, width=max(1, round(width * scale)))
+        else:
+            draw.rectangle(coords, outline=outline,
+                           width=max(1, round(width * scale)))
+
+    if category == "AI":
+        # A neural graph: interconnected nodes and an abstract central chip.
+        nodes = [(-105, -43), (-108, 38), (-40, -68), (-40, 65),
+                 (53, -68), (55, 63), (113, -32), (111, 42)]
+        for x, y in nodes:
+            line([(x, y), (0, 0)], pale, 2)
+        rect(-33, -30, 33, 30, navy, 3, 9)
+        for x, y in nodes:
+            circle(x, y, 8, CYAN if x < 0 else ORANGE, 3,
+                   (249, 248, 245))
+        circle(0, 0, 10, CYAN, 3)
+    elif category == "Technology":
+        # Smart-glasses / connected-device silhouette: recognizable and
+        # relevant to device stories, without implying any real photograph.
+        line([(-132, -12), (-105, -34), (-32, -34), (-15, -14),
+              (15, -14), (32, -34), (105, -34), (132, -12)], navy, 4)
+        rect(-107, -26, -22, 42, navy, 4, 18)
+        rect(22, -26, 107, 42, navy, 4, 18)
+        line([(-21, -7), (0, -15), (21, -7)], CYAN, 4)
+        line([(-132, -12), (-149, 15)], muted, 3)
+        line([(132, -12), (149, 15)], muted, 3)
+        for x, y in [(-85, 55), (-55, 64), (58, 64), (87, 55)]:
+            circle(x, y, 3, CYAN, 2, CYAN)
+    elif category == "Crypto":
+        # Abstract distributed ledger nodes; no fake price action.
+        for x, y in [(-110, -45), (-110, 45), (105, -45), (105, 45)]:
+            line([(x, y), (0, 0)], pale, 3)
+            circle(x, y, 12, CYAN, 3)
+        circle(0, 0, 62, navy, 4)
+        circle(0, 0, 48, muted, 2)
+        draw.text(point(0, -33), "B", font=_serif(max(16, round(68 * scale))),
+                  fill=ORANGE, anchor="mt")
+        line([(-9, -37), (-9, 40)], ORANGE, 2)
+        line([(7, -37), (7, 40)], ORANGE, 2)
+    else:
+        # Stylized financial exchange columns, intentionally without
+        # axes, numbers or data points: decorative, not a market chart.
+        for x, h in [(-120, 38), (-73, 72), (-26, 49),
+                     (21, 91), (68, 62), (115, 80)]:
+            rect(x - 13, 75 - h, x + 13, 75, pale, 2, 4)
+            line([(x, 75 - h), (x, 75)], CYAN if x < 0 else ORANGE, 4)
+        line([(-143, 78), (144, 78)], muted, 2)
+
+    # The illustration never changes the story text or attribution.
     return True
