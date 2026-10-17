@@ -81,6 +81,36 @@ class NewsQualityTests(unittest.TestCase):
         self.assertTrue(all(x["summary_screening"]["passed"] for x in result))
         self.assertTrue(all(not x["fact_checked"] for x in result))
 
+    def test_joined_article_heading_removed_without_rewriting_claim(self):
+        from news_collector import _sentence_candidates
+        from news_quality import strip_section_heading
+        raw = ("Unanswered questions Meta hasn’t said what caused the "
+               "Ray-Ban Metas to record people without user consent. "
+               "According to user reports, the smart glasses recorded "
+               "conversations unexpectedly in several instances.")
+        candidates = _sentence_candidates(raw, "Ray-Ban Meta smart glasses report")
+        self.assertTrue(candidates)
+        self.assertTrue(candidates[0][1].startswith("Meta hasn’t said"))
+        self.assertNotIn("Unanswered questions", candidates[0][1])
+        self.assertEqual(strip_section_heading("Unanswered questions remain."),
+                         "Unanswered questions remain.")
+        self.assertEqual(screen_summary(raw.split(". ")[0] + ".", raw)["reason"],
+                         "embedded_section_heading")
+        self.assertTrue(screen_summary(candidates[0][1], raw)["passed"])
+
+    def test_section_heading_kept_out_of_generated_summary(self):
+        from news_collector import generate_summary
+        raw = ("Unanswered questions Meta hasn’t said what caused the "
+               "Ray-Ban Metas to record people without user consent. "
+               "According to user reports, the smart glasses recorded "
+               "conversations unexpectedly in several instances. "
+               "The company said it was reviewing reports from customers "
+               "and investigating the behavior of the devices.")
+        summary = generate_summary(raw, headline="Ray-Ban Meta glasses recording issue")
+        self.assertTrue(summary)
+        self.assertNotIn("Unanswered questions", summary)
+        self.assertTrue(screen_summary(summary, raw)["passed"])
+
     def test_event_duplicates(self):
         self.assertTrue(same_event(
             "Nvidia unveils new AI chip for enterprise data centers",

@@ -94,6 +94,20 @@ def _normalized_text(value):
     return re.sub(r"\s+", " ", value).casefold().strip()
 
 
+SECTION_HEADINGS = ("unanswered questions", "what happens next", "the bigger picture", "why it matters", "what to know", "what we know", "looking ahead", "the bottom line", "the takeaway", "key takeaways")
+
+
+def strip_section_heading(sentence):
+    """Discard a known article subheading joined to a complete sentence."""
+    for heading in SECTION_HEADINGS:
+        prefix = heading + " "
+        if sentence.casefold().startswith(prefix):
+            tail = sentence[len(prefix):]
+            if tail and tail[0].isupper():
+                return tail
+    return sentence
+
+
 def screen_summary(summary, article_text):
     """Check exact source sentence support and sensitive-claim attribution."""
     if not isinstance(summary, str) or not isinstance(article_text, str):
@@ -106,6 +120,8 @@ def screen_summary(summary, article_text):
         sentence = sentence.strip()
         if not sentence:
             continue
+        if strip_section_heading(sentence) != sentence:
+            return {"passed": False, "reason": "embedded_section_heading"}
         if _normalized_text(sentence) not in source:
             return {"passed": False, "reason": "summary_not_in_source"}
         if CLAIM_TERMS.search(sentence) and not ATTRIBUTION.search(sentence):

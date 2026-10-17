@@ -7,7 +7,7 @@ from pathlib import Path
 import re
 from html import unescape
 from urllib.parse import urlsplit, urlunsplit
-from news_quality import select_usable, same_event, CLAIM_TERMS, ATTRIBUTION
+from news_quality import select_usable, same_event, CLAIM_TERMS, ATTRIBUTION, strip_section_heading
 
 
 FEEDS = {
@@ -151,7 +151,7 @@ def _sentence_candidates(article_text, headline=""):
     results = []
     seen = []
     for position, part in enumerate(parts):
-        sentence = part.strip(" \t\r\n-•")
+        sentence = strip_section_heading(part.strip(" \t\r\n-•"))
         words = sentence.split()
         if not 8 <= len(words) <= 45 or not re.search(r"[.!?][\"'”’)]?$", sentence):
             continue

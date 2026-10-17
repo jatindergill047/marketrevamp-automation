@@ -116,7 +116,8 @@ def draw_editorial_illustration(image, top, index=1, category="AI", headline="")
     draw.line((left, top, right, top), fill=(197, 208, 212), width=2)
     art_top, art_bottom = top + 20, bottom - 10
     cx, cy = 540, (art_top + art_bottom) // 2
-    scale = min(1.25, (art_bottom - art_top) / 160)
+    scale = min(1.42 if topic == "glasses" else 1.25,
+                (art_bottom - art_top) / 160)
     def point(x, y):
         return (round(cx + x * scale), round(cy + y * scale))
     def line(points, color=muted, width=3):
