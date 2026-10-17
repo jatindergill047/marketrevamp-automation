@@ -69,6 +69,37 @@ def font(size, bold=False):
     return face
 
 
+def wrap_lines(draw, text, face, max_width):
+    """Wrap by measured pixel width, splitting exceptionally long tokens if needed."""
+    words = re.sub(r"\s+", " ", str(text)).strip().split()
+    lines = []
+    current = ""
+    for word in words:
+        candidate = f"{current} {word}".strip()
+        if draw.textbbox((0, 0), candidate, font=face)[2] <= max_width:
+            current = candidate
+            continue
+        if current:
+            lines.append(current)
+            current = ""
+        # Extremely long URLs/tokens should never spill outside the card.
+        if draw.textbbox((0, 0), word, font=face)[2] > max_width:
+            chunk = ""
+            for character in word:
+                test = chunk + character
+                if chunk and draw.textbbox((0, 0), test, font=face)[2] > max_width:
+                    lines.append(chunk)
+                    chunk = character
+                else:
+                    chunk = test
+            current = chunk
+        else:
+            current = word
+    if current:
+        lines.append(current)
+    return lines
+
+
 def background(index):
     """Compatibility wrapper for the all-white 2D editorial background."""
     return newspaper_background(index)
