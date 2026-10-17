@@ -198,6 +198,7 @@ def approval_fingerprint(manifest, image_urls):
         "image_urls": image_urls,
         "article_urls": manifest.get("article_urls", []),
         "caption": manifest.get("caption", ""),
+        "first_comment": manifest.get("first_comment", ""),
         "slides": [
             {"slide": slide.get("slide"), "alt_text": slide.get("alt_text", "")}
             for slide in manifest.get("slides", [])
