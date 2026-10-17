@@ -1,11 +1,13 @@
-from carousel_config import CAROUSEL_SIZE
 """MarketRevamp: create seven branded 1080x1350 Instagram news cards.
 
 Run: python image_generator.py
 Input: news_results.json from news_collector.py
 Output: instagram_images/slide_01.png ... slide_07.png
-Requires: Pillow>=11.0,<13.0
+Requires: Pillow==12.3.0 (see requirements.lock)
 """
+
+from carousel_config import CAROUSEL_SIZE
+
 
 import json
 import re
@@ -98,33 +100,7 @@ def wrap_lines(draw, text, face, max_width):
     return lines
 
 
-def fit_headline(draw, text, max_width=902, max_lines=6, max_height=300):
-    for size in range(70, 25, -2):
-        face = font(size, bold=True)
-        lines = wrap_lines(draw, text, face, max_width)
-        line_height = size + 17
-        if len(lines) <= max_lines and len(lines) * line_height <= max_height:
-            return face, lines, line_height
-    raise ValueError(f"Headline cannot fit without truncation: {text}")
-
-
-def fit_summary(draw, text, max_width=865, max_height=235):
-    """Use larger readable text without clipping or truncation."""
-    for size in range(36, 15, -1):
-        face = font(size)
-        lines = wrap_lines(draw, text, face, max_width)
-        line_height = size + 10
-
-        if len(lines) * line_height <= max_height:
-            return face, lines, line_height
-
-    raise ValueError(
-        "Summary is too long for readable text. "
-        "Shorten the summary or increase the available space."
-    )
-
-
-def background(accent, index):
+def background(index):
     """Compatibility wrapper for the all-white 2D editorial background."""
     return newspaper_background(index)
 
@@ -228,7 +204,7 @@ def draw_card(story, index, total, date_label):
     if not headline:
         raise ValueError("Missing article headline")
 
-    image = background(CYAN, index)
+    image = background(index)
     draw = ImageDraw.Draw(image)
     left, right = 67, 1013
 

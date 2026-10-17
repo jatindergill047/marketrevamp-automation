@@ -1,3 +1,5 @@
+"""Fail-closed Instagram carousel publishing with persistent history."""
+
 from carousel_config import CAROUSEL_SIZE
 
 import json
@@ -204,6 +206,47 @@ def wait_for_container(container_id, token):
     raise RuntimeError("Timed out waiting for media processing.")
 
 
+def create_ready_carousel(account_id, token, image_urls, manifest, history, fingerprint, caption):
+    """Prepare and verify media without calling media_publish."""
+    child_ids = []
+
+    for index, image_url in enumerate(image_urls, start=1):
+        result = api_request(
+            "POST",
+            f"{account_id}/media",
+            token,
+            {
+                "image_url": image_url,
+                "is_carousel_item": "true",
+                "alt_text": manifest["slides"][index - 1].get("alt_text", ""),
+            },
+        )
+        child_ids.append(result["id"])
+        print(f"Created carousel item {index}/{len(image_urls)}.")
+
+    result = api_request(
+        "POST",
+        f"{account_id}/media",
+        token,
+        {
+            "media_type": "CAROUSEL",
+            "children": ",".join(child_ids),
+            "caption": caption,
+        },
+    )
+
+    carousel_id = result["id"]
+
+    history[fingerprint]["instagram_container_id"] = carousel_id
+    save_history(history)
+
+    print(f"Instagram carousel container recorded: {carousel_id}")
+
+    wait_for_container(carousel_id, token)
+
+    return carousel_id
+
+
 def main():
     manifest, image_urls = load_manifest()
     history = load_history()
@@ -253,9 +296,13 @@ def main():
 
     if fingerprint in history:
         status = history[fingerprint].get("status")
-        print(f"Existing publishing record: {status}")
-        print("Skipping to prevent duplicate publishing.")
-        return
+        if status != "failed":
+            print(f"Existing publishing record: {status}")
+            print("Skipping to prevent duplicate publishing.")
+            return
+        if history[fingerprint].get("publish_attempted_at"):
+            raise RuntimeError("Failed record includes a publish attempt; reconciliation required.")
+        print("Retrying a confirmed pre-publication failure.")
 
     today = datetime.now(
         ZoneInfo("America/Toronto")
@@ -331,41 +378,19 @@ def main():
 
     print("Publishing attempt recorded as pending.")
 
-    child_ids = []
-
-    for index, image_url in enumerate(image_urls, start=1):
-        result = api_request(
-            "POST",
-            f"{account_id}/media",
-            token,
-            {
-                "image_url": image_url,
-                "is_carousel_item": "true",
-                "alt_text": manifest["slides"][index - 1].get("alt_text", ""),
-            },
+    try:
+        carousel_id = create_ready_carousel(
+            account_id, token, image_urls, manifest, history, fingerprint, caption
         )
-        child_ids.append(result["id"])
-        print(f"Created carousel item {index}/{len(image_urls)}.")
+    except Exception:
+        history[fingerprint]["status"] = "failed"
+        history[fingerprint]["failed_at"] = int(time.time())
+        save_history(history)
+        raise
 
-    result = api_request(
-        "POST",
-        f"{account_id}/media",
-        token,
-        {
-            "media_type": "CAROUSEL",
-            "children": ",".join(child_ids),
-            "caption": caption,
-        },
-    )
-
-    carousel_id = result["id"]
-
-    history[fingerprint]["instagram_container_id"] = carousel_id
+    # Save an irreversible-call checkpoint; subsequent failures remain pending.
+    history[fingerprint]["publish_attempted_at"] = int(time.time())
     save_history(history)
-
-    print(f"Instagram carousel container recorded: {carousel_id}")
-
-    wait_for_container(carousel_id, token)
 
     published = api_request(
         "POST",

@@ -1,0 +1,38 @@
+# MarketRevamp hardening progress
+
+Status is based on merged code and CI evidence, not commit-message wording. **DONE** means code and regression coverage are merged; **IN REVIEW** is not done; **BLOCKED** needs credentials/provider decisions.
+
+| Backlog item | Status | Notes |
+| --- | --- | --- |
+| P0 seven-slide logging | DONE | PR #21 |
+| P0 pre-publish failed retry | IN REVIEW | PR #27; only safe pre-publication failures can retry, ambiguous final requests remain pending |
+| P0 Instagram token refresh and persistence | BLOCKED | Requires confirming Meta token flow and secure write-capable secret storage; 401 warning is not refresh |
+| P0 invalid-summary fallback | DONE | PR #21 |
+| P0 pinned Python dependencies | DONE | PR #21; exact direct dependencies and requirements.lock |
+| P0 duplicate urlsplit import | DONE | PR #21 |
+| P1 failure alert | DONE (optional configuration) | FAILURE_WEBHOOK_URL secret required to send webhook |
+| P1 feed/extraction retry | DONE | PR #21 |
+| P1 history push conflict automatic reconciliation | NOT DONE | Fail-closed diagnostic implemented; safe merge/retry not implemented |
+| P1 atomic history JSON | DONE | PR #21 |
+| P1 GitHub Actions SHA pinning | IN REVIEW | PR #27; verified checkout/setup-python/upload-artifact tag refs |
+| P1 Cloudinary unsigned preset replacement | BLOCKED | Requires signed upload credentials and preset configuration |
+| P1 dependency vulnerability audit | DONE | PR #21 |
+| P1 Graph API version review | PARTIAL | Explicit v24.0 constant, no automated sunset monitoring |
+| P2 syndicated corroboration detection | NOT DONE | |
+| P2 publisher diversity | DONE | PR #25 |
+| P2 carousel alt text | DONE | PR #26; requires provider compatibility verification |
+| P2 hashtags in first comment | NOT DONE | |
+| P2 summary coherence | NOT DONE | |
+| P2 editorial config | NOT DONE | |
+| P3 dead functions and imports | IN REVIEW | PR #27 removes unused legacy extractor, cleaner, five-item selector and two image fitting functions; retains active wrap_lines |
+| P3 README | DONE | PR #21 |
+| P3 centralize seven-slide count | IN REVIEW | PR #26 shared constant; PR #27 removes remaining dead legacy helper |
+| P3 Ruff and pre-commit | DONE (limited rules) | PR #26 |
+| P3 PR CI | DONE | Safe Validation workflow |
+| P3 type hints, main decomposition, structured logs | NOT DONE | |
+| Module docstrings | IN REVIEW | PR #27 |
+| Production full pre-publish regression suite | IN REVIEW | PR #27 |
+
+## Production safety
+
+Do not manually dispatch production to test. Unknown `pending` states may represent a successful Instagram publication; reconcile before retry. No automatic token or Cloudinary secret rotation without a secure persistence mechanism.

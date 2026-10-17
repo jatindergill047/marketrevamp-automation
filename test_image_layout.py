@@ -38,7 +38,7 @@ def test():
                 assert image.size == (1080, 1350)
                 assert image.mode == "RGB"
                 # Newspaper template is high-key; logo is inset into a white masthead.
-                baseline = ig.background(ig.COLORS[category], 1)
+                baseline = ig.background(1)
                 assert all(channel > 225 for channel in baseline.getpixel((540, 520)))
                 assert image.getpixel((80, 70)) == (0, 210, 235)
                 assert image.getpixel((185, 55)) == (255, 255, 255)
