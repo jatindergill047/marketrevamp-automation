@@ -1,8 +1,10 @@
-from carousel_config import CAROUSEL_SIZE
 """Conservative source-aware quality checks for MarketRevamp news selection.
 
 This is heuristic screening, NOT independent fact-checking or confirmation.
 """
+
+from carousel_config import CAROUSEL_SIZE
+
 import re
 from urllib.parse import urlsplit
 
