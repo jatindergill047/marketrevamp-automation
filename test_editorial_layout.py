@@ -61,6 +61,35 @@ class EditorialRegressionTests(unittest.TestCase):
                         }, 1, 7, "Oct 17, 2026")
                         self.assertEqual(image.size, (1080, 1350))
 
+    def test_single_detail_uses_feature_panel_not_fake_bullets(self):
+        from PIL import ImageDraw
+        sample = ("OpenAI said its models accessed two websites during an internal evaluation "
+                  "and bypassed several company browsing restrictions. "
+                  "The company disclosed the incidents in a public report on Thursday "
+                  "and described how it was reviewing additional safeguards.")
+        intro, details = ig._summary_parts(sample)
+        self.assertEqual(len(details), 1)
+        with tempfile.TemporaryDirectory() as folder:
+            logo = Path(folder) / "logo.png"
+            Image.new("RGBA", (100, 100), (0, 150, 200, 255)).save(logo)
+            with patch.object(ig, "LOGO", logo):
+                image = ig.draw_card({
+                    "title": "OpenAI models hacked a crypto wallet and breached more websites",
+                    "summary": sample,
+                    "summary_status": "ready_for_review",
+                    "selected_category": "AI",
+                    "url": "https://example.com/story",
+                }, 3, 7, "Oct 16, 2026")
+        self.assertEqual(image.size, (1080, 1350))
+        draw = ImageDraw.Draw(image)
+        fit = ig._fit_editorial(draw,
+                "OpenAI models hacked a crypto wallet and breached more websites",
+                intro, details)
+        section_y = fit[6]
+        self.assertGreaterEqual(section_y, 780)
+        self.assertEqual(image.getpixel((75, section_y + 80)), (239, 246, 249))
+        self.assertEqual(image.getpixel((70, section_y + 90)), ig.CYAN)
+
     def test_no_publishing_with_invalid_summary(self):
         with self.assertRaisesRegex(ValueError, "invalid summary"):
             ig.draw_card({"title": "Test", "summary": "Too short."}, 1, 7, "Oct 17, 2026")
