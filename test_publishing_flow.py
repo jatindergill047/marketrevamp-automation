@@ -1,4 +1,5 @@
 
+import hashlib
 import json
 import tempfile
 from pathlib import Path
@@ -23,6 +24,12 @@ def main():
         # Enable publishing only inside this simulated test.
         manifest["publish_enabled"] = True
         manifest["automated_checks_passed"] = True
+
+        image_urls = [slide["image_url"] or slide["secure_url"]
+                      for slide in manifest["slides"]]
+        approval_fingerprint = hashlib.sha256(
+            json.dumps(image_urls, sort_keys=True).encode()
+        ).hexdigest()
 
         manifest_path.write_text(
             json.dumps(manifest), encoding="utf-8"
@@ -74,6 +81,7 @@ def main():
                     "INSTAGRAM_PERSISTENCE_READY": "true",
                     "INSTAGRAM_ACCESS_TOKEN": "TEST_TOKEN",
                     "INSTAGRAM_USER_ID": "TEST_ACCOUNT",
+                    "INSTAGRAM_APPROVED_FINGERPRINT": approval_fingerprint,
                 },
             ),
         ):
