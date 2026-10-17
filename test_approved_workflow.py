@@ -37,7 +37,7 @@ class ApprovedWorkflowTests(unittest.TestCase):
         self.assertIn("INSTAGRAM_PUBLISH_ENABLED: 'true'", manual)
         self.assertIn("INSTAGRAM_APPROVED_FINGERPRINT:", manual)
         self.assertIn("marketrevamp-instagram-carousel", manual)
-        self.assertIn('".head_branch == "main"', manual)
+        self.assertIn('.head_branch == "main"', manual)
 
 
 if __name__ == "__main__":
