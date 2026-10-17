@@ -344,19 +344,39 @@ def score_article(article):
 
 
 def infer_category(article):
-    """Choose the most specific editorial category for a headline."""
+    """Classify the headline's main subject, not an incidental mentioned asset.
+
+    Explicit AI actors/models take precedence over incidental crypto-wallet
+    mentions; explicit blockchain/exchange events remain Crypto. When no
+    clear headline-level signal exists, retain the feed/category fallback.
+    """
     title = article["title"].casefold()
-    if any(re.search(r"\b" + re.escape(w) + r"\b", title) for w in
-           ("bitcoin", "ethereum", "crypto", "blockchain", "tokenized", "stablecoin", "solana")):
-        return "Crypto"
-    if any(term in title for term in ("software developer", "software engineer", "coding jobs", "job postings", "cybersecurity", "smartphone")):
-        return "Technology"
-    if any(term in title for term in ("artificial intelligence", "ai model", "ai safety", "openai", "anthropic", "chatgpt", "machine learning")):
+    def has_any(terms):
+        return any(re.search(r"\\b" + re.escape(term) + r"\\b", title)
+                   for term in terms)
+
+    ai = has_any(("openai", "chatgpt", "anthropic", "claude", "gemini",
+                  "artificial intelligence", "ai model", "ai models",
+                  "ai agent", "ai agents", "ai safety", "machine learning",
+                  "large language model", "llm"))
+    crypto = has_any(("bitcoin", "ethereum", "ether", "crypto", "cryptocurrency",
+                      "blockchain", "stablecoin", "solana", "defi", "coinbase",
+                      "crypto exchange", "bitcoin etf"))
+    technology = has_any(("cybersecurity", "software developer", "software engineer",
+                          "coding jobs", "smartphone", "data breach", "malware"))
+    # 'crypto wallet' or 'cryptocurrency' as the object of an AI incident
+    # should not override the explicit AI subject of the headline.
+    if ai:
         return "AI"
+    if crypto:
+        return "Crypto"
+    if technology:
+        return "Technology"
     matched = article.get("matched_categories", [])
-    if article["category"] in matched:
-        return article["category"]
-    return matched[0] if matched else article["category"]
+    category = article.get("category")
+    if category in matched:
+        return category
+    return matched[0] if matched else (category or "Technology")
 
 
 def select_top_five(articles):
