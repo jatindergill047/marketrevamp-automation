@@ -59,73 +59,138 @@ def load_history():
 
 
 
+def merge_history_updates(base, proposed, remote):
+    """Merge disjoint Git history updates; reject conflicting records.
+
+    Never infer a safe winner for two distinct updates to the same
+    fingerprint. Missing or malformed records also fail closed.
+    """
+    if any(not isinstance(data, dict) for data in (base, proposed, remote)):
+        raise RuntimeError("Cannot reconcile malformed publishing history.")
+    sentinel = object()
+    merged = {}
+    for key in base.keys() | proposed.keys() | remote.keys():
+        old = base.get(key, sentinel)
+        ours = proposed.get(key, sentinel)
+        theirs = remote.get(key, sentinel)
+        if not isinstance(key, str) or any(
+            value is not sentinel and not isinstance(value, dict)
+            for value in (old, ours, theirs)
+        ):
+            raise RuntimeError("Cannot reconcile malformed publishing history records.")
+        # Deletion of a recorded attempt must never silently erase evidence.
+        if old is not sentinel and (ours is sentinel or theirs is sentinel):
+            raise RuntimeError("Publishing history deletion requires manual reconciliation.")
+        if ours == theirs:
+            chosen = ours
+        elif ours == old:
+            chosen = theirs
+        elif theirs == old:
+            chosen = ours
+        else:
+            raise RuntimeError(
+                f"Conflicting publishing history update for {key!r}; "
+                "manual reconciliation required."
+            )
+        if chosen is not sentinel:
+            merged[key] = chosen
+    return merged
+
+
+def _write_history_atomically(destination, content):
+    with tempfile.NamedTemporaryFile(
+        mode="w", encoding="utf-8", dir=destination.parent,
+        prefix=".history-", suffix=".tmp", delete=False,
+    ) as temporary:
+        temporary.write(content)
+        temporary.flush()
+        os.fsync(temporary.fileno())
+        temp_path = temporary.name
+    try:
+        os.replace(temp_path, destination)
+    finally:
+        if os.path.exists(temp_path):
+            os.unlink(temp_path)
+
+
 def save_history(history):
     history_checkout = Path("publishing-history")
     branch_file = history_checkout / HISTORY_FILE.name
 
     if not history_checkout.is_dir():
-        raise RuntimeError(
-            "Publishing history checkout is missing."
-        )
+        raise RuntimeError("Publishing history checkout is missing.")
 
+    # Save the exact checkout baseline to detect concurrent conflicting
+    # modifications. We only reconcile disjoint fingerprint records.
+    base = json.loads(branch_file.read_text(encoding="utf-8")) if branch_file.exists() else {}
+    if not isinstance(base, dict):
+        raise RuntimeError("Invalid publishing history checkout.")
     content = json.dumps(history, indent=2) + "\n"
-
     for destination in (HISTORY_FILE, branch_file):
-        with tempfile.NamedTemporaryFile(
-            mode="w", encoding="utf-8", dir=destination.parent,
-            prefix=".history-", suffix=".tmp", delete=False,
-        ) as temporary:
-            temporary.write(content)
-            temporary.flush()
-            os.fsync(temporary.fileno())
-            temp_path = temporary.name
-        try:
-            os.replace(temp_path, destination)
-        finally:
-            if os.path.exists(temp_path):
-                os.unlink(temp_path)
+        _write_history_atomically(destination, content)
 
     def git(*args):
-        subprocess.run(
+        return subprocess.run(
             ["git", "-C", str(history_checkout), *args],
-            check=True,
-            timeout=60,
+            check=True, timeout=60,
         )
 
+    def commit_if_changed():
+        git("add", HISTORY_FILE.name)
+        changes = subprocess.run(
+            ["git", "-C", str(history_checkout), "diff", "--cached", "--quiet"],
+            check=False, timeout=60,
+        )
+        if changes.returncode == 0:
+            return False
+        if changes.returncode != 1:
+            raise RuntimeError("Could not inspect history changes.")
+        git("commit", "-m", "Update Instagram publishing history")
+        return True
+
     git("config", "user.name", "github-actions[bot]")
-    git(
-        "config",
-        "user.email",
-        "41898282+github-actions[bot]@users.noreply.github.com",
-    )
-
-    git("add", HISTORY_FILE.name)
-
-    changes = subprocess.run(
-        [
-            "git", "-C", str(history_checkout),
-            "diff", "--cached", "--quiet",
-        ],
-        check=False,
-        timeout=60,
-    )
-
-    if changes.returncode == 0:
+    git("config", "user.email",
+        "41898282+github-actions[bot]@users.noreply.github.com")
+    if not commit_if_changed():
         return
 
-    if changes.returncode != 1:
-        raise RuntimeError("Could not inspect history changes.")
-
-    git("commit", "-m", "Update Instagram publishing history")
     try:
         git("push", "origin", "HEAD:publishing-history")
-    except subprocess.CalledProcessError as error:
-        raise RuntimeError(
-            "Publishing-history push failed or conflicted. Inspect the remote "
-            "history branch and reconcile before retrying; never force-push."
-        ) from error
-
+    except subprocess.CalledProcessError:
+        # Reconcile against a freshly fetched remote. The checkout is
+        # dedicated to publishing-history; never force-push.
+        for attempt in range(2):
+            try:
+                git("fetch", "origin", "publishing-history")
+                result = subprocess.run(
+                    ["git", "-C", str(history_checkout),
+                     "show", f"FETCH_HEAD:{HISTORY_FILE.name}"],
+                    check=True, timeout=60, text=True, capture_output=True,
+                )
+                remote = json.loads(result.stdout)
+                merged = merge_history_updates(base, history, remote)
+                git("reset", "--hard", "FETCH_HEAD")
+                reconciled_content = json.dumps(merged, indent=2) + "\n"
+                for destination in (HISTORY_FILE, branch_file):
+                    _write_history_atomically(destination, reconciled_content)
+                if not commit_if_changed():
+                    history.clear()
+                    history.update(merged)
+                    return
+                git("push", "origin", "HEAD:publishing-history")
+                history.clear()
+                history.update(merged)
+                print("Publishing history reconciled and saved to GitHub.")
+                return
+            except (subprocess.CalledProcessError, json.JSONDecodeError) as error:
+                if attempt == 1:
+                    raise RuntimeError(
+                        "History synchronization failed after bounded retries. "
+                        "Inspect the remote branch before publishing."
+                    ) from error
+        raise RuntimeError("Publishing history could not be synchronized.")
     print("Publishing history saved to GitHub.")
+
 
 def load_manifest():
     if not MANIFEST_FILE.exists():
