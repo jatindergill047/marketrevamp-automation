@@ -296,9 +296,13 @@ def main():
 
     if fingerprint in history:
         status = history[fingerprint].get("status")
-        print(f"Existing publishing record: {status}")
-        print("Skipping to prevent duplicate publishing.")
-        return
+        if status != "failed":
+            print(f"Existing publishing record: {status}")
+            print("Skipping to prevent duplicate publishing.")
+            return
+        if history[fingerprint].get("publish_attempted_at"):
+            raise RuntimeError("Failed record includes a publish attempt; reconciliation required.")
+        print("Retrying a confirmed pre-publication failure.")
 
     today = datetime.now(
         ZoneInfo("America/Toronto")
