@@ -401,6 +401,9 @@ def main():
                 )
                 return
 
+    reviewed_fingerprint = approval_fingerprint(manifest, image_urls)
+    print(f"REVIEW FINGERPRINT: {reviewed_fingerprint}")
+
     if not PUBLISH_ENABLED:
         print("DRY RUN: Instagram publishing is disabled.")
         print("No Instagram API publishing requests were made.")
@@ -409,7 +412,6 @@ def main():
     # Explicit human approval applies to the exact seven-image package,
     # never merely to a date, workflow run, or reusable manifest flag.
     approved = os.getenv("INSTAGRAM_APPROVED_FINGERPRINT", "").strip()
-    reviewed_fingerprint = approval_fingerprint(manifest, image_urls)
     if not approved or approved != reviewed_fingerprint:
         print(f"REVIEW REQUIRED: carousel fingerprint {reviewed_fingerprint}")
         print("No Instagram API publishing requests were made.")
