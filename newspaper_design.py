@@ -149,8 +149,10 @@ def draw_editorial_illustration(image, top, index=1, category="AI"):
             circle(x, y, 12, CYAN, 3)
         circle(0, 0, 62, navy, 4)
         circle(0, 0, 48, muted, 2)
-        draw.text(point(0, -33), "₿", font=_serif(max(16, round(68 * scale))),
+        draw.text(point(0, -33), "B", font=_serif(max(16, round(68 * scale))),
                   fill=ORANGE, anchor="mt")
+        line([(-9, -37), (-9, 40)], ORANGE, 2)
+        line([(7, -37), (7, 40)], ORANGE, 2)
     else:
         # Stylized financial exchange columns, intentionally without
         # axes, numbers or data points: decorative, not a market chart.
