@@ -105,6 +105,34 @@ class EditorialRegressionTests(unittest.TestCase):
             self.assertFalse(draw_editorial_illustration(image, 1050, 2, category))
             self.assertEqual(image.tobytes(), original)
 
+    def test_headline_drives_illustration_topic(self):
+        from newspaper_design import illustration_topic
+        cases = [
+            ("Jev is Vercel's fastest-adopted AI model ever", "AI", "chip"),
+            ("Lawmakers propose new AI regulation", "AI", "policy"),
+            ("OpenAI models hacked a crypto wallet", "AI", "security"),
+            ("Ray-Ban Meta smart glasses record unexpectedly", "Technology", "glasses"),
+            ("Bitcoin ETF inflows rise", "Crypto", "ledger"),
+            ("Global stock markets open higher", "Markets", "market"),
+            ("AI breakthrough announced", "AI", "network"),
+        ]
+        for headline, category, expected in cases:
+            with self.subTest(headline=headline):
+                self.assertEqual(illustration_topic(headline, category), expected)
+
+    def test_same_category_headlines_produce_distinct_centered_art(self):
+        from newspaper_design import draw_editorial_illustration
+        art = []
+        for headline in ("New AI model released", "AI regulators announce policy"):
+            image = Image.new("RGB", (1080, 1350), (249, 248, 245))
+            self.assertTrue(draw_editorial_illustration(
+                image, 850, category="AI", headline=headline))
+            art.append(image.crop((300, 900, 780, 1174)).tobytes())
+            # Illustration is centered, not confined to the right edge.
+            self.assertNotEqual(image.crop((380, 930, 700, 1160)).tobytes(),
+                                Image.new("RGB", (320, 230), (249, 248, 245)).tobytes())
+        self.assertNotEqual(art[0], art[1])
+
     def test_newspaper_background_is_deterministic(self):
         from newspaper_design import newspaper_background
         first = newspaper_background(6)
