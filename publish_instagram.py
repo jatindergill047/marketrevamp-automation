@@ -206,7 +206,7 @@ def wait_for_container(container_id, token):
     raise RuntimeError("Timed out waiting for media processing.")
 
 
-def create_ready_carousel(account_id, token, image_urls, manifest, history, fingerprint):
+def create_ready_carousel(account_id, token, image_urls, manifest, history, fingerprint, caption):
     """Prepare and verify media without calling media_publish."""
     child_ids = []
 
@@ -380,7 +380,7 @@ def main():
 
     try:
         carousel_id = create_ready_carousel(
-            account_id, token, image_urls, manifest, history, fingerprint
+            account_id, token, image_urls, manifest, history, fingerprint, caption
         )
     except Exception:
         history[fingerprint]["status"] = "failed"
