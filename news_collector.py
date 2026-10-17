@@ -8,7 +8,7 @@ from pathlib import Path
 import re
 from html import unescape
 from urllib.parse import urlsplit, urlunsplit
-from news_quality import select_usable, same_event, CLAIM_TERMS, ATTRIBUTION, strip_section_heading
+from news_quality import select_usable, CLAIM_TERMS, ATTRIBUTION, strip_section_heading
 
 
 FEEDS = {
