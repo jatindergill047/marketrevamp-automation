@@ -1,4 +1,3 @@
-from carousel_config import CAROUSEL_SIZE
 """MarketRevamp: create seven branded 1080x1350 Instagram news cards.
 
 Run: python image_generator.py
@@ -6,6 +5,9 @@ Input: news_results.json from news_collector.py
 Output: instagram_images/slide_01.png ... slide_07.png
 Requires: Pillow>=11.0,<13.0
 """
+
+from carousel_config import CAROUSEL_SIZE
+
 
 import json
 import re
