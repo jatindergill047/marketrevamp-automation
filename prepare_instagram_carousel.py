@@ -1,3 +1,5 @@
+"""Validate seven source-grounded stories and prepare Instagram manifest."""
+
 from carousel_config import CAROUSEL_SIZE
 
 import json
