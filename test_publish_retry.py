@@ -23,6 +23,7 @@ class PublishRetryTests(unittest.TestCase):
             ],
             "article_urls": [f"https://example.com/story{i}" for i in range(7)],
             "caption": "Sources: example.com",
+            "first_comment": "#MarketRevamp #AI",
             "publish_enabled": True,
             "automated_checks_passed": True,
         }), encoding="utf-8")
@@ -106,6 +107,25 @@ class PublishRetryTests(unittest.TestCase):
             self.assertIn("publish_attempted_at", record)
             publisher.main()
         self.assertEqual(sum(e.endswith("/media_publish") for e in calls), 1)
+
+    def test_uncertain_first_comment_never_republishes(self):
+        calls = []
+        def fake_api(method, endpoint, token, payload=None):
+            calls.append(endpoint)
+            if endpoint.endswith("/media_publish"):
+                return {"id": "PUBLISHED"}
+            if endpoint.endswith("/comments"):
+                raise TimeoutError("comment response was lost")
+            return {"id": f"CONTAINER_{len(calls)}"}
+        with patch.object(publisher, "api_request", fake_api):
+            with self.assertRaisesRegex(RuntimeError, "do NOT republish"):
+                publisher.main()
+            record = next(iter(self.saved[-1].values()))
+            self.assertEqual(record["status"], "published")
+            self.assertEqual(record["first_comment_status"], "pending")
+            publisher.main()
+        self.assertEqual(sum(s.endswith("/media_publish") for s in calls), 1)
+        self.assertEqual(sum(s.endswith("/comments") for s in calls), 1)
 
     def test_unknown_existing_status_blocks(self):
         with patch.object(publisher, "api_request") as api:
