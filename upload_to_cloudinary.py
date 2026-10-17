@@ -1,9 +1,11 @@
-from carousel_config import CAROUSEL_SIZE
 """Upload MarketRevamp's generated PNG slides to Cloudinary.
 
 Requires CLOUDINARY_CLOUD_NAME and CLOUDINARY_UPLOAD_PRESET environment variables.
 Only uploads images; does not publish or schedule social media posts.
 """
+
+from carousel_config import CAROUSEL_SIZE
+
 import json
 import mimetypes
 import os
