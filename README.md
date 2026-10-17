@@ -41,3 +41,7 @@ python test_publishing_flow.py
 3. If source extraction produces fewer than seven eligible stories, the run fails closed rather than posting incomplete content.
 4. Check access-token validity, Cloudinary upload results, and API responses; rotate credentials via GitHub Secrets.
 5. Re-run only non-publishing CI tests to verify code fixes.
+
+## Cloudinary signed upload migration
+
+The uploader supports signed uploads when both `CLOUDINARY_API_KEY` and `CLOUDINARY_API_SECRET` are configured as GitHub environment secrets. It signs the `timestamp` and `upload_preset` parameters with SHA-1 according to Cloudinary's upload API. **Never log or commit the secret.** To migrate, configure both secrets and a compatible Cloudinary preset, validate with a non-production test, then disable the old unsigned preset in Cloudinary. Until the credentials are configured, the existing unsigned preset remains in use for compatibility; signed upload migration is **not** complete.
