@@ -3,7 +3,7 @@
 Run: python image_generator.py
 Input: news_results.json from news_collector.py
 Output: instagram_images/slide_01.png ... slide_07.png
-Requires: Pillow>=11.0,<13.0
+Requires: Pillow==12.3.0 (see requirements.lock)
 """
 
 from carousel_config import CAROUSEL_SIZE
@@ -126,7 +126,7 @@ def fit_summary(draw, text, max_width=865, max_height=235):
     )
 
 
-def background(accent, index):
+def background(index):
     """Compatibility wrapper for the all-white 2D editorial background."""
     return newspaper_background(index)
 
@@ -230,7 +230,7 @@ def draw_card(story, index, total, date_label):
     if not headline:
         raise ValueError("Missing article headline")
 
-    image = background(CYAN, index)
+    image = background(index)
     draw = ImageDraw.Draw(image)
     left, right = 67, 1013
 
