@@ -191,7 +191,8 @@ def _summary_parts(summary):
 
 
 def _fit_editorial(draw, headline, intro, details):
-    """Choose font sizes and vertical placement as one bounded layout."""
+    """Fit source text with a balanced 1-, 2- or 3-detail editorial layout."""
+    groups = details if len(details) <= 3 else details[:2] + [" ".join(details[2:])]
     for headline_size in range(56, 31, -2):
         hface = font(headline_size, bold=True)
         hlines = wrap_lines(draw, headline, hface, 930)
@@ -199,37 +200,38 @@ def _fit_editorial(draw, headline, intro, details):
         hbottom = 300 + len(hlines) * hlead
         if hbottom > 665:
             continue
-
         if intro:
-            iface, ilines, ilead = _fit_text(
-                draw, intro, 930, 160, 27, 19)
+            try:
+                iface, ilines, ilead = _fit_text(draw, intro, 930, 160, 27, 19)
+            except ValueError:
+                continue
             ibottom = hbottom + 14 + len(ilines) * ilead
         else:
             iface, ilines, ilead = None, [], 0
             ibottom = hbottom
 
-        section_y = max(ibottom + 28, 600)
-        if section_y > 800:
+        # A single detail is a featured editorial callout; 2–3 details
+        # form a compact numbered list. Never synthesize filler bullets.
+        preferred = {1: 780, 2: 720, 3: 665}[min(len(groups), 3)]
+        section_y = max(ibottom + 32, preferred)
+        if section_y > 870:
             continue
         detail_top = section_y + 76
-        available = 1175 - detail_top
-        if available < 220:
+        available = 1172 - detail_top
+        if available < 200:
             continue
 
-        # Two or three editorial bullets. Group whole sentences, not words.
-        groups = []
-        if len(details) <= 3:
-            groups = list(details)
-        else:
-            groups = details[:2] + [" ".join(details[2:])]
-        for detail_size in range(27, 17, -1):
+        largest = 34 if len(groups) == 1 else 28
+        for detail_size in range(largest, 17, -1):
             dface = font(detail_size)
-            dlead = detail_size + 9
-            wrapped = [wrap_lines(draw, part, dface, 867) for part in groups]
-            needed = sum(len(lines) * dlead + 17 for lines in wrapped)
-            if needed <= available:
+            dlead = detail_size + 11
+            wrapped = [wrap_lines(draw, part, dface, 854) for part in groups]
+            # Include explicit gaps between separate facts.
+            spacing = 25 if len(groups) > 1 else 0
+            needed = sum(len(lines) * dlead for lines in wrapped) + spacing * (len(groups) - 1)
+            if needed <= available - (24 if len(groups) == 1 else 0):
                 return (hface, hlines, hlead, iface, ilines, ilead,
-                        section_y, dface, wrapped, dlead)
+                        section_y, dface, wrapped, dlead, spacing)
     raise ValueError("Headline and complete source-derived details cannot fit safely")
 
 
@@ -294,7 +296,7 @@ def draw_card(story, index, total, date_label):
               font=font(26, bold=True), fill=INK, anchor="ra")
 
     (hface, hlines, hlead, iface, ilines, ilead,
-     section_y, dface, wrapped, dlead) = _fit_editorial(draw, headline, intro, details)
+     section_y, dface, wrapped, dlead, detail_spacing) = _fit_editorial(draw, headline, intro, details)
     hbottom = _draw_lines(draw, hlines, left, 300, hface, INK, hlead)
     if ilines:
         _draw_lines(draw, ilines, left, hbottom + 14, iface,
@@ -308,11 +310,21 @@ def draw_card(story, index, total, date_label):
               fill=INK, width=2)
 
     y = section_y + 76
-    for number, lines in enumerate(wrapped, 1):
-        draw.ellipse((left + 1, y + 4, left + 32, y + 35), fill=CYAN)
-        draw.text((left + 16, y + 5), str(number),
-                  font=font(18, bold=True), fill=(255, 255, 255), anchor="mt")
-        y = _draw_lines(draw, lines, left + 54, y, dface, INK, dlead) + 17
+    if len(wrapped) == 1:
+        # A large, source-derived single-fact panel fills the available area
+        # without inventing a second or third bullet.
+        panel_bottom = 1155
+        draw.rounded_rectangle((left, y - 13, right, panel_bottom),
+                               radius=18, fill=(239, 246, 249))
+        draw.rectangle((left, y - 13, left + 7, panel_bottom), fill=CYAN)
+        draw.text((left + 25, y + 3), "01", font=font(22, bold=True), fill=CYAN)
+        y = _draw_lines(draw, wrapped[0], left + 75, y + 3, dface, INK, dlead)
+    else:
+        for number, lines in enumerate(wrapped, 1):
+            draw.ellipse((left + 1, y + 4, left + 32, y + 35), fill=CYAN)
+            draw.text((left + 16, y + 5), str(number),
+                      font=font(18, bold=True), fill=(255, 255, 255), anchor="mt")
+            y = _draw_lines(draw, lines, left + 54, y, dface, INK, dlead) + detail_spacing
     if y > 1175:
         raise ValueError("Details overlap the source footer")
 
