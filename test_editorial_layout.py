@@ -82,6 +82,29 @@ class EditorialRegressionTests(unittest.TestCase):
         self.assertFalse(draw_editorial_illustration(dense, 1050, 6, "AI"))
         self.assertEqual(dense.tobytes(), before.tobytes())
 
+    def test_category_illustrations_are_distinct_and_preserve_text(self):
+        from newspaper_design import draw_editorial_illustration
+        rendered = []
+        for category in ("AI", "Technology", "Crypto", "Markets"):
+            image = Image.new("RGB", (1080, 1350), (249, 248, 245))
+            before = image.copy()
+            self.assertTrue(draw_editorial_illustration(image, 850, 2, category))
+            # Only the editorial area between summary and footer may change.
+            self.assertEqual(image.crop((0, 0, 1080, 875)).tobytes(),
+                             before.crop((0, 0, 1080, 875)).tobytes())
+            self.assertEqual(image.crop((0, 1174, 1080, 1350)).tobytes(),
+                             before.crop((0, 1174, 1080, 1350)).tobytes())
+            rendered.append(image.crop((500, 930, 1013, 1174)).tobytes())
+        self.assertEqual(len(set(rendered)), 4)
+
+    def test_long_summary_skips_artwork_without_modifying_pixels(self):
+        from newspaper_design import draw_editorial_illustration
+        image = Image.new("RGB", (1080, 1350), (249, 248, 245))
+        original = image.tobytes()
+        for category in ("AI", "Technology", "Crypto", "Markets"):
+            self.assertFalse(draw_editorial_illustration(image, 1050, 2, category))
+            self.assertEqual(image.tobytes(), original)
+
     def test_newspaper_background_is_deterministic(self):
         from newspaper_design import newspaper_background
         first = newspaper_background(6)
