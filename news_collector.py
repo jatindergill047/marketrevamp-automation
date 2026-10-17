@@ -192,7 +192,11 @@ def generate_summary(article_text, min_words=SUMMARY_MIN_WORDS,
                 continue
             if used and len(tokens & used) / max(len(tokens), 1) > 0.60:
                 continue
-            gap_penalty = 0 if last_position is None else 0.18 * max(0, position - last_position - 1)
+            # A digest assembled from distant sections may join unrelated
+            # developments into a misleading narrative. Keep extracts local.
+            if last_position is not None and position - last_position > 5:
+                continue
+            gap_penalty = 0 if last_position is None else 0.8 * max(0, position - last_position - 1)
             expanded.append((total + count, indices + (index,), used | tokens,
                              quality + score - gap_penalty, position))
         buckets = {}

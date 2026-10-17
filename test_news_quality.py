@@ -111,6 +111,32 @@ class NewsQualityTests(unittest.TestCase):
         self.assertNotIn("Unanswered questions", summary)
         self.assertTrue(screen_summary(summary, raw)["passed"])
 
+    def test_summary_sentences_stay_within_nearby_article_sections(self):
+        from news_collector import _sentence_candidates, generate_summary
+        opening = (
+            "Nvidia announced a new AI processor for enterprise customers during "
+            "its annual developer conference."
+        )
+        middle = [
+            f"Background section {i} describes unrelated historical details about "
+            "the industry and its changing business conditions."
+            for i in range(8)
+        ]
+        ending = (
+            "Nvidia said the new AI processor would reach enterprise customers "
+            "through its hardware partners later this year."
+        )
+        article_text = " ".join([opening, *middle, ending])
+        summary = generate_summary(article_text, min_words=20, max_words=70,
+                                   headline="Nvidia new AI processor enterprise")
+        if summary:
+            candidates = _sentence_candidates(article_text,
+                                              "Nvidia new AI processor enterprise")
+            positions = [position for position, sentence, _, _ in candidates
+                         if sentence in summary]
+            self.assertGreaterEqual(len(positions), 2)
+            self.assertTrue(all(b - a <= 5 for a, b in zip(positions, positions[1:])))
+
     def test_publisher_diversity_when_sources_available(self):
         titles = [
             "Nvidia introduces next generation chip platform",
