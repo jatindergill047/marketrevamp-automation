@@ -6,6 +6,7 @@ from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
 from pathlib import Path
 import re
+from html import unescape
 from urllib.parse import urlsplit, urlunsplit
 from news_quality import select_usable, CLAIM_TERMS, ATTRIBUTION, strip_section_heading
 
