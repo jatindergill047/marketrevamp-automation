@@ -7,7 +7,7 @@ from pathlib import Path
 import re
 from html import unescape
 from urllib.parse import urlsplit, urlunsplit
-from news_quality import select_usable, same_event
+from news_quality import select_usable, same_event, CLAIM_TERMS, ATTRIBUTION
 
 
 FEEDS = {
@@ -201,7 +201,11 @@ def generate_summary(article_text, min_words=SUMMARY_MIN_WORDS,
             r"however|million|billion|percent|regulation|research)\b",
             sentence, re.I,
         ))
-        score = 5 * relevance + 0.8 * has_number + 0.5 * has_detail - 0.10 * position
+        # Favor attributed reporting; never turn an allegation into a bare fact.
+        attribution_bonus = 1.5 if ATTRIBUTION.search(sentence) else 0
+        sensitive_penalty = 20 if CLAIM_TERMS.search(sentence) and not ATTRIBUTION.search(sentence) else 0
+        score = (5 * relevance + 0.8 * has_number + 0.5 * has_detail
+                 + attribution_bonus - sensitive_penalty - 0.10 * position)
         ranked.append((position, sentence, count, tokens, score))
 
     # Beam search: favor source-relevant facts, coherent nearby sentences,
