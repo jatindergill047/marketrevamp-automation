@@ -22,7 +22,7 @@ Status is based on merged code and CI evidence, not commit-message wording. **DO
 | P2 publisher diversity | DONE | PR #25 |
 | P2 carousel alt text | DONE | PR #26; requires provider compatibility verification |
 | P2 hashtags in first comment | NOT DONE | |
-| P2 summary coherence | NOT DONE | |
+| P2 summary coherence | PARTIAL | PR #31 merged; extractive summaries now constrain sentence distance and have offline regression coverage. Full semantic coherence remains unverified |
 | P2 editorial config | NOT DONE | |
 | P3 dead functions and imports | DONE (targeted) | PR #27 removes unused legacy extractor, cleaner, five-item selector and two image fitting functions; retains active wrap_lines |
 | P3 README | DONE | PR #21 |
