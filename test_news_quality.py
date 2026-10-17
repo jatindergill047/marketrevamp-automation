@@ -1,7 +1,7 @@
 """Offline regression checks for MarketRevamp news scanner v2."""
 import unittest
 
-from news_quality import same_event, select_usable, source_domain, source_screen, independent_coverage
+from news_quality import same_event, select_usable, source_domain, source_screen, independent_coverage, screen_summary
 
 
 def article(title, category, rank):
@@ -41,6 +41,46 @@ class NewsQualityTests(unittest.TestCase):
         story["matched_categories"] = ["Technology"]
         self.assertEqual(infer_category(story), "Technology")
 
+    def test_summary_requires_exact_publisher_support(self):
+        self.assertTrue(screen_summary(GOOD_SUMMARY, GOOD_SUMMARY)["passed"])
+        altered = GOOD_SUMMARY.replace("several changes", "unverified profits")
+        self.assertEqual(screen_summary(altered, GOOD_SUMMARY)["reason"],
+                         "summary_not_in_source")
+
+    def test_unattributed_privacy_allegation_is_held(self):
+        first = ("Some Ray-Ban Meta glasses were recording private conversations "
+                 "without the wearer knowing.")
+        attributed = ("According to user reports, some Ray-Ban Meta glasses "
+                      "were recording conversations unexpectedly.")
+        self.assertEqual(screen_summary(first, first)["reason"],
+                         "unattributed_sensitive_claim")
+        self.assertTrue(screen_summary(attributed, attributed)["passed"])
+
+    def test_selection_skips_unattributed_story_and_uses_backup(self):
+        items = [
+            article("Ray-Ban Meta glasses record conversations without consent", "Technology", 1),
+        ] + [article(title, "AI", i) for i, title in enumerate((
+            "Nvidia introduces new chip architecture",
+            "Microsoft expands cloud data center capacity",
+            "Apple announces accessibility software",
+            "Google releases developer tools",
+            "Anthropic publishes research evaluation",
+            "Amazon announces robotics investment",
+            "Tesla upgrades autonomous driving systems",
+            "OpenAI releases education product",
+        ), start=2)]
+        risky = ("Some Ray-Ban Meta glasses were recording private conversations "
+                 "without the wearer knowing.")
+        def extract(url):
+            return risky if url.endswith("story-1") else GOOD_SUMMARY
+        def summarize(text, headline):
+            return text
+        result = select_usable(items, lambda x: x["category"], extract, summarize)
+        self.assertEqual(len(result), 7)
+        self.assertFalse(any(x["url"].endswith("story-1") for x in result))
+        self.assertTrue(all(x["summary_screening"]["passed"] for x in result))
+        self.assertTrue(all(not x["fact_checked"] for x in result))
+
     def test_event_duplicates(self):
         self.assertTrue(same_event(
             "Nvidia unveils new AI chip for enterprise data centers",
@@ -72,7 +112,7 @@ class NewsQualityTests(unittest.TestCase):
         def extract(url):
             if url.endswith("story-1"):
                 return ""
-            return "Valid original article text."
+            return GOOD_SUMMARY
 
         result = select_usable(items, lambda s: s["category"],
                                extract, lambda t, headline: GOOD_SUMMARY)
@@ -95,7 +135,7 @@ class NewsQualityTests(unittest.TestCase):
             article("Ethereum developers ship blockchain upgrade", "Crypto", 8),
         ]
         result = select_usable(items, lambda s: s["category"],
-                               lambda url: "Extracted article.",
+                               lambda url: GOOD_SUMMARY,
                                lambda text, headline: GOOD_SUMMARY)
         self.assertEqual(len(result), 7)
         self.assertFalse(any(s["url"].endswith("story-2") for s in result))

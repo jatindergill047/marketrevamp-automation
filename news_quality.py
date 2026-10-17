@@ -66,6 +66,53 @@ def prioritize_diversity(candidates, inferred_category):
     return first + [story for story in ordered if story["url"] not in visited]
 
 
+
+# These checks establish fidelity to the publisher's extracted article,
+# not independent factual verification.
+CLAIM_TERMS = re.compile(
+    r"\b(?:record(?:ed|ing|s)?|spy|spied|steal|stole|stolen|hack(?:ed|ing|s)?|"
+    r"breach(?:ed|es)?|leak(?:ed|s)?|fraud|scam|illegal|"
+    r"without (?:consent|permission)|violat(?:ed|es|ing))\b", re.I
+)
+ATTRIBUTION = re.compile(
+    r"\b(?:according to|reported|reports|reportedly|alleged|allegedly|"
+    r"claimed|claims|said|says|stated|told|accused|"
+    r"users? (?:say|said|reported|claim)|researchers? (?:say|said|reported)|"
+    r"the company (?:said|says|reported)|"
+    r"documents? (?:show|showed)|investigators? (?:say|said|found))\b", re.I
+)
+
+
+def _normalized_text(value):
+    import unicodedata
+    value = unicodedata.normalize("NFKC", str(value))
+    value = value.translate(str.maketrans({
+        "\u2018": "'", "\u2019": "'", "\u201c": '"',
+        "\u201d": '"', "\u2014": "-", "\u2013": "-",
+        "\u00a0": " ",
+    }))
+    return re.sub(r"\s+", " ", value).casefold().strip()
+
+
+def screen_summary(summary, article_text):
+    """Check exact source sentence support and sensitive-claim attribution."""
+    if not isinstance(summary, str) or not isinstance(article_text, str):
+        return {"passed": False, "reason": "missing_source_text"}
+    source = _normalized_text(article_text)
+    if not _normalized_text(summary) or not source:
+        return {"passed": False, "reason": "missing_source_text"}
+    sentences = re.split(r"(?<=[.!?])\s+(?=[\"'“‘(]*[A-Z0-9])", summary)
+    for sentence in sentences:
+        sentence = sentence.strip()
+        if not sentence:
+            continue
+        if _normalized_text(sentence) not in source:
+            return {"passed": False, "reason": "summary_not_in_source"}
+        if CLAIM_TERMS.search(sentence) and not ATTRIBUTION.search(sentence):
+            return {"passed": False, "reason": "unattributed_sensitive_claim"}
+    return {"passed": True, "reason": "source_matched_not_fact_checked"}
+
+
 def select_usable(candidates, infer_category, extract, summarize, min_words=30, max_words=90):
     """Return seven distinct, extractable and source-derived articles or fail closed.
 
@@ -93,6 +140,9 @@ def select_usable(candidates, infer_category, extract, summarize, min_words=30, 
         count = len(summary.split())
         if not min_words <= count <= max_words:
             continue
+        quality = screen_summary(summary, text)
+        if not quality["passed"]:
+            continue
         story = dict(choice)
         story["selected_category"] = infer_category(story)
         story["article_text"] = text
@@ -100,6 +150,7 @@ def select_usable(candidates, infer_category, extract, summarize, min_words=30, 
         story["verified_summary"] = ""
         story["summary_word_count"] = count
         story["summary_status"] = "ready_for_review"
+        story["summary_screening"] = quality
         # Recording source provenance is not a cross-source verification claim.
         story["source_domain"] = source_domain(story["url"])
         story.update(screening)

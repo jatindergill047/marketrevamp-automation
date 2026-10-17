@@ -3,6 +3,7 @@ import json
 from pathlib import Path
 from datetime import datetime, timezone, timedelta
 from urllib.parse import urlsplit, urlunsplit
+from news_quality import screen_summary
 
 SOURCE = Path("cloudinary_uploads.json")
 OUTPUT = Path("instagram_carousel_manifest.json")
@@ -51,6 +52,16 @@ for index, story in enumerate(stories, start=1):
         raise ValueError(
             f"Story {index} has an inconsistent summary word count."
         )
+
+    # Recheck publisher-text fidelity immediately before enabling publication.
+    # This is a source-attribution safeguard, NOT a claim of fact-checking.
+    quality = screen_summary(summary, story.get("article_text", ""))
+    if not quality["passed"]:
+        raise ValueError(
+            f"Story {index} failed source fidelity / attribution: {quality['reason']}"
+        )
+    if story.get("summary_screening", {}).get("passed") is not True:
+        raise ValueError(f"Story {index} has no passing summary screening record.")
 
     article_text = story.get("article_text", "")
 
