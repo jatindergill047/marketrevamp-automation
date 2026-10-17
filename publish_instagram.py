@@ -242,9 +242,12 @@ def main():
 
     if fingerprint in history:
         status = history[fingerprint].get("status")
-        print(f"Existing publishing record: {status}")
-        print("Skipping to prevent duplicate publishing.")
-        return
+        if status in ("pending", "published"):
+            print(f"Existing publishing record: {status}")
+            print("Skipping to prevent duplicate publishing.")
+            return
+        if status != "failed":
+            raise RuntimeError(f"Unknown publishing status: {status}")
 
     today = datetime.now(
         ZoneInfo("America/Toronto")
