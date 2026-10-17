@@ -341,6 +341,7 @@ def main():
             {
                 "image_url": image_url,
                 "is_carousel_item": "true",
+                "alt_text": manifest["slides"][index - 1].get("alt_text", ""),
             },
         )
         child_ids.append(result["id"])
