@@ -114,7 +114,13 @@ def save_history(history):
         raise RuntimeError("Could not inspect history changes.")
 
     git("commit", "-m", "Update Instagram publishing history")
-    git("push", "origin", "HEAD:publishing-history")
+    try:
+        git("push", "origin", "HEAD:publishing-history")
+    except subprocess.CalledProcessError as error:
+        raise RuntimeError(
+            "Publishing-history push failed or conflicted. Inspect the remote "
+            "history branch and reconcile before retrying; never force-push."
+        ) from error
 
     print("Publishing history saved to GitHub.")
 
