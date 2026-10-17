@@ -1,0 +1,89 @@
+name: Publish Approved MarketRevamp Carousel
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_run_id:
+        description: "Successful MarketRevamp preparation run ID (review its artifacts first)"
+        required: true
+        type: string
+      approval_fingerprint:
+        description: "64-character REVIEW FINGERPRINT printed by that preparation run"
+        required: true
+        type: string
+
+concurrency:
+  group: marketrevamp-instagram-publishing
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  publish-approved:
+    runs-on: ubuntu-latest
+    environment: instagram-production
+    env:
+      SOURCE_RUN_ID: ${{ inputs.source_run_id }}
+      INSTAGRAM_APPROVED_FINGERPRINT: ${{ inputs.approval_fingerprint }}
+      INSTAGRAM_PUBLISH_ENABLED: 'true'
+      INSTAGRAM_PERSISTENCE_READY: 'true'
+    steps:
+      - name: Validate reviewed artifact source and approval input
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ "$GITHUB_REF" != "refs/heads/main" ]; then
+            echo "Only main can publish approved artifacts."
+            exit 1
+          fi
+          [[ "$SOURCE_RUN_ID" =~ ^[0-9]+$ ]] || exit 1
+          [[ "$INSTAGRAM_APPROVED_FINGERPRINT" =~ ^[a-f0-9]{64}$ ]] || exit 1
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$SOURCE_RUN_ID" |
+            jq -e '.name == "MarketRevamp Automation"
+              and .head_branch == "main"
+              and .conclusion == "success"
+              and .repository.full_name == env.GITHUB_REPOSITORY'
+
+      - name: Checkout verified code
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: main
+
+      - name: Checkout publishing history
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: publishing-history
+          path: publishing-history
+          persist-credentials: true
+
+      - name: Restore authoritative history
+        run: cp publishing-history/instagram_publish_history.json instagram_publish_history.json
+
+      - name: Download exactly the reviewed carousel manifest
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh run download "$SOURCE_RUN_ID" --repo "$GITHUB_REPOSITORY" \
+            --name marketrevamp-instagram-carousel --dir .
+          test -s instagram_carousel_manifest.json
+
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install -r requirements.lock
+
+      - name: Validate publishing safeguards and approved-manifest simulation
+        run: |
+          python -m unittest -v test_reliability.py test_history_reconcile.py test_editorial_config.py test_publish_retry.py test_news_quality.py test_seven_pipeline.py test_cloudinary_signing.py
+          python test_publishing_flow.py
+
+      - name: Publish the exact manually approved carousel
+        env:
+          INSTAGRAM_ACCESS_TOKEN: ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
+          INSTAGRAM_USER_ID: ${{ vars.INSTAGRAM_USER_ID }}
+        run: python publish_instagram.py
