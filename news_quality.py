@@ -135,6 +135,11 @@ def select_usable(candidates, infer_category, extract, summarize, min_words=30, 
     Prefer uncovered categories throughout fallback selection. No AI rewriting.
     """
     pending = prioritize_diversity(candidates, infer_category)
+    # Apply a publisher cap when the candidate pool actually has alternatives.
+    # Preserve the seven-story fail-closed contract for thin-source days.
+    distinct_domains = {source_domain(item["url"]) for item in candidates}
+    per_domain_cap = 3 if len(distinct_domains) >= 3 else 7
+    domain_counts = {}
     selected = []
     used_categories = set()
     attempted = set()
@@ -144,6 +149,9 @@ def select_usable(candidates, infer_category, extract, summarize, min_words=30, 
         choice = next((s for s in pending if infer_category(s) not in used_categories), pending[0])
         pending.remove(choice)
         if choice["url"] in attempted or is_repeat_event(choice, selected):
+            continue
+        domain = source_domain(choice["url"])
+        if domain_counts.get(domain, 0) >= per_domain_cap:
             continue
         attempted.add(choice["url"])
         screening = source_screen(choice, candidates)
@@ -171,6 +179,7 @@ def select_usable(candidates, infer_category, extract, summarize, min_words=30, 
         story["source_domain"] = source_domain(story["url"])
         story.update(screening)
         selected.append(story)
+        domain_counts[domain] = domain_counts.get(domain, 0) + 1
         used_categories.add(story["selected_category"])
 
     if len(selected) != 7:
