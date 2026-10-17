@@ -123,7 +123,8 @@ for number, item in enumerate(images, start=1):
     slides.append({
         "slide": number,
         "image_url": jpeg_url,
-        "is_carousel_item": True
+        "is_carousel_item": True,
+        "alt_text": ("MarketRevamp news slide: " + stories[number - 1]["title"])[:950]
     })
 caption_lines = [
     "🚀 MARKETREVAMP | DAILY NEWS BRIEF",
