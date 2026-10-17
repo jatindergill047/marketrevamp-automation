@@ -203,14 +203,26 @@ CAUTION_SIGNALS = (
 )
 
 
+def origin_domain(story):
+    """Use publisher-provided original-source provenance when available.
+
+    A syndication mirror is not an independent confirmation of its source.
+    Unknown provenance must not be inferred from headline similarity alone.
+    """
+    origin = story.get("original_source_url") or story.get("syndicated_from_url")
+    if isinstance(origin, str) and origin.startswith(("https://", "http://")):
+        return source_domain(origin) or source_domain(story["url"])
+    return source_domain(story["url"])
+
+
 def independent_coverage(story, candidates):
-    """Find distinct publisher domains reporting a closely matched event."""
-    original_domain = source_domain(story["url"])
+    """Find distinct originating publishers reporting a closely matched event."""
+    original_domain = origin_domain(story)
     corroborating = {}
     for other in candidates:
         if other["url"] == story["url"]:
             continue
-        other_domain = source_domain(other["url"])
+        other_domain = origin_domain(other)
         if not other_domain or other_domain == original_domain:
             continue
         if same_event(story["title"], other["title"]):

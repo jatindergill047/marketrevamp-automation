@@ -18,7 +18,7 @@ Status is based on merged code and CI evidence, not commit-message wording. **DO
 | P1 Cloudinary unsigned preset replacement | PARTIAL | Signed upload code merged in PR #28; migration needs secrets, compatible preset and disabling old unsigned preset |
 | P1 dependency vulnerability audit | DONE | PR #21 |
 | P1 Graph API version review | PARTIAL | Explicit v24.0 constant, no automated sunset monitoring |
-| P2 syndicated corroboration detection | NOT DONE | |
+| P2 syndicated corroboration detection | PARTIAL | Explicit `original_source_url` / `syndicated_from_url` provenance prevents counting reprints as independent; automatic detection of unmarked syndication remains open |
 | P2 publisher diversity | DONE | PR #25 |
 | P2 carousel alt text | DONE | PR #26; requires provider compatibility verification |
 | P2 hashtags in first comment | NOT DONE | |

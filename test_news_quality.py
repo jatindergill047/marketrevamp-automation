@@ -209,6 +209,26 @@ class NewsQualityTests(unittest.TestCase):
         self.assertEqual(matches[0]["domain"], "bbc.com")
         self.assertFalse(source_screen(one, [one, two])["fact_checked"])
 
+    def test_syndicated_reprint_is_not_independent_coverage(self):
+        primary = {
+            "title": "Nvidia unveils new AI chip for enterprise data centers",
+            "url": "https://wire.example/story",
+        }
+        mirror = {
+            "title": "Nvidia unveils new AI chip for enterprise data centers today",
+            "url": "https://publisher.example/reprint",
+            "original_source_url": "https://wire.example/story",
+        }
+        self.assertEqual(independent_coverage(primary, [primary, mirror]), [])
+        self.assertEqual(source_screen(primary, [primary, mirror])["corroboration_status"],
+                         "single_source")
+        independent = {
+            **mirror,
+            "url": "https://independent.example/report",
+            "original_source_url": "https://independent.example/report",
+        }
+        self.assertEqual(len(independent_coverage(primary, [primary, mirror, independent])), 1)
+
     def test_speculative_headlines_require_second_report(self):
         first = {"title": "Nvidia reportedly unveils new AI chip for data centers",
                  "url": "https://techcrunch.com/ai/chip"}
