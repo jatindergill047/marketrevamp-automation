@@ -457,6 +457,13 @@ def main():
             "Instagram caption must include source attribution."
         )
 
+    first_comment = manifest.get("first_comment", "")
+    if not isinstance(first_comment, str) or len(first_comment) > 1000:
+        raise RuntimeError("Invalid first-comment text.")
+    first_comment = first_comment.strip()
+    if first_comment and not first_comment.startswith("#"):
+        raise RuntimeError("First comment must begin with a hashtag.")
+
     print("Caption safety checks passed.")
 
     history[fingerprint] = {
@@ -502,6 +509,27 @@ def main():
     save_history(history)
 
     print(f"Instagram carousel published: {published['id']}")
+
+    if first_comment:
+        # A failed or timed-out comments request may still have succeeded.
+        # Save this checkpoint before the irreversible call. Never
+        # automatically retry unknown comment outcomes.
+        history[fingerprint]["first_comment_status"] = "pending"
+        save_history(history)
+        try:
+            comment = api_request(
+                "POST", f"{published['id']}/comments", token,
+                {"message": first_comment},
+            )
+        except Exception as error:
+            raise RuntimeError(
+                "Carousel was published, but first-comment outcome is unknown. "
+                "Inspect Instagram and reconcile the history; do NOT republish."
+            ) from error
+        history[fingerprint]["first_comment_status"] = "posted"
+        history[fingerprint]["first_comment_id"] = comment["id"]
+        save_history(history)
+        print("First hashtag comment posted and recorded.")
 
 
 if __name__ == "__main__":
