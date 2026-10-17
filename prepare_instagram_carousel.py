@@ -154,10 +154,12 @@ for index, story in enumerate(stories, start=1):
 caption_lines.extend([
     "Follow @marketrevampdaily for daily updates.",
     "",
-    "#MarketRevamp #AI #Technology #Crypto #Bitcoin #StockMarket",
-    "",
     "News and information only. Not investment advice."
 ])
+
+first_comment = "#MarketRevamp #AI #Technology #Crypto #Bitcoin #StockMarket"
+if len(first_comment) > 1000:
+    raise ValueError("Instagram first comment exceeds 1,000 characters")
 
 caption = "\n".join(caption_lines)
 
@@ -173,6 +175,7 @@ manifest = {
     "editorial_approved": False,
     "media_type": "CAROUSEL",
     "caption": caption,
+    "first_comment": first_comment,
     "article_urls": [
         story["url"] for story in stories
     ],
