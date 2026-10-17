@@ -5,6 +5,7 @@ import sys
 import time
 import hashlib
 import subprocess
+import tempfile
 from pathlib import Path
 from datetime import datetime
 from zoneinfo import ZoneInfo
@@ -12,6 +13,8 @@ from zoneinfo import ZoneInfo
 import requests
 from urllib.parse import urlsplit, urlunsplit
 
+# Review the Meta Graph API version and deprecation schedule quarterly.
+# Do not guess a sunset date; confirm against Meta release notes.
 API_VERSION = "v24.0"
 API_BASE = f"https://graph.instagram.com/{API_VERSION}"
 
@@ -64,8 +67,20 @@ def save_history(history):
 
     content = json.dumps(history, indent=2) + "\n"
 
-    HISTORY_FILE.write_text(content, encoding="utf-8")
-    branch_file.write_text(content, encoding="utf-8")
+    for destination in (HISTORY_FILE, branch_file):
+        with tempfile.NamedTemporaryFile(
+            mode="w", encoding="utf-8", dir=destination.parent,
+            prefix=".history-", suffix=".tmp", delete=False,
+        ) as temporary:
+            temporary.write(content)
+            temporary.flush()
+            os.fsync(temporary.fileno())
+            temp_path = temporary.name
+        try:
+            os.replace(temp_path, destination)
+        finally:
+            if os.path.exists(temp_path):
+                os.unlink(temp_path)
 
     def git(*args):
         subprocess.run(
@@ -99,7 +114,13 @@ def save_history(history):
         raise RuntimeError("Could not inspect history changes.")
 
     git("commit", "-m", "Update Instagram publishing history")
-    git("push", "origin", "HEAD:publishing-history")
+    try:
+        git("push", "origin", "HEAD:publishing-history")
+    except subprocess.CalledProcessError as error:
+        raise RuntimeError(
+            "Publishing-history push failed or conflicted. Inspect the remote "
+            "history branch and reconcile before retrying; never force-push."
+        ) from error
 
     print("Publishing history saved to GitHub.")
 
@@ -150,6 +171,8 @@ def api_request(method, endpoint, token, payload=None):
         )
 
     if not response.ok or "error" in result:
+        if response.status_code == 401:
+            raise RuntimeError("Instagram authentication failed (401): check token expiry and rotate the production secret.")
         error = result.get("error", {})
         raise RuntimeError(
             f"Instagram API error: {error.get('message', 'Unknown error')}"
@@ -320,7 +343,7 @@ def main():
             },
         )
         child_ids.append(result["id"])
-        print(f"Created carousel item {index}/5.")
+        print(f"Created carousel item {index}/{len(image_urls)}.")
 
     result = api_request(
         "POST",

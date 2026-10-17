@@ -62,7 +62,7 @@ jobs:
 
       - name: Install dependencies
         if: steps.schedule.outputs.run == 'true'
-        run: pip install -r requirements.txt
+        run: pip install -r requirements.lock
 
       - name: Install Playfair Display font
         if: steps.schedule.outputs.run == 'true'
@@ -139,3 +139,21 @@ jobs:
           name: marketrevamp-images
           path: instagram_images/
           if-no-files-found: error
+
+      - name: Report failed publishing workflow
+        if: ${{ failure() && steps.schedule.outputs.run == 'true' }}
+        env:
+          FAILURE_WEBHOOK_URL: ${{ secrets.FAILURE_WEBHOOK_URL }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          echo "MarketRevamp publishing failed: $RUN_URL" >> "$GITHUB_STEP_SUMMARY"
+          if [ -n "$FAILURE_WEBHOOK_URL" ]; then
+            python - <<'PY'
+          import json, os, urllib.request
+          payload = json.dumps({"text": "MarketRevamp production failed: " + os.environ["RUN_URL"]}).encode()
+          request = urllib.request.Request(
+              os.environ["FAILURE_WEBHOOK_URL"], data=payload,
+              headers={"Content-Type": "application/json"}, method="POST")
+          urllib.request.urlopen(request, timeout=15).close()
+          PY
+          fi

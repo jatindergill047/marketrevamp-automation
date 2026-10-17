@@ -124,8 +124,6 @@ for number, item in enumerate(images, start=1):
         "image_url": jpeg_url,
         "is_carousel_item": True
     })
-from urllib.parse import urlsplit
-
 caption_lines = [
     "🚀 MARKETREVAMP | DAILY NEWS BRIEF",
     "",
