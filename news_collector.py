@@ -1,5 +1,6 @@
 import json
 import urllib.request
+import time
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
@@ -268,9 +269,18 @@ def fetch_article_text(url):
     try:
         import trafilatura
 
-        downloaded = trafilatura.fetch_url(url)
+        downloaded = None
+        for attempt in range(3):
+            try:
+                downloaded = trafilatura.fetch_url(url)
+            except (OSError, TimeoutError):
+                downloaded = None
+            if downloaded:
+                break
+            if attempt < 2:
+                time.sleep(2 ** attempt)
         if not downloaded:
-            print(f"Could not download article: {url}")
+            print(f"Could not download article after retries: {url}")
             return ""
 
         article_text = trafilatura.extract(
@@ -462,8 +472,16 @@ def collect_news():
         count = 0
         try:
             request = urllib.request.Request(url, headers=HEADERS)
-            with urllib.request.urlopen(request, timeout=20) as response:
-                xml_data = response.read()
+            xml_data = None
+            for attempt in range(3):
+                try:
+                    with urllib.request.urlopen(request, timeout=20) as response:
+                        xml_data = response.read()
+                    break
+                except (OSError, TimeoutError):
+                    if attempt == 2:
+                        raise
+                    time.sleep(2 ** attempt)
 
             root = ET.fromstring(xml_data)
             for item in root.findall(".//item"):
