@@ -25,7 +25,7 @@ def main():
         manifest["publish_enabled"] = True
         manifest["automated_checks_passed"] = True
 
-        image_urls = [slide["image_url"] or slide["secure_url"]
+        image_urls = [slide.get("image_url") or slide.get("secure_url")
                       for slide in manifest["slides"]]
         approval_fingerprint = hashlib.sha256(
             json.dumps(image_urls, sort_keys=True).encode()
