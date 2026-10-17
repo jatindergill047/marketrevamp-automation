@@ -320,7 +320,7 @@ def main():
             },
         )
         child_ids.append(result["id"])
-        print(f"Created carousel item {index}/5.")
+        print(f"Created carousel item {index}/{len(image_urls)}.")
 
     result = api_request(
         "POST",
