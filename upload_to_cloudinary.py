@@ -7,6 +7,8 @@ Only uploads images; does not publish or schedule social media posts.
 from carousel_config import CAROUSEL_SIZE
 
 import json
+import hashlib
+import time
 import mimetypes
 import os
 import secrets
@@ -19,9 +21,28 @@ IMAGES = Path('instagram_images')
 OUTPUT = Path('cloudinary_uploads.json')
 
 
-def upload_image(path, cloud, preset):
+def upload_fields(preset, api_key="", api_secret="", timestamp=None):
+    """Build Cloudinary signed fields when both credentials are configured."""
+    if bool(api_key) != bool(api_secret):
+        raise ValueError("Cloudinary signed upload requires both API key and API secret.")
+    fields = [("upload_preset", preset)]
+    if api_key:
+        timestamp = int(time.time()) if timestamp is None else int(timestamp)
+        signature_base = f"timestamp={timestamp}&upload_preset={preset}"
+        signature = hashlib.sha1(
+            (signature_base + api_secret).encode("utf-8")
+        ).hexdigest()
+        fields.extend([
+            ("timestamp", str(timestamp)),
+            ("api_key", api_key),
+            ("signature", signature),
+        ])
+    return fields
+
+
+def upload_image(path, cloud, preset, api_key="", api_secret=""):
     boundary = '----MarketRevamp' + secrets.token_hex(12)
-    fields = [('upload_preset', preset), ('file', path.read_bytes())]
+    fields = upload_fields(preset, api_key, api_secret) + [('file', path.read_bytes())]
     body = bytearray()
     for name, value in fields:
         body.extend(f'--{boundary}\r\n'.encode())
@@ -54,6 +75,10 @@ def upload_image(path, cloud, preset):
 def main():
     cloud = os.environ.get('CLOUDINARY_CLOUD_NAME', '').strip()
     preset = os.environ.get('CLOUDINARY_UPLOAD_PRESET', '').strip()
+    api_key = os.environ.get('CLOUDINARY_API_KEY', '').strip()
+    api_secret = os.environ.get('CLOUDINARY_API_SECRET', '').strip()
+    if bool(api_key) != bool(api_secret):
+        raise SystemExit('Both Cloudinary API key and API secret are required for signed uploads')
     if not cloud or not preset:
         raise SystemExit('Missing CLOUDINARY_CLOUD_NAME or CLOUDINARY_UPLOAD_PRESET environment variable')
     paths = sorted(IMAGES.glob('slide_*.png'))
@@ -62,7 +87,7 @@ def main():
     uploaded = []
     try:
         for path in paths:
-            result = upload_image(path, cloud, preset)
+            result = upload_image(path, cloud, preset, api_key, api_secret)
             uploaded.append(result)
             print(f'Uploaded {path.name} -> {result["secure_url"]}')
     finally:
