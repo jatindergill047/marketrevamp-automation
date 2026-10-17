@@ -364,12 +364,6 @@ def main():
 
     repeated = set(normalized_urls) & previously_published
 
-    if repeated:
-        raise RuntimeError(
-            f"Publishing blocked: {len(repeated)} "
-            "previously published article(s) detected."
-        )
-
     fingerprint = hashlib.sha256(
         json.dumps(image_urls, sort_keys=True).encode()
     ).hexdigest()
@@ -385,6 +379,14 @@ def main():
         if history[fingerprint].get("publish_attempted_at"):
             raise RuntimeError("Failed record includes a publish attempt; reconciliation required.")
         print("Retrying a confirmed pre-publication failure.")
+
+    # Existing exact-fingerprint records are idempotent. Different image
+    # packages still cannot re-use articles from earlier published posts.
+    if repeated:
+        raise RuntimeError(
+            f"Publishing blocked: {len(repeated)} "
+            "previously published article(s) detected."
+        )
 
     today = datetime.now(
         ZoneInfo("America/Toronto")
