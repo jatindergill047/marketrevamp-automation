@@ -30,6 +30,17 @@ class ApprovedWorkflowTests(unittest.TestCase):
             self.assertNotEqual(original, approval_fingerprint(candidate, urls))
         self.assertNotEqual(original, approval_fingerprint(manifest, list(reversed(urls))))
 
+    def test_manual_validation_workflows_have_no_live_side_effects(self):
+        for filename in ("test-instagram-carousel.yml", "test-history.yml"):
+            content = (Path(".github/workflows") / filename).read_text()
+            self.assertIn("contents: read", content)
+            self.assertNotIn("INSTAGRAM_ACCESS_TOKEN:", content)
+            self.assertNotIn("INSTAGRAM_USER_ID:", content)
+            self.assertNotIn("publishing-history", content)
+            self.assertNotIn("test_instagram_carousel.py", content)
+            self.assertNotIn("test_history_persistence.py", content)
+            self.assertIn("python -m unittest", content)
+
     def test_automatic_workflow_never_grants_publish_flag(self):
         production = Path(".github/workflows/marketrevamp.yml").read_text()
         manual = Path(".github/workflows/publish-approved.yml").read_text()

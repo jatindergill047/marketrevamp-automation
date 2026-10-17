@@ -1,37 +1,16 @@
-name: Test Publishing History
-
+name: Test Publishing History (Offline)
 on:
   workflow_dispatch:
-
 permissions:
-  contents: write
-
+  contents: read
 jobs:
   test-history:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Checkout publishing history
-        uses: actions/checkout@v4
-        with:
-          ref: publishing-history
-          path: publishing-history
-          persist-credentials: true
-
-      - name: Restore publishing history
-        run: |
-          cp publishing-history/instagram_publish_history.json instagram_publish_history.json
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: '3.12'
-
-      - name: Install dependencies
-        run: pip install -r requirements.txt
-
-      - name: Test history persistence
-        run: python test_history_persistence.py
+      - run: pip install -r requirements.lock
+      - name: Exercise local-only Git history and retry safeguards
+        run: python -m unittest -v test_reliability.py test_history_reconcile.py test_publish_retry.py
