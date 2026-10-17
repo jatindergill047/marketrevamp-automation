@@ -175,77 +175,131 @@ def _fit_text(draw, text, width, max_height, largest, smallest, bold=False):
 
 
 def _summary_parts(summary):
-    """Extract intro and details from the supplied summary; invent nothing."""
-    sentences = re.split(r"(?<=[.!?])\\s+(?=[A-Z0-9])", summary.strip())
-    sentences = [s.strip() for s in sentences if s.strip()]
-    if len(sentences) <= 1:
-        words = summary.split()
-        split = min(len(words), max(10, len(words) // 3))
-        return " ".join(words[:split]), [" ".join(words[split:])]
+    """Split on real sentence boundaries, never at an arbitrary word count.
+
+    A single sentence is displayed in full under Key Details, not broken
+    mid-sentence or duplicated as an introduction.
+    """
+    sentences = re.split(r'(?<=[.!?])\s+(?=[A-Z0-9"“])', summary.strip())
+    sentences = [part.strip() for part in sentences if part.strip()]
+    if not sentences:
+        raise ValueError("Empty article summary")
+    if len(sentences) == 1:
+        return "", sentences
+    # Keep all original sentences without inventing or dropping facts.
     return sentences[0], sentences[1:]
 
 
-def draw_card(story, index, total, date_label):
-    """White newspaper-inspired editorial layout; no external visual APIs.
+def _fit_editorial(draw, headline, intro, details):
+    """Choose font sizes and vertical placement as one bounded layout."""
+    for headline_size in range(56, 31, -2):
+        hface = font(headline_size, bold=True)
+        hlines = wrap_lines(draw, headline, hface, 930)
+        hlead = headline_size + 11
+        hbottom = 300 + len(hlines) * hlead
+        if hbottom > 665:
+            continue
 
-    All news text is taken from the selected story. Decorative 2D elements
-    never depict or assert a factual event.
-    """
-    category = story_category(story)
+        if intro:
+            iface, ilines, ilead = _fit_text(
+                draw, intro, 930, 160, 27, 19)
+            ibottom = hbottom + 14 + len(ilines) * ilead
+        else:
+            iface, ilines, ilead = None, [], 0
+            ibottom = hbottom
+
+        section_y = max(ibottom + 28, 600)
+        if section_y > 800:
+            continue
+        detail_top = section_y + 76
+        available = 1175 - detail_top
+        if available < 220:
+            continue
+
+        # Two or three editorial bullets. Group whole sentences, not words.
+        groups = []
+        if len(details) <= 3:
+            groups = list(details)
+        else:
+            groups = details[:2] + [" ".join(details[2:])]
+        for detail_size in range(27, 17, -1):
+            dface = font(detail_size)
+            dlead = detail_size + 9
+            wrapped = [wrap_lines(draw, part, dface, 867) for part in groups]
+            needed = sum(len(lines) * dlead + 17 for lines in wrapped)
+            if needed <= available:
+                return (hface, hlines, hlead, iface, ilines, ilead,
+                        section_y, dface, wrapped, dlead)
+    raise ValueError("Headline and complete source-derived details cannot fit safely")
+
+
+def _article_date(story, edition_date):
+    """Prefer the RSS article timestamp; otherwise label the edition honestly."""
+    published = story.get("published")
+    if published:
+        try:
+            stamp = datetime.fromisoformat(str(published).replace("Z", "+00:00"))
+            if stamp.tzinfo is None:
+                raise ValueError("Timestamp missing timezone")
+            return "ARTICLE DATE: " + stamp.strftime("%b %d, %Y").upper()
+        except (ValueError, TypeError):
+            pass
+    return "EDITION: " + str(edition_date).upper()
+
+
+def draw_card(story, index, total, date_label):
+    """Adaptive editorial news layout; no generated factual imagery or paid APIs."""
+    if not 1 <= index <= total == 7:
+        raise ValueError("Expected slide index 1–7 of 7")
+    summary, valid = summary_for_card(story)
+    if not valid:
+        raise ValueError("Cannot render a news card with an invalid summary")
+    intro, details = _summary_parts(summary)
+    headline = (story.get("title") or "").strip()
+    if not headline:
+        raise ValueError("Missing article headline")
+
     image = background(CYAN, index)
     draw = ImageDraw.Draw(image)
     left, right = 67, 1013
 
-    # Official transparent PNG at top left; preserve original aspect ratio.
+    # Give the original square logo a deliberate white newspaper masthead
+    # treatment, rather than pretending its dark background is transparent.
+    draw.rounded_rectangle((left - 10, 37, 196, 175), radius=13,
+                           fill=(255, 255, 255), outline=(200, 207, 210), width=2)
     if not LOGO.exists():
         raise FileNotFoundError("Missing marketrevamp_logo.png in the repository root")
     with Image.open(LOGO) as original_logo:
         if original_logo.format != "PNG":
             raise ValueError("MarketRevamp logo must be a PNG file")
         logo = original_logo.convert("RGBA")
-        logo.thumbnail((425, 120), Image.Resampling.LANCZOS)
-        image.paste(logo, (left, 52), logo)
+        logo.thumbnail((116, 116), Image.Resampling.LANCZOS)
+        image.paste(logo, (74 + (116 - logo.width) // 2, 48 + (116 - logo.height) // 2), logo)
+
     draw = ImageDraw.Draw(image)
+    draw.text((221, 73), "MARKETREVAMP", font=font(48, bold=True), fill=INK)
+    draw.text((221, 135), "GLOBAL NEWS  •  SMART INSIGHTS  •  BIGGER PERSPECTIVE",
+              font=font(16, bold=True), fill=(65, 74, 85))
+    draw.line((left, 203, right, 203), fill=(153, 164, 171), width=2)
 
-    # Small newspaper tagline and strong horizontal rule.
-    draw.text((left, 171), "GLOBAL NEWS  •  SMART INSIGHTS  •  BIGGER PERSPECTIVE",
-              font=font(17, bold=True), fill=INK)
-    draw.line((left, 203, right, 203), fill=(170, 176, 179), width=2)
-
-    # Orange section ribbon and seven-slide counter.
+    category = story_category(story)
     label = {"AI": "ARTIFICIAL INTELLIGENCE", "Technology": "TECHNOLOGY",
              "Crypto": "CRYPTOCURRENCY", "Markets": "FINANCIAL MARKETS"}[category]
-    ribbon_x, ribbon_y = left, 220
     ribbon_width = min(550, max(265, len(label) * 17 + 54))
-    draw.polygon([(ribbon_x + 17, ribbon_y), (ribbon_x + ribbon_width, ribbon_y),
-                  (ribbon_x + ribbon_width - 18, ribbon_y + 51),
-                  (ribbon_x, ribbon_y + 51)], fill=ORANGE)
-    draw.text((ribbon_x + 27, ribbon_y + 10), label,
-              font=font(25, bold=True), fill=(255, 255, 255))
-    draw.text((right, ribbon_y + 10), f"{index:02d}/{total:02d}",
+    draw.polygon([(left + 17, 220), (left + ribbon_width, 220),
+                  (left + ribbon_width - 18, 271), (left, 271)], fill=ORANGE)
+    draw.text((left + 27, 230), label, font=font(25, bold=True),
+              fill=(255, 255, 255))
+    draw.text((right, 230), f"{index:02d}/{total:02d}",
               font=font(26, bold=True), fill=INK, anchor="ra")
 
-    headline = story.get("title") or "News update"
-    headline_face, headline_lines, headline_leading = _fit_text(
-        draw, headline, 942, 305, 65, 31, bold=True)
-    headline_end = _draw_lines(draw, headline_lines, left, 296,
-                               headline_face, INK, headline_leading)
+    (hface, hlines, hlead, iface, ilines, ilead,
+     section_y, dface, wrapped, dlead) = _fit_editorial(draw, headline, intro, details)
+    hbottom = _draw_lines(draw, hlines, left, 300, hface, INK, hlead)
+    if ilines:
+        _draw_lines(draw, ilines, left, hbottom + 14, iface,
+                    (53, 61, 69), ilead)
 
-    summary, valid = summary_for_card(story)
-    if not valid:
-        raise ValueError("Cannot render a news card with an invalid summary")
-    intro, details = _summary_parts(summary)
-    intro_y = headline_end + 14
-    # The lead paragraph gets up to 130px; fit it without shortening.
-    intro_face, intro_lines, intro_leading = _fit_text(
-        draw, intro, 930, 128, 28, 20)
-    intro_end = _draw_lines(draw, intro_lines, left, intro_y,
-                            intro_face, (54, 60, 67), intro_leading)
-
-    # Clean KEY DETAILS heading and horizontal editorial rule.
-    section_y = max(775, intro_end + 30)
-    if section_y > 906:
-        raise ValueError("Headline and intro exceed safe editorial layout area")
     draw.rounded_rectangle((left, section_y, left + 245, section_y + 52),
                            radius=22, fill=INK)
     draw.text((left + 26, section_y + 10), "KEY DETAILS",
@@ -253,23 +307,15 @@ def draw_card(story, index, total, date_label):
     draw.line((left + 265, section_y + 28, right, section_y + 28),
               fill=INK, width=2)
 
-    # Bullet list is sourced exclusively from extracted article sentences.
-    if not details or not any(d.strip() for d in details):
-        details = [intro]
-    details = [d for d in details if d.strip()]
-    detail_text = " ".join(details)
-    detail_top = section_y + 75
-    detail_height = 1180 - detail_top
-    # Wrapped prose remains fully source-derived, even for a one-sentence summary.
-    detail_face, detail_lines, detail_leading = _fit_text(
-        draw, detail_text, 875, detail_height, 29, 19)
-    draw.ellipse((left + 2, detail_top + 5, left + 32, detail_top + 35), fill=CYAN)
-    draw.text((left + 17, detail_top + 9), "•", font=font(20, bold=True),
-              fill=(255, 255, 255), anchor="mt")
-    _draw_lines(draw, detail_lines, left + 54, detail_top,
-                detail_face, INK, detail_leading)
+    y = section_y + 76
+    for number, lines in enumerate(wrapped, 1):
+        draw.ellipse((left + 1, y + 4, left + 32, y + 35), fill=CYAN)
+        draw.text((left + 16, y + 5), str(number),
+                  font=font(18, bold=True), fill=(255, 255, 255), anchor="mt")
+        y = _draw_lines(draw, lines, left + 54, y, dface, INK, dlead) + 17
+    if y > 1175:
+        raise ValueError("Details overlap the source footer")
 
-    # Fixed footer with source provenance, publication date, and swipe cue.
     draw.line((left, 1200, right, 1200), fill=INK, width=2)
     draw.text((left, 1216), "SOURCE:", font=font(18, bold=True), fill=INK)
     src = source_name(story.get("url", ""))
@@ -277,7 +323,7 @@ def draw_card(story, index, total, date_label):
     if len(src_lines) != 1:
         raise ValueError("Source domain cannot fit in footer")
     draw.text((left + 110, 1214), src_lines[0], font=src_face, fill=CYAN)
-    draw.text((left, 1252), f"PUBLISHED: {date_label.upper()}",
+    draw.text((left, 1252), _article_date(story, date_label),
               font=font(18), fill=(72, 75, 78))
     draw.text((right, 1223), "SWIPE  ›", font=font(23, bold=True),
               fill=INK, anchor="ra")

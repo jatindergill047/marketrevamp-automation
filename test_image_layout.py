@@ -37,12 +37,11 @@ def test():
                 }, 1, 7, "Oct 14, 2026")
                 assert image.size == (1080, 1350)
                 assert image.mode == "RGB"
-                # Newspaper template is high-key, and the official logo
-                # remains alpha-composited at the top-left.
+                # Newspaper template is high-key; logo is inset into a white masthead.
                 baseline = ig.background(ig.COLORS[category], 1)
                 assert all(channel > 225 for channel in baseline.getpixel((540, 520)))
-                assert image.getpixel((70, 70)) == (0, 210, 235)
-                assert image.getpixel((155, 70)) == baseline.getpixel((155, 70))
+                assert image.getpixel((80, 70)) == (0, 210, 235)
+                assert image.getpixel((185, 55)) == (255, 255, 255)
                 # Header, section ribbon, and source area are visibly rendered.
                 assert image.getpixel((80, 260)) == (245, 127, 19)
                 assert image.getpixel((100, 1201)) != baseline.getpixel((100, 1201))

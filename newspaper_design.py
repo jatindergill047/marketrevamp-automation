@@ -26,65 +26,54 @@ def _serif(size):
 
 
 def newspaper_background(index=1):
-    """Draw a subtle newspaper-paper backdrop with clean central text space."""
+    """Quiet high-key newspaper stock, with decoration confined to margins.
+
+    The central headline and details column remains clear for readability.
+    """
     image = Image.new("RGB", (WIDTH, HEIGHT), PAPER)
     draw = ImageDraw.Draw(image)
     rng = random.Random(20261016 + index)
 
-    # Paper grain: fixed-seed for reproducible builds, no external images.
-    for _ in range(15500):
+    # Paper fiber / ink speckles: visible at full resolution, never on top
+    # of content as large decorative words.
+    for _ in range(18000):
         x, y = rng.randrange(WIDTH), rng.randrange(HEIGHT)
-        shade = rng.choice((232, 237, 242, 246))
-        draw.point((x, y), fill=(shade, shade, max(225, shade - 2)))
+        tone = rng.choice((226, 232, 239, 245))
+        draw.point((x, y), fill=(tone, tone, min(255, tone + 1)))
 
-    # Faint newspaper columns and rules live in the page margins.
-    for x in (22, 180, 370, 720, 900, 1055):
-        draw.line((x, 0, x, HEIGHT), fill=(239, 238, 235), width=1)
-    for y in (32, 145, 880, 1190, 1332):
-        draw.line((0, y, WIDTH, y), fill=(231, 230, 227), width=1)
+    # Newspaper top and bottom bands, not behind article copy.
+    draw.rectangle((0, 0, WIDTH, 34), fill=(239, 238, 233))
+    draw.rectangle((0, 1325, WIDTH, HEIGHT), fill=(238, 237, 232))
+    for y in (32, 191, 1330):
+        draw.line((0, y, WIDTH, y), fill=(205, 207, 206), width=1)
 
-    headings = (
-        ("GLOBAL MARKETS", (18, 4), 52),
-        ("TECHNOLOGY", (24, 1050), 38),
-        ("ECONOMY", (765, 1070), 38),
-        ("BUSINESS", (835, 900), 33),
-    )
-    for text, point, size in headings:
-        draw.text(point, text, font=_serif(size), fill=(220, 220, 218))
+    # Editorial microprint confined to a thin strip at the bottom edge.
+    micro = "GLOBAL MARKETS  •  TECHNOLOGY  •  BUSINESS  •  CRYPTO  •  ECONOMY"
+    draw.text((30, 1330), micro, font=_serif(11), fill=(150, 156, 159))
 
-    micro = ("MARKET INSIGHTS  •  GLOBAL ECONOMY  •  TECHNOLOGY  •  "
-             "BUSINESS AND FINANCE  •  INDEPENDENT NEWS ROUNDUP")
-    tiny = _serif(12)
-    for y in (91, 108, 125, 1120, 1137, 1154):
-        draw.text((20, y), micro, font=tiny, fill=(224, 223, 220))
+    # Very subtle vertical margins and clipped corner dot-grid accents.
+    for x in (23, 1057):
+        draw.line((x, 40, x, 1320), fill=(223, 224, 221), width=1)
+    for row in range(8):
+        for col in range(15):
+            x, y = 830 + col * 15, 49 + row * 15
+            draw.ellipse((x, y, x + 2, y + 2), fill=(218, 221, 222))
 
-    # Faint halftone world motif: two latitude ellipses and dotted longitude.
-    for lat in range(-2, 3):
-        draw.arc((610, 4 + lat * 14, 1070, 215 + lat * 14),
-                 185, 350, fill=(225, 226, 225), width=1)
-    for row in range(10):
-        for col in range(21):
-            x, y = 700 + col * 16, 36 + row * 15
-            if ((col - 10) / 12) ** 2 + ((row - 4) / 6) ** 2 < 1:
-                draw.ellipse((x, y, x + 2, y + 2), fill=(220, 220, 218))
+    # 2D financial chart watermark only at far right, kept behind a wash.
+    pts = [(840 + i * 9, 1065 - (i * 9 + 14 * math.sin(i * .9)))
+           for i in range(24)]
+    draw.line(pts, fill=(217, 223, 226), width=2, joint="curve")
+    for i in range(11):
+        x = 865 + i * 18
+        h = 22 + (i * 19) % 64
+        draw.line((x, 1165 - h, x, 1173), fill=(223, 227, 228), width=2)
+        draw.rectangle((x - 3, 1152 - h, x + 3, 1160 - h),
+                       fill=(223, 227, 228))
 
-    # A restrained 2D market line, intentionally behind the whitewash.
-    pts = [(630 + i * 17, 930 - (i * 11 + 32 * math.sin(i * .8)))
-           for i in range(25)]
-    draw.line(pts, fill=(214, 220, 222), width=3, joint="curve")
-    for x, y in pts[::4]:
-        draw.ellipse((x - 3, y - 3, x + 3, y + 3), fill=(211, 215, 216))
-    for i in range(18):
-        x = 710 + i * 19
-        high = 20 + (i * 23) % 85
-        draw.line((x, 1095 - high, x, 1102), fill=(215, 218, 219), width=2)
-        draw.rectangle((x - 4, 1080 - high, x + 4, 1090 - high),
-                       fill=(220, 223, 223))
-
-    # A broad white wash keeps headline and article copy readable.
+    # Strong white reading surface, faintly translucent at the outer edges.
     wash = Image.new("RGBA", (WIDTH, HEIGHT), (255, 255, 255, 0))
     w = ImageDraw.Draw(wash)
-    w.rounded_rectangle((44, 185, 1037, 1210), radius=30,
-                        fill=(255, 255, 255, 183))
-    wash = wash.filter(ImageFilter.GaussianBlur(30))
+    w.rounded_rectangle((44, 280, 1035, 1195), radius=18,
+                        fill=(255, 255, 255, 208))
+    wash = wash.filter(ImageFilter.GaussianBlur(16))
     return Image.alpha_composite(image.convert("RGBA"), wash).convert("RGB")
