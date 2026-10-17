@@ -41,6 +41,10 @@ This requires the Instagram comment-management permission for the chosen Meta lo
 
 The `publishing-history` Git branch holds `instagram_publish_history.json`, restored into the workflow before collecting news. Each carousel is keyed by a fingerprint and marked `pending` before Instagram calls, then `published` on confirmed success. An unresolved `pending` is deliberately blocking: the API may have published successfully even if the response was lost. **Never delete pending records, force-push history, or rerun production to fix a timeout without reconciling Instagram first.** Publishing history is written to both the worktree and history checkout.
 
+## Safe manual diagnostics
+
+The legacy **Test Instagram Carousel (Offline)** and **Test Publishing History (Offline)** Actions perform only local unit/integration checks. They require neither Instagram credentials nor a publishing-history checkout, and cannot create Instagram media containers or add test records to the live history branch. The old network-connected carousel script and write-capable history test scripts have been retired.
+
 ## Local validation (no live post)
 
 ```bash
