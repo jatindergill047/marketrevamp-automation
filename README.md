@@ -4,7 +4,7 @@ Automated **seven-slide** editorial Instagram news carousel for @marketrevampdai
 
 ## Architecture
 
-Weekday GitHub Actions production workflow (`.github/workflows/marketrevamp.yml`) checks the Toronto publishing window, restores the persistent history checkout, installs Python dependencies/fonts, runs safeguards, collects recent RSS news, selects seven distinct stories, renders 1080×1350 newspaper-style cards, uploads images to Cloudinary, prepares the carousel manifest, and calls the Instagram Graph API.
+Weekday GitHub Actions production workflow (`.github/workflows/marketrevamp.yml`) checks the Toronto publishing window, restores the persistent history checkout, installs Python dependencies/fonts, runs safeguards, collects recent RSS news, selects seven distinct stories, renders 1080×1350 newspaper-style cards, uploads images to Cloudinary, prepares the carousel manifest, and saves artifacts for human review. **Scheduled runs never send Instagram publishing requests.** The manual `.github/workflows/publish-approved.yml` workflow publishes a reviewed saved manifest without regenerating images.
 
 `editorial_config.py` is the reviewed source of truth for RSS feeds, category keyword lists, exclusion terms, feed headers, and summary word limits. Update these values in a PR and run the test suite; the seven-slide safety contract remains fixed. `news_collector.py` collects RSS feeds and extracts publisher text using Trafilatura. `news_quality.py` screens source fidelity, attribution, event duplicates, and corroboration signals. `image_generator.py` and `newspaper_design.py` draw editorial cards locally using Pillow. `upload_to_cloudinary.py` uploads media. `prepare_instagram_carousel.py` validates seven stories and constructs the caption/manifest. `publish_instagram.py` is the only live publishing entry point.
 
@@ -14,11 +14,18 @@ GitHub production environment: `instagram-production`.
 
 Secrets: `INSTAGRAM_ACCESS_TOKEN`, Cloudinary upload credentials/preset used by `upload_to_cloudinary.py`; optional `FAILURE_WEBHOOK_URL` (a JSON webhook endpoint for workflow failures).
 
-Variables: `INSTAGRAM_USER_ID`, `INSTAGRAM_APPROVED_FINGERPRINT` and Cloudinary variables used in the upload step. See workflow `env:` blocks for exact names.
+Variables: `INSTAGRAM_USER_ID` and Cloudinary variables used in the upload step. The manual workflow takes `approval_fingerprint` as a per-run input, not a persistent variable. See workflow `env:` blocks for exact names.
 
 ### Explicit per-carousel approval
 
-The scheduled workflow may prepare and upload assets, but **must not publish without human approval for that exact seven-image carousel**. The publishing script computes a SHA-256 fingerprint of the sorted JSON list of seven image URLs. If the production environment variable `INSTAGRAM_APPROVED_FINGERPRINT` is missing or differs, the workflow logs `REVIEW REQUIRED` with the fingerprint and exits before any Instagram API requests. Review the seven generated images, caption, and sources in the GitHub Actions artifacts. Only after approval, set `INSTAGRAM_APPROVED_FINGERPRINT` to that exact fingerprint and run a controlled publication using the *same manifest and images*. A new workflow run that generates different Cloudinary URLs will have a different fingerprint, even when the source stories are unchanged. A separate approved-artifact publication workflow has **not yet been implemented**, so setting the variable by itself does not publish the held carousel. Never use a reusable generic value such as `true`.
+**A scheduled run prepares a seven-slide package but never publishes it.** After it completes:
+
+1. Open the successful **MarketRevamp Automation** GitHub Actions run and inspect its `marketrevamp-images`, `marketrevamp-news`, and `marketrevamp-instagram-carousel` artifacts. Verify each image, headline, source, caption, and alt text.
+2. Copy the `REVIEW FINGERPRINT` (64 hexadecimal characters) printed by the preparation run. The SHA-256 digest binds the seven image URLs and their order, all article URLs, slide alt text, and caption. Editing any reviewed content invalidates approval.
+3. Go to **Actions → Publish Approved MarketRevamp Carousel → Run workflow** on `main`. Enter the **source_run_id** of that *successful preparation run* and its exact **approval_fingerprint**.
+4. The manual workflow retrieves the already-reviewed manifest, rechecks the source workflow and publishing history, runs offline safeguards, and publishes only when the supplied fingerprint matches. It does **not** create a fresh seven-slide selection.
+
+The scheduled workflow has `INSTAGRAM_PUBLISH_ENABLED=false` and is not given Instagram publishing credentials. The manual workflow alone enables the publisher and receives `INSTAGRAM_ACCESS_TOKEN`. Its environment is `instagram-production`. Required-reviewer rules can add a second authorization gate, but because scheduled preparation currently uses this same environment, those rules would also hold preparation runs; separate the environments before enabling review requirements if you want unattended preparation. A manual run is an explicit publication action: never enter a fingerprint until all images and text have been reviewed. <https://docs.github.com/en/actions/how-tos/deploy/configure-and-manage-deployments/control-deployments>
 
 The manifest's `publish_enabled` flag and successful automated tests are additional safety checks, **not** human approval.
 

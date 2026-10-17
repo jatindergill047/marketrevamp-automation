@@ -192,6 +192,22 @@ def save_history(history):
     print("Publishing history saved to GitHub.")
 
 
+def approval_fingerprint(manifest, image_urls):
+    """Bind approval to the exact images, order, alt text, sources and caption."""
+    reviewed = {
+        "image_urls": image_urls,
+        "article_urls": manifest.get("article_urls", []),
+        "caption": manifest.get("caption", ""),
+        "slides": [
+            {"slide": slide.get("slide"), "alt_text": slide.get("alt_text", "")}
+            for slide in manifest.get("slides", [])
+        ],
+    }
+    canonical = json.dumps(reviewed, sort_keys=True, separators=(",", ":"),
+                           ensure_ascii=False)
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+
 def load_manifest():
     if not MANIFEST_FILE.exists():
         raise RuntimeError("Instagram carousel manifest is missing.")
@@ -385,6 +401,9 @@ def main():
                 )
                 return
 
+    reviewed_fingerprint = approval_fingerprint(manifest, image_urls)
+    print(f"REVIEW FINGERPRINT: {reviewed_fingerprint}")
+
     if not PUBLISH_ENABLED:
         print("DRY RUN: Instagram publishing is disabled.")
         print("No Instagram API publishing requests were made.")
@@ -393,8 +412,8 @@ def main():
     # Explicit human approval applies to the exact seven-image package,
     # never merely to a date, workflow run, or reusable manifest flag.
     approved = os.getenv("INSTAGRAM_APPROVED_FINGERPRINT", "").strip()
-    if not approved or approved != fingerprint:
-        print(f"REVIEW REQUIRED: carousel fingerprint {fingerprint}")
+    if not approved or approved != reviewed_fingerprint:
+        print(f"REVIEW REQUIRED: carousel fingerprint {reviewed_fingerprint}")
         print("No Instagram API publishing requests were made.")
         return
 

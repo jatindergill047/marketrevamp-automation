@@ -21,7 +21,7 @@ jobs:
     environment: instagram-production
 
     env:
-      INSTAGRAM_PUBLISH_ENABLED: 'true'
+      INSTAGRAM_PUBLISH_ENABLED: 'false'
       INSTAGRAM_PERSISTENCE_READY: 'true'
 
     steps:
@@ -70,7 +70,7 @@ jobs:
 
       - name: Test scheduling and publishing-history safeguards
         if: steps.schedule.outputs.run == 'true'
-        run: python -m unittest -v test_reliability.py test_history_reconcile.py test_editorial_config.py test_publish_retry.py test_news_quality.py test_seven_pipeline.py test_editorial_layout.py test_cloudinary_signing.py
+        run: python -m unittest -v test_reliability.py test_history_reconcile.py test_approved_workflow.py test_editorial_config.py test_publish_retry.py test_news_quality.py test_seven_pipeline.py test_editorial_layout.py test_cloudinary_signing.py
 
       - name: Collect latest news and generate images
         if: steps.schedule.outputs.run == 'true'
@@ -103,12 +103,8 @@ jobs:
         if: steps.schedule.outputs.run == 'true'
         run: python test_publishing_flow.py
 
-      - name: Validate Instagram carousel publishing
+      - name: Verify carousel is held for manual approval
         if: steps.schedule.outputs.run == 'true'
-        env:
-          INSTAGRAM_ACCESS_TOKEN: ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
-          INSTAGRAM_USER_ID: ${{ vars.INSTAGRAM_USER_ID }}
-          INSTAGRAM_APPROVED_FINGERPRINT: ${{ vars.INSTAGRAM_APPROVED_FINGERPRINT }}
         run: python publish_instagram.py
 
       - name: Save Instagram carousel manifest

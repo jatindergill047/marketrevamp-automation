@@ -29,9 +29,9 @@ class PublishRetryTests(unittest.TestCase):
         self.history.write_text("{}", encoding="utf-8")
         image_urls = [f"https://res.cloudinary.com/demo/image/upload/test{i}.jpg"
                       for i in range(7)]
-        self.fingerprint = hashlib.sha256(
-            json.dumps(image_urls, sort_keys=True).encode()
-        ).hexdigest()
+        self.fingerprint = publisher.approval_fingerprint(
+            json.loads(self.manifest.read_text(encoding="utf-8")), image_urls
+        )
         self.saved = []
         def save(history):
             snapshot = json.loads(json.dumps(history))
@@ -61,6 +61,15 @@ class PublishRetryTests(unittest.TestCase):
             with patch.object(publisher, "api_request") as api:
                 publisher.main()
                 api.assert_not_called()
+        self.assertEqual(self.saved, [])
+
+    def test_caption_change_invalidates_approval(self):
+        data = json.loads(self.manifest.read_text(encoding="utf-8"))
+        data["caption"] = "Sources: different reviewed statement"
+        self.manifest.write_text(json.dumps(data), encoding="utf-8")
+        with patch.object(publisher, "api_request") as api:
+            publisher.main()
+            api.assert_not_called()
         self.assertEqual(self.saved, [])
 
     def test_prepublication_error_marks_failed_and_retry_succeeds(self):

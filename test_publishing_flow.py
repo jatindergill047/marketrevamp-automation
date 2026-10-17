@@ -1,5 +1,4 @@
 
-import hashlib
 import json
 import tempfile
 from pathlib import Path
@@ -27,9 +26,7 @@ def main():
 
         image_urls = [slide.get("image_url") or slide.get("secure_url")
                       for slide in manifest["slides"]]
-        approval_fingerprint = hashlib.sha256(
-            json.dumps(image_urls, sort_keys=True).encode()
-        ).hexdigest()
+        approval_fingerprint = publisher.approval_fingerprint(manifest, image_urls)
 
         manifest_path.write_text(
             json.dumps(manifest), encoding="utf-8"
