@@ -13,7 +13,7 @@ Status is based on merged code and CI evidence, not commit-message wording. **DO
 | P0 duplicate urlsplit import | DONE | PR #21 |
 | P1 failure alert | DONE (optional configuration) | FAILURE_WEBHOOK_URL secret required to send webhook |
 | P1 feed/extraction retry | DONE | PR #21 |
-| P1 history push conflict automatic reconciliation | NOT DONE | Fail-closed diagnostic implemented; safe merge/retry not implemented |
+| P1 history push conflict automatic reconciliation | DONE (disjoint records) | PR #34; bounded fetch/merge/push retries with local Git integration test; conflicting same-record edits/deletions still require manual reconciliation |
 | P1 atomic history JSON | DONE | PR #21 |
 | P1 GitHub Actions SHA pinning | DONE | PR #27; verified checkout/setup-python/upload-artifact tag refs |
 | P1 Cloudinary unsigned preset replacement | PARTIAL | Signed upload code merged in PR #28; migration needs secrets, compatible preset and disabling old unsigned preset |
