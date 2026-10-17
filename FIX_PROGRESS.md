@@ -15,7 +15,7 @@ Status is based on merged code and CI evidence, not commit-message wording. **DO
 | P1 history push conflict automatic reconciliation | NOT DONE | Fail-closed diagnostic implemented; safe merge/retry not implemented |
 | P1 atomic history JSON | DONE | PR #21 |
 | P1 GitHub Actions SHA pinning | DONE | PR #27; verified checkout/setup-python/upload-artifact tag refs |
-| P1 Cloudinary unsigned preset replacement | PARTIAL | Signed upload code in review; needs secrets, compatible preset and disabling old unsigned preset |
+| P1 Cloudinary unsigned preset replacement | PARTIAL | Signed upload code merged in PR #28; migration needs secrets, compatible preset and disabling old unsigned preset |
 | P1 dependency vulnerability audit | DONE | PR #21 |
 | P1 Graph API version review | PARTIAL | Explicit v24.0 constant, no automated sunset monitoring |
 | P2 syndicated corroboration detection | NOT DONE | |
