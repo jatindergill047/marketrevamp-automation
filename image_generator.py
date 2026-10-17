@@ -152,7 +152,7 @@ def summary_for_card(story):
         valid = False
     if not valid:
         # Do not display a misleading, possibly invalid article summary.
-        return "Summary requires editorial review. Read the original article before publishing this slide.", False
+        return "", False
     return summary, True
 
 
