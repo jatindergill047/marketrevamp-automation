@@ -22,9 +22,9 @@ Status is based on merged code and CI evidence, not commit-message wording. **DO
 | P2 syndicated corroboration detection | PARTIAL | Explicit `original_source_url` / `syndicated_from_url` provenance prevents counting reprints as independent; automatic detection of unmarked syndication remains open |
 | P2 publisher diversity | DONE | PR #25 |
 | P2 carousel alt text | DONE | PR #26; requires provider compatibility verification |
-| P2 hashtags in first comment | NOT DONE | |
+| P2 hashtags in first comment | PARTIAL | PR #37 merged; safe post-publication comment checkpoint and offline tests pass; live Meta comment permissions remain unverified |
 | P2 summary coherence | PARTIAL | PR #31 merged; extractive summaries now constrain sentence distance and have offline regression coverage. Full semantic coherence remains unverified |
-| P2 editorial config | NOT DONE | |
+| P2 editorial config | DONE | PR #35; centralized reviewed feeds, keywords, exclusions, summary bounds and CI regression |
 | P3 dead functions and imports | DONE (targeted) | PR #27 removes unused legacy extractor, cleaner, five-item selector and two image fitting functions; retains active wrap_lines |
 | P3 README | DONE | PR #21 |
 | P3 centralize seven-slide count | DONE | PR #26 shared constant; PR #27 removes remaining dead legacy helper |
