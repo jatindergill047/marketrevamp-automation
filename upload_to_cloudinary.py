@@ -1,3 +1,4 @@
+from carousel_config import CAROUSEL_SIZE
 """Upload MarketRevamp's generated PNG slides to Cloudinary.
 
 Requires CLOUDINARY_CLOUD_NAME and CLOUDINARY_UPLOAD_PRESET environment variables.
@@ -54,7 +55,7 @@ def main():
     if not cloud or not preset:
         raise SystemExit('Missing CLOUDINARY_CLOUD_NAME or CLOUDINARY_UPLOAD_PRESET environment variable')
     paths = sorted(IMAGES.glob('slide_*.png'))
-    if len(paths) != 7:
+    if len(paths) != CAROUSEL_SIZE:
         raise SystemExit(f'Expected exactly seven slide PNGs, found {len(paths)}. No upload attempted.')
     uploaded = []
     try:
