@@ -43,7 +43,7 @@ class HistoryReconcileTests(unittest.TestCase):
             git(local, "checkout", "-b", "publishing-history")
             git(local, "config", "user.name", "Test")
             git(local, "config", "user.email", "test@example.com")
-            (local / "instagram_publish_history.json").write_text("{}\\n")
+            (local / "instagram_publish_history.json").write_text("{}\n")
             git(local, "add", ".")
             git(local, "commit", "-m", "initial")
             git(local, "push", "-u", "origin", "publishing-history")
@@ -53,7 +53,7 @@ class HistoryReconcileTests(unittest.TestCase):
             git(other, "config", "user.name", "Test")
             git(other, "config", "user.email", "test@example.com")
             (other / "instagram_publish_history.json").write_text(
-                json.dumps({"remote": {"status": "published"}}) + "\\n")
+                json.dumps({"remote": {"status": "published"}}) + "\n")
             git(other, "add", ".")
             git(other, "commit", "-m", "remote update")
             git(other, "push")
