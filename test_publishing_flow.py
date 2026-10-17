@@ -14,11 +14,23 @@ def main():
         manifest_path = folder / "manifest.json"
         history_path = folder / "history.json"
 
-        manifest = json.loads(
-            Path("instagram_carousel_manifest.json").read_text(
-                encoding="utf-8"
-            )
-        )
+        source_manifest = Path("instagram_carousel_manifest.json")
+        if source_manifest.is_file():
+            manifest = json.loads(source_manifest.read_text(encoding="utf-8"))
+        else:
+            # PR CI has no generated production artifacts. Exercise the same
+            # publisher with a complete offline-only seven-image fixture.
+            manifest = {
+                "slides": [
+                    {"slide": i + 1,
+                     "image_url": f"https://res.cloudinary.com/demo/image/upload/test{i + 1}.jpg",
+                     "alt_text": f"Test article {i + 1}"}
+                    for i in range(7)
+                ],
+                "article_urls": [f"https://example.com/article-{i + 1}"
+                                 for i in range(7)],
+                "caption": "Sources: example.com (offline simulation)",
+            }
 
         # Enable publishing only inside this simulated test.
         manifest["publish_enabled"] = True
@@ -88,7 +100,21 @@ def main():
         ):
             publisher.main()
 
-        assert len(saved_history) == 5
+        # The publisher writes six distinct history checkpoints:
+        # pending, container ready, publish attempt, published,
+        # first comment pending, and first comment confirmed.
+        assert len(saved_history) == 6, (
+            f"Expected six persistence checkpoints, got {len(saved_history)}"
+        )
+        checkpoints = [next(iter(snapshot.values())) for snapshot in saved_history]
+        assert [item["status"] for item in checkpoints] == [
+            "pending", "pending", "pending", "published",
+            "published", "published",
+        ]
+        assert "publish_attempted_at" not in checkpoints[1]
+        assert "publish_attempted_at" in checkpoints[2]
+        assert checkpoints[4]["first_comment_status"] == "pending"
+        assert checkpoints[5]["first_comment_status"] == "posted"
 
         records = list(saved_history[-1].values())
         assert len(records) == 1
