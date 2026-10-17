@@ -13,6 +13,8 @@ from zoneinfo import ZoneInfo
 import requests
 from urllib.parse import urlsplit, urlunsplit
 
+# Review the Meta Graph API version and deprecation schedule quarterly.
+# Do not guess a sunset date; confirm against Meta release notes.
 API_VERSION = "v24.0"
 API_BASE = f"https://graph.instagram.com/{API_VERSION}"
 
@@ -163,6 +165,8 @@ def api_request(method, endpoint, token, payload=None):
         )
 
     if not response.ok or "error" in result:
+        if response.status_code == 401:
+            raise RuntimeError("Instagram authentication failed (401): check token expiry and rotate the production secret.")
         error = result.get("error", {})
         raise RuntimeError(
             f"Instagram API error: {error.get('message', 'Unknown error')}"
