@@ -88,7 +88,21 @@ def main():
         ):
             publisher.main()
 
-        assert len(saved_history) == 5
+        # The publisher writes six distinct history checkpoints:
+        # pending, container ready, publish attempt, published,
+        # first comment pending, and first comment confirmed.
+        assert len(saved_history) == 6, (
+            f"Expected six persistence checkpoints, got {len(saved_history)}"
+        )
+        checkpoints = [next(iter(snapshot.values())) for snapshot in saved_history]
+        assert [item["status"] for item in checkpoints] == [
+            "pending", "pending", "pending", "published",
+            "published", "published",
+        ]
+        assert "publish_attempted_at" not in checkpoints[1]
+        assert "publish_attempted_at" in checkpoints[2]
+        assert checkpoints[4]["first_comment_status"] == "pending"
+        assert checkpoints[5]["first_comment_status"] == "posted"
 
         records = list(saved_history[-1].values())
         assert len(records) == 1
