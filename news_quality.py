@@ -177,8 +177,9 @@ def summary_answers_headline(summary, headline):
     """Fail closed when a who-profits headline lacks beneficiary evidence."""
     if not headline_requires_beneficiary_answer(headline):
         return True
-    sentences = re.split(r"(?<=[.!?])\s+(?=[\\"'“‘(]*[A-Z0-9])",
-                         summary or "")
+    # The source screener validates exact sentence provenance separately.
+    # Splitting without quoting-specific lookahead avoids ambiguous escapes.
+    sentences = re.split(r"(?<=[.!?])\s+", summary or "")
     return any(contains_beneficiary_answer(sentence) for sentence in sentences)
 
 
