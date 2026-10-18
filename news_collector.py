@@ -9,7 +9,10 @@ import re
 from html import unescape
 from urllib.parse import urlsplit, urlunsplit
 from news_quality import (select_usable, CLAIM_TERMS, ATTRIBUTION,
-                          strip_section_heading, repeated_descriptive_phrase)
+                          strip_section_heading, repeated_descriptive_phrase,
+                          headline_requires_beneficiary_answer,
+                          contains_beneficiary_answer, summary_answers_headline,
+                          is_unresolved_beneficiary_question)
 
 
 from editorial_config import (
@@ -119,8 +122,11 @@ def generate_summary(article_text, min_words=SUMMARY_MIN_WORDS,
     if not candidates:
         return ""
     headline_tokens = set(_tokens(headline))
+    needs_beneficiary = headline_requires_beneficiary_answer(headline)
     ranked = []
     for position, sentence, count, tokens in candidates[:60]:
+        if needs_beneficiary and is_unresolved_beneficiary_question(sentence):
+            continue
         relevance = len(tokens & headline_tokens) / max(len(headline_tokens), 1)
         has_number = bool(re.search(r"\d", sentence))
         has_detail = bool(re.search(
@@ -131,8 +137,23 @@ def generate_summary(article_text, min_words=SUMMARY_MIN_WORDS,
         # Favor attributed reporting; never turn an allegation into a bare fact.
         attribution_bonus = 1.5 if ATTRIBUTION.search(sentence) else 0
         sensitive_penalty = 20 if CLAIM_TERMS.search(sentence) and not ATTRIBUTION.search(sentence) else 0
+        # Prefer specific findings over commentary about a report's importance.
+        editorial_teaser = bool(re.search(
+            r"\b(?:worth sitting with|isn't news anymore|is not news anymore|"
+            r"conversation has moved|better known for|influential research firm|"
+            r"the article itself|the report itself)\b", sentence, re.I,
+        ))
+        concrete = bool(re.search(
+            r"\b(?:would|will|could|expects?|projects?|reported|found|"
+            r"shows?|fees|profits?|revenue|costs?|sales|approved|"
+            r"launched|because|due to|increased|decreased|rose|fell)\b",
+            sentence, re.I,
+        ))
+        answers = needs_beneficiary and contains_beneficiary_answer(sentence)
         score = (5 * relevance + 0.8 * has_number + 0.5 * has_detail
-                 + attribution_bonus - sensitive_penalty - 0.10 * position)
+                 + 1.2 * concrete + 5.5 * answers
+                 + attribution_bonus - sensitive_penalty
+                 - 3.0 * editorial_teaser - 0.10 * position)
         ranked.append((position, sentence, count, tokens, score))
 
     # Beam search: favor source-relevant facts, coherent nearby sentences,
@@ -166,7 +187,12 @@ def generate_summary(article_text, min_words=SUMMARY_MIN_WORDS,
                  for state in sorted(group, key=lambda x: x[3], reverse=True)[:12]]
 
     valid = [state for state in beams if min_words <= state[0] <= max_words
-             and len(state[1]) >= 2]
+             and len(state[1]) >= 2 and (
+                 not needs_beneficiary or any(
+                     contains_beneficiary_answer(ranked[i][1])
+                     for i in state[1]
+                 )
+             )]
     if not valid:
         return ""
 
@@ -181,6 +207,8 @@ def generate_summary(article_text, min_words=SUMMARY_MIN_WORDS,
     summary = " ".join(item[1] for item in chosen)
     # Final safety check: no exact title, even if it appeared as a fragment.
     if headline and headline.casefold().strip(" .!?\n") in summary.casefold():
+        return ""
+    if not summary_answers_headline(summary, headline):
         return ""
     return summary
 

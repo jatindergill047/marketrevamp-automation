@@ -177,6 +177,69 @@ class NewsQualityTests(unittest.TestCase):
             self.assertGreaterEqual(len(positions), 2)
             self.assertTrue(all(b - a <= 5 for a, b in zip(positions, positions[1:])))
 
+    def test_who_profits_headline_needs_a_real_beneficiary_answer(self):
+        from news_collector import generate_summary
+        from news_quality import (
+            contains_beneficiary_answer, headline_requires_beneficiary_answer,
+        )
+        headline = "Citrini sees a tokenization boom. The harder question is who profits"
+        report_intro = (
+            "Citrini Research, known for work on technology and market trends, "
+            "published a study of digital securities and future investment flows. "
+            "The report attracted discussion about the wider role that blockchain "
+            "technology might play in financial markets."
+        )
+        unresolved = (
+            "For investors, the next challenge is figuring out which companies "
+            "and networks capture the revenue from tokenization."
+        )
+        beneficiaries = (
+            "The analysis said custody providers and asset managers could earn "
+            "service fees by helping issuers move securities onto token networks."
+        )
+        supporting = (
+            "It also suggested that infrastructure platforms might collect "
+            "recurring revenue by processing digital asset transfers for clients."
+        )
+        self.assertTrue(headline_requires_beneficiary_answer(headline))
+        self.assertFalse(contains_beneficiary_answer(unresolved))
+        self.assertTrue(contains_beneficiary_answer(beneficiaries))
+        self.assertFalse(screen_summary(
+            report_intro + " " + unresolved,
+            report_intro + " " + unresolved,
+            headline=headline,
+        )["passed"])
+        self.assertEqual(screen_summary(
+            report_intro + " " + unresolved,
+            report_intro + " " + unresolved,
+            headline=headline,
+        )["reason"], "headline_answer_not_supported")
+
+        source = " ".join((report_intro, unresolved, beneficiaries, supporting))
+        summary = generate_summary(source, min_words=30, max_words=80,
+                                   headline=headline)
+        self.assertTrue(summary)
+        self.assertTrue(screen_summary(summary, source, headline=headline)["passed"])
+        self.assertIn("custody providers and asset managers", summary)
+        self.assertNotIn("the next challenge is figuring out", summary)
+        self.assertEqual(
+            generate_summary(report_intro + " " + unresolved,
+                             min_words=30, max_words=80, headline=headline), ""
+        )
+
+    def test_non_question_headlines_keep_source_based_extraction(self):
+        from news_collector import generate_summary
+        source = (
+            "Nvidia announced a new chip architecture for enterprise server "
+            "customers following its annual developer meeting. "
+            "The company said the chip will be available through distribution "
+            "partners in the fourth quarter of next year."
+        )
+        output = generate_summary(source, min_words=30, max_words=80,
+                                  headline="Nvidia announces a new chip architecture")
+        self.assertTrue(output)
+        self.assertTrue(screen_summary(output, source)["passed"])
+
     def test_publisher_diversity_when_sources_available(self):
         titles = [
             "Nvidia introduces next generation chip platform",

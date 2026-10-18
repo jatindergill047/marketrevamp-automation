@@ -78,6 +78,22 @@ def test():
         "selected_category": "Crypto",
     }, 3, 7, "Oct 17, 2026")
     tokenization.save("marketrevamp_tokenization_preview.png", "PNG", optimize=True)
+    # Synthetic headline-answer preview: representative typography and
+    # beneficiary detail, NOT a live news story or a publishing artifact.
+    answer_preview = ig.draw_card({
+        "title": "Tokenization expands: which companies stand to benefit?",
+        "summary": (
+            "The example analysis identifies custody providers and asset "
+            "managers as potential fee earners when issuers tokenize financial "
+            "securities. It also describes how infrastructure platforms might "
+            "earn service revenue by processing digital transfers for clients."
+        ),
+        "summary_status": "ready_for_review",
+        "url": "https://example.com/synthetic-headline-answer",
+        "selected_category": "Crypto",
+    }, 3, 7, "Oct 17, 2026")
+    answer_preview.save("marketrevamp_headline_answer_preview.png",
+                        "PNG", optimize=True)
     print("PASS: compact Option C horizontal logo is centered and renders on all four 1080x1350 editorial cards")
     print("PREVIEW: marketrevamp_brand_preview.png (offline, not published)")
 

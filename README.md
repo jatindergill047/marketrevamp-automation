@@ -25,6 +25,25 @@ news), and the **Safe Validation** pull-request workflow attaches it as a
 seven-day preview artifact. Inspect this preview before merging any future
 masthead edits. Neither rendering nor CI sends Instagram API requests.
 
+## Headline-answer summaries and mobile typography
+
+The source-extractive news selector now favors concrete, source-supported
+findings over commentary about how interesting an article or report is. When
+a headline explicitly asks **who profits / benefits / wins**, the summary
+must contain a source sentence naming a plausible beneficiary category
+*and* the revenue, savings, fee or profit mechanism. Unresolved questions
+such as "which companies capture the revenue?" do **not** count as answers.
+If the publisher's available text has no suitable answer, the pipeline skips
+that article and attempts another; it never fabricates beneficiaries.
+
+The larger **KEY DETAILS** font prefers 34px (previously 29px) and adapts
+down to 22px for longer extracts, keeping complete source sentences and a
+safe margin above the footer. Its slightly wider text line preserves the
+content card's margins. The approved Option C2 logo and other layout
+components are unchanged. The safe test suite publishes an offline synthetic
+sample called `marketrevamp_headline_answer_preview.png` as a CI artifact.
+These tests do not fact-check article claims or post to Instagram.
+
 ## Editorial quality and tokenization imagery
 
 The extractive summary selector rejects repeated three-word descriptive leads
