@@ -111,6 +111,46 @@ class NewsQualityTests(unittest.TestCase):
         self.assertNotIn("Unanswered questions", summary)
         self.assertTrue(screen_summary(summary, raw)["passed"])
 
+    def test_repeated_research_firm_description_is_not_used_twice(self):
+        from news_collector import generate_summary
+        from news_quality import repeated_descriptive_phrase
+        lead = (
+            "The influential research firm says real-world assets could finally "
+            "give blockchains a clear role in finance."
+        )
+        detail = (
+            "For investors, the next challenge is figuring out which companies, "
+            "networks and protocols capture the revenue."
+        )
+        repetitive = (
+            "Now, an influential research firm that Wall Street investors pay "
+            "attention to has made the case for them."
+        )
+        later = (
+            "Tokenization would allow financial institutions to represent asset "
+            "ownership using programmable digital records."
+        )
+        article_text = " ".join((lead, detail, repetitive, later))
+        self.assertTrue(repeated_descriptive_phrase(lead, repetitive))
+        self.assertEqual(
+            screen_summary(lead + " " + repetitive, article_text)["reason"],
+            "repeated_descriptive_phrase",
+        )
+        summary = generate_summary(
+            article_text, min_words=30, max_words=75,
+            headline="Citrini sees a tokenization boom",
+        )
+        self.assertTrue(summary)
+        self.assertLessEqual(summary.casefold().count("influential research firm"), 1)
+        self.assertTrue(screen_summary(summary, article_text)["passed"])
+
+    def test_new_numbered_detail_can_restate_subject(self):
+        from news_quality import repeated_descriptive_phrase
+        a = "The influential research firm outlined a broad strategy for digital assets."
+        b = "The influential research firm expects 30 companies to adopt the software."
+        self.assertFalse(repeated_descriptive_phrase(a, b))
+        self.assertTrue(screen_summary(a + " " + b, a + " " + b)["passed"])
+
     def test_summary_sentences_stay_within_nearby_article_sections(self):
         from news_collector import _sentence_candidates, generate_summary
         opening = (
