@@ -63,6 +63,21 @@ def test():
         assert card.getpixel((100, 1201)) != baseline.getpixel((100, 1201))
         if category == "AI":
             card.save("marketrevamp_brand_preview.png", "PNG", optimize=True)
+    # A second offline preview targets the tokenization headline and footer.
+    tokenization = ig.draw_card({
+        "title": "Research report examines real-world asset tokenization",
+        "summary": (
+            "A research report examines the potential role of tokenized assets "
+            "in financial markets. It discusses how digital ownership records "
+            "might connect familiar instruments with blockchain infrastructure. "
+            "The discussion focuses on market structure and open questions "
+            "rather than projecting any asset prices or guaranteed returns."
+        ),
+        "summary_status": "ready_for_review",
+        "url": "https://example.com/tokenization-preview",
+        "selected_category": "Crypto",
+    }, 3, 7, "Oct 17, 2026")
+    tokenization.save("marketrevamp_tokenization_preview.png", "PNG", optimize=True)
     print("PASS: compact Option C horizontal logo is centered and renders on all four 1080x1350 editorial cards")
     print("PREVIEW: marketrevamp_brand_preview.png (offline, not published)")
 
