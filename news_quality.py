@@ -163,7 +163,13 @@ def contains_beneficiary_answer(sentence):
     This is a structural relevance heuristic; it is not a claim that a named
     beneficiary actually profits. Those claims still need source screening.
     """
-    return bool(_BENEFIT_ACTOR.search(sentence) and
+    unresolved = re.search(
+        r"\\b(?:unclear|unknown|unanswered|remains to be seen|question is|"
+        r"challenge is figuring out|which companies|which firms|who profits|"
+        r"who benefits|who will gain|has not identified)\\b",
+        sentence, re.I,
+    )
+    return bool(not unresolved and _BENEFIT_ACTOR.search(sentence) and
                 _BENEFIT_MECHANISM.search(sentence))
 
 
