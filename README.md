@@ -14,7 +14,7 @@ The newspaper-style 1080×1350 cards use the approved transparent
 `marketrevamp_logo_horizontal.png` in the repository root. The generator
 extracts the **existing** circular MR emblem and MarketRevamp wordmark from
 that same PNG and sizes both for a **compact, centered editorial masthead**
-(78px maximum icon, 460px maximum wordmark); it does not redraw the brand
+(78px maximum icon, 410px maximum wordmark); it does not redraw the brand
 name or replace the approved artwork. The publication tagline is centered
 underneath with more whitespace around the logo. The original
 `marketrevamp_logo.png` is retained for backwards compatibility.
