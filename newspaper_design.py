@@ -85,6 +85,10 @@ def illustration_topic(headline, category):
     if mentions("security", "hack", "hacked", "breach", "breached",
                 "malware", "cyberattack", "vulnerability", "privacy"):
         return "security"
+    if mentions("tokenization", "tokenisation", "tokenized", "tokenised",
+                "tokenize", "tokenise", "real world assets", "rwa",
+                "asset backed tokens", "digital securities"):
+        return "tokenization"
     if category == "AI" and mentions("model", "models", "launch", "released",
                                       "release", "inference", "llm", "agent"):
         return "chip"
@@ -181,6 +185,26 @@ def draw_editorial_illustration(image, top, index=1, category="AI", headline="")
         rect(-57, -89, 57, 89, navy, 4, 17)
         rect(-42, -66, 42, 59, pale, 3, 6)
         circle(0, 73, 5, CYAN, 2)
+    elif topic == "tokenization":
+        # Conceptual asset certificate linked to divisible ledger units.
+        # No coin logos, invented market prices or factual ownership claims.
+        rect(-136, -80, -21, 80, navy, 4, 8)
+        for y in (-50, -30):
+            line([(-114, y), (-49, y)], pale, 4)
+        # A small abstract asset/building inside the original certificate.
+        line([(-109, 28), (-109, -1), (-77, -21), (-46, -1),
+              (-46, 28)], muted, 3)
+        for x in (-98, -85, -72, -59):
+            line([(x, 0), (x, 25)], CYAN, 3)
+        line([(-112, 31), (-42, 31)], navy, 3)
+        # Transfer link from an asset to several fractional token units.
+        line([(-18, 0), (38, 0)], pale, 4)
+        circle(15, 0, 12, CYAN, 3)
+        for y in (-54, 0, 54):
+            line([(38, 0), (66, y)], pale, 3)
+            rect(66, y - 22, 139, y + 22, navy, 3, 7)
+            circle(86, y, 7, CYAN, 2)
+            line([(102, y), (123, y)], ORANGE, 3)
     elif topic == "ledger":
         for x, y in [(-110, -45), (-110, 45), (105, -45), (105, 45)]:
             line([(x, y), (0, 0)], pale, 3)
