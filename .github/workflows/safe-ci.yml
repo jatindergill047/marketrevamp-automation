@@ -25,6 +25,7 @@ jobs:
           path: |
             marketrevamp_brand_preview.png
             marketrevamp_tokenization_preview.png
+            marketrevamp_headline_answer_preview.png
           if-no-files-found: error
           retention-days: 7
       - run: python -m unittest -v test_news_quality.py
