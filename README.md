@@ -25,6 +25,23 @@ news), and the **Safe Validation** pull-request workflow attaches it as a
 seven-day preview artifact. Inspect this preview before merging any future
 masthead edits. Neither rendering nor CI sends Instagram API requests.
 
+## Editorial quality and tokenization imagery
+
+The extractive summary selector rejects repeated three-word descriptive leads
+when they do not supply new numeric detail. The independent summary screener
+also holds such duplicated phrasing for review instead of silently paraphrasing
+the original publisher. This is a heuristic, not independent fact-checking.
+
+The 2D newspaper illustration selector uses a certificate-to-token diagram
+for headlines about tokenization or real-world assets; actual Bitcoin news
+retains its own ledger artwork. The bottom editorial disclaimer is raised so
+it no longer crowds the paper's frame. The approved Option C2 masthead is
+unchanged.
+
+Safe Validation generates both `marketrevamp_brand_preview.png` and
+`marketrevamp_tokenization_preview.png` using offline sample copy. These
+previews are **not** live stories or publishable Instagram content.
+
 ## Configuration
 
 GitHub production environment: `instagram-production`.
