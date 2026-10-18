@@ -8,6 +8,21 @@ Weekday GitHub Actions production workflow (`.github/workflows/marketrevamp.yml`
 
 `editorial_config.py` is the reviewed source of truth for RSS feeds, category keyword lists, exclusion terms, feed headers, and summary word limits. Update these values in a PR and run the test suite; the seven-slide safety contract remains fixed. `news_collector.py` collects RSS feeds and extracts publisher text using Trafilatura. `news_quality.py` screens source fidelity, attribution, event duplicates, and corroboration signals. `image_generator.py` and `newspaper_design.py` draw editorial cards locally using Pillow. `upload_to_cloudinary.py` uploads media. `prepare_instagram_carousel.py` validates seven stories and constructs the caption/manifest. `publish_instagram.py` is the only live publishing entry point.
 
+## Official logo and editorial masthead
+
+The newspaper-style 1080×1350 cards use the approved transparent
+`marketrevamp_logo_horizontal.png` in the repository root. The generator
+extracts the **existing** circular MR emblem and MarketRevamp wordmark from
+that same PNG and sizes both for the shallow header; it does not redraw the
+brand name or replace the approved artwork. The original
+`marketrevamp_logo.png` is retained for backwards compatibility.
+
+The offline `python test_image_layout.py` test creates
+`marketrevamp_brand_preview.png` with synthetic example text (not actual
+news), and the **Safe Validation** pull-request workflow attaches it as a
+seven-day preview artifact. Inspect this preview before merging any future
+masthead edits. Neither rendering nor CI sends Instagram API requests.
+
 ## Configuration
 
 GitHub production environment: `instagram-production`.

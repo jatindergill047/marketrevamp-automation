@@ -1,8 +1,5 @@
 """Offline regression tests for unified summary and responsive editorial cards."""
-import tempfile
 import unittest
-from pathlib import Path
-from unittest.mock import patch
 from PIL import Image, ImageDraw
 import image_generator as ig
 
@@ -49,25 +46,22 @@ class EditorialRegressionTests(unittest.TestCase):
         self.assertEqual(" ".join(fit[5]), FIRST)
 
     def test_varied_headlines_and_full_summary_render(self):
-        with tempfile.TemporaryDirectory() as folder:
-            logo = Path(folder) / "logo.png"
-            Image.new("RGBA", (100, 100), (0, 150, 200, 255)).save(logo)
-            with patch.object(ig, "LOGO", logo):
-                for headline in (
-                    "Bitcoin market update",
-                    "International regulators announce extensive new technology guidelines "
-                    "as major companies prepare for substantial changes",
-                    "Elorian’s first AI model wants to reason with images, not just about them",
-                ):
-                    image = ig.draw_card({
-                        "title": headline,
-                        "summary": SUMMARY,
-                        "summary_status": "ready_for_review",
-                        "selected_category": "AI",
-                        "url": "https://example.com/article",
-                        "published": "2026-10-15T21:30:00+00:00",
-                    }, 6, 7, "Oct 17, 2026")
-                    self.assertEqual(image.size, (1080, 1350))
+        # Use the official horizontal PNG to detect layout regressions.
+        for headline in (
+            "Bitcoin market update",
+            "International regulators announce extensive new technology guidelines "
+            "as major companies prepare for substantial changes",
+            "Elorian’s first AI model wants to reason with images, not just about them",
+        ):
+            image = ig.draw_card({
+                "title": headline,
+                "summary": SUMMARY,
+                "summary_status": "ready_for_review",
+                "selected_category": "AI",
+                "url": "https://example.com/article",
+                "published": "2026-10-15T21:30:00+00:00",
+            }, 6, 7, "Oct 17, 2026")
+            self.assertEqual(image.size, (1080, 1350))
 
     def test_decorative_engraving_only_uses_available_space(self):
         from newspaper_design import draw_editorial_illustration

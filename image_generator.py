@@ -21,7 +21,7 @@ from newspaper_design import newspaper_background, draw_editorial_illustration, 
 WIDTH, HEIGHT = 1080, 1350
 INPUT = Path("news_results.json")
 OUTPUT = Path("instagram_images")
-LOGO = Path("marketrevamp_logo.png")
+LOGO = Path("marketrevamp_logo_horizontal.png")
 NAVY = (6, 18, 38)
 WHITE = (246, 250, 255)
 MUTED = (158, 181, 205)
@@ -193,6 +193,50 @@ def _article_date(story, edition_date):
     return "EDITION: " + str(edition_date).upper()
 
 
+def paste_horizontal_masthead(image):
+    """Use the approved PNG icon and wordmark, preserving their proportions.
+
+    The supplied lockup has a taller icon than lettering. Fit its two
+    existing components independently so both remain readable within
+    the newspaper's shallow masthead. Do not redraw the brand name.
+    """
+    if not LOGO.is_file():
+        raise FileNotFoundError(f"Missing approved horizontal logo: {LOGO}")
+    with Image.open(LOGO) as source:
+        if source.format != "PNG":
+            raise ValueError("MarketRevamp horizontal logo must be PNG")
+        logo = source.convert("RGBA")
+
+    if logo.width < logo.height * 2.5:
+        raise ValueError("MarketRevamp logo must be a horizontal lockup")
+
+    # The approved asset has a small transparent gutter between emblem and
+    # lettering; skip that gutter so a stray slice of the rim isn't pasted.
+    icon_end = round(logo.width * 0.255)
+    wordmark_start = round(logo.width * 0.268)
+    icon = logo.crop((0, 0, icon_end, logo.height))
+    wordmark = logo.crop((wordmark_start, 0, logo.width, logo.height))
+
+    def visible_crop(part):
+        # Ignore near-invisible antialiasing artifacts outside visible artwork.
+        alpha = part.getchannel("A")
+        visible = alpha.point(lambda value: 255 if value >= 24 else 0)
+        bounds = visible.getbbox()
+        if bounds is None:
+            raise ValueError("Horizontal logo has an empty icon or wordmark")
+        return part.crop(bounds)
+
+    icon = visible_crop(icon)
+    wordmark = visible_crop(wordmark)
+    icon.thumbnail((128, 128), Image.Resampling.LANCZOS)
+    wordmark.thumbnail((760, 110), Image.Resampling.LANCZOS)
+
+    # Align the original assets as an editorial lockup without stretching.
+    image.paste(icon, (77, 44 + (128 - icon.height) // 2), icon)
+    image.paste(wordmark, (225, 51 + (110 - wordmark.height) // 2),
+                wordmark)
+
+
 def draw_card(story, index, total, date_label):
     """Adaptive editorial news layout; no generated factual imagery or paid APIs."""
     if not 1 <= index <= total == CAROUSEL_SIZE:
@@ -208,22 +252,13 @@ def draw_card(story, index, total, date_label):
     draw = ImageDraw.Draw(image)
     left, right = 67, 1013
 
-    # Give the original square logo a deliberate white newspaper masthead
-    # treatment, rather than pretending its dark background is transparent.
-    draw.rounded_rectangle((left - 10, 37, 196, 175), radius=13,
-                           fill=(255, 255, 255), outline=(200, 207, 210), width=2)
-    if not LOGO.exists():
-        raise FileNotFoundError("Missing marketrevamp_logo.png in the repository root")
-    with Image.open(LOGO) as original_logo:
-        if original_logo.format != "PNG":
-            raise ValueError("MarketRevamp logo must be a PNG file")
-        logo = original_logo.convert("RGBA")
-        logo.thumbnail((116, 116), Image.Resampling.LANCZOS)
-        image.paste(logo, (74 + (116 - logo.width) // 2, 48 + (116 - logo.height) // 2), logo)
+    # Clear the former decorative globe behind the full-width wordmark;
+    # the off-white newspaper background remains visible across the header.
+    draw.rectangle((left - 10, 37, right + 6, 190), fill=(249, 248, 245))
+    paste_horizontal_masthead(image)
 
     draw = ImageDraw.Draw(image)
-    draw.text((221, 73), "MARKETREVAMP", font=font(48, bold=True), fill=INK)
-    draw.text((221, 135), "GLOBAL NEWS  •  SMART INSIGHTS  •  BIGGER PERSPECTIVE",
+    draw.text((225, 167), "GLOBAL NEWS  •  SMART INSIGHTS  •  BIGGER PERSPECTIVE",
               font=font(16, bold=True), fill=(65, 74, 85))
     draw.line((left, 203, right, 203), fill=(153, 164, 171), width=2)
 
@@ -282,7 +317,7 @@ def draw_card(story, index, total, date_label):
 
 def main():
     if not LOGO.exists():
-        raise SystemExit("Missing marketrevamp_logo.png. Upload the official logo to the repository root.")
+        raise SystemExit("Missing marketrevamp_logo_horizontal.png. Add the approved horizontal PNG to the repository root.")
     if not INPUT.exists():
         raise SystemExit("Missing news_results.json. Run news_collector.py first.")
     data = json.loads(INPUT.read_text(encoding="utf-8"))
