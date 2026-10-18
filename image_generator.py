@@ -232,7 +232,7 @@ def paste_horizontal_masthead(image):
     # Option C: compact, centered editorial masthead. The original image
     # components are scaled (not stretched) to give headlines priority.
     icon.thumbnail((78, 78), Image.Resampling.LANCZOS)
-    wordmark.thumbnail((460, 78), Image.Resampling.LANCZOS)
+    wordmark.thumbnail((410, 78), Image.Resampling.LANCZOS)
     gap = 18
     total_width = icon.width + gap + wordmark.width
     start_x = (WIDTH - total_width) // 2
