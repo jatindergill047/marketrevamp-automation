@@ -136,14 +136,14 @@ def generate_summary(article_text, min_words=SUMMARY_MIN_WORDS,
         sensitive_penalty = 20 if CLAIM_TERMS.search(sentence) and not ATTRIBUTION.search(sentence) else 0
         # Prefer specific findings over commentary about a report's importance.
         editorial_teaser = bool(re.search(
-            r"\\b(?:worth sitting with|isn't news anymore|is not news anymore|"
+            r"\b(?:worth sitting with|isn't news anymore|is not news anymore|"
             r"conversation has moved|better known for|influential research firm|"
-            r"the article itself|the report itself)\\b", sentence, re.I,
+            r"the article itself|the report itself)\b", sentence, re.I,
         ))
         concrete = bool(re.search(
-            r"\\b(?:would|will|could|expects?|projects?|reported|found|"
+            r"\b(?:would|will|could|expects?|projects?|reported|found|"
             r"shows?|fees|profits?|revenue|costs?|sales|approved|"
-            r"launched|because|due to|increased|decreased|rose|fell)\\b",
+            r"launched|because|due to|increased|decreased|rose|fell)\b",
             sentence, re.I,
         ))
         answers = needs_beneficiary and contains_beneficiary_answer(sentence)
