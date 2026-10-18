@@ -157,20 +157,25 @@ def headline_requires_beneficiary_answer(headline):
     return bool(_BENEFIT_HEADLINE.search(headline or ""))
 
 
+def is_unresolved_beneficiary_question(sentence):
+    """A question about who wins is not evidence of who actually wins."""
+    return bool(re.search(
+        r"\b(?:unclear|unknown|unanswered|remains to be seen|question is|"
+        r"challenge is figuring out|which companies|which firms|who profits|"
+        r"who benefits|who will gain|has not identified)\b",
+        sentence, re.I,
+    ))
+
+
 def contains_beneficiary_answer(sentence):
     """Require an actor and a gain mechanism *within the same source sentence*.
 
     This is a structural relevance heuristic; it is not a claim that a named
     beneficiary actually profits. Those claims still need source screening.
     """
-    unresolved = re.search(
-        r"\b(?:unclear|unknown|unanswered|remains to be seen|question is|"
-        r"challenge is figuring out|which companies|which firms|who profits|"
-        r"who benefits|who will gain|has not identified)\b",
-        sentence, re.I,
-    )
-    return bool(not unresolved and _BENEFIT_ACTOR.search(sentence) and
-                _BENEFIT_MECHANISM.search(sentence))
+    return bool(not is_unresolved_beneficiary_question(sentence)
+                and _BENEFIT_ACTOR.search(sentence)
+                and _BENEFIT_MECHANISM.search(sentence))
 
 
 def summary_answers_headline(summary, headline):
