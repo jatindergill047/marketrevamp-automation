@@ -210,9 +210,12 @@ def paste_horizontal_masthead(image):
     if logo.width < logo.height * 2.5:
         raise ValueError("MarketRevamp logo must be a horizontal lockup")
 
-    split = round(logo.width * 0.248)  # transparent gap between MR and wordmark
-    icon = logo.crop((0, 0, split, logo.height))
-    wordmark = logo.crop((split, 0, logo.width, logo.height))
+    # The approved asset has a small transparent gutter between emblem and
+    # lettering; skip that gutter so a stray slice of the rim isn't pasted.
+    icon_end = round(logo.width * 0.255)
+    wordmark_start = round(logo.width * 0.268)
+    icon = logo.crop((0, 0, icon_end, logo.height))
+    wordmark = logo.crop((wordmark_start, 0, logo.width, logo.height))
 
     def visible_crop(part):
         # Ignore near-invisible antialiasing artifacts outside visible artwork.
