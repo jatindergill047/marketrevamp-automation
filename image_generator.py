@@ -168,9 +168,11 @@ def _fit_editorial(draw, headline, summary):
 
         section_y = hbottom + 35
         text_y = section_y + 77
-        for summary_size in range(29, 18, -1):
+        # Prefer a larger, phone-readable key-details font. For unusually
+        # long verified extracts, fit all text without clipping or ellipses.
+        for summary_size in range(34, 21, -1):
             sface = font(summary_size)
-            slines = wrap_lines(draw, summary, sface, 860)
+            slines = wrap_lines(draw, summary, sface, 878)
             slead = summary_size + 12
             text_bottom = text_y + len(slines) * slead
             panel_bottom = text_bottom + 28
