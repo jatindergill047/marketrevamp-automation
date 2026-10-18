@@ -11,7 +11,8 @@ from urllib.parse import urlsplit, urlunsplit
 from news_quality import (select_usable, CLAIM_TERMS, ATTRIBUTION,
                           strip_section_heading, repeated_descriptive_phrase,
                           headline_requires_beneficiary_answer,
-                          contains_beneficiary_answer, summary_answers_headline)
+                          contains_beneficiary_answer, summary_answers_headline,
+                          is_unresolved_beneficiary_question)
 
 
 from editorial_config import (
@@ -124,6 +125,8 @@ def generate_summary(article_text, min_words=SUMMARY_MIN_WORDS,
     needs_beneficiary = headline_requires_beneficiary_answer(headline)
     ranked = []
     for position, sentence, count, tokens in candidates[:60]:
+        if needs_beneficiary and is_unresolved_beneficiary_question(sentence):
+            continue
         relevance = len(tokens & headline_tokens) / max(len(headline_tokens), 1)
         has_number = bool(re.search(r"\d", sentence))
         has_detail = bool(re.search(
