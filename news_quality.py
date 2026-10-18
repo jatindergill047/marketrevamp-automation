@@ -111,6 +111,27 @@ def strip_section_heading(sentence):
     return sentence
 
 
+def repeated_descriptive_phrase(first, second):
+    """Spot an exact recurring descriptive phrase while preserving source copy.
+
+    Sentences with new numbers are not treated as redundant, because they may
+    report distinct facts. A failed screen holds the story for review rather
+    than rewriting publisher quotations or fabricating a paraphrase.
+    """
+    if re.search(r"\d", second):
+        return False
+
+    def phrases(sentence):
+        words = re.findall(r"[a-z0-9]+", sentence.casefold())
+        return {
+            tuple(words[i:i + 3])
+            for i in range(len(words) - 2)
+            if all(len(word) >= 4 for word in words[i:i + 3])
+        }
+
+    return bool(phrases(first) & phrases(second))
+
+
 def screen_summary(summary, article_text):
     """Check exact source sentence support and sensitive-claim attribution."""
     if not isinstance(summary, str) or not isinstance(article_text, str):
@@ -119,10 +140,15 @@ def screen_summary(summary, article_text):
     if not _normalized_text(summary) or not source:
         return {"passed": False, "reason": "missing_source_text"}
     sentences = re.split(r"(?<=[.!?])\s+(?=[\"'“‘(]*[A-Z0-9])", summary)
+    prior_sentences = []
     for sentence in sentences:
         sentence = sentence.strip()
         if not sentence:
             continue
+        if any(repeated_descriptive_phrase(previous, sentence)
+               for previous in prior_sentences):
+            return {"passed": False, "reason": "repeated_descriptive_phrase"}
+        prior_sentences.append(sentence)
         if strip_section_heading(sentence) != sentence:
             return {"passed": False, "reason": "embedded_section_heading"}
         if _normalized_text(sentence) not in source:
