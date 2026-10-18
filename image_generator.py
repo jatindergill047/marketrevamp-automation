@@ -33,6 +33,7 @@ COLORS = {
 }
 MIN_SUMMARY_WORDS = 30
 MAX_SUMMARY_WORDS = 90
+FOOTER_DISCLAIMER_Y = 1285  # 18px above the old position; clears bottom rule
 
 
 OPEN_SANS_FONT = Path("fonts/OpenSans[wdth,wght].ttf")
@@ -324,8 +325,14 @@ def draw_card(story, index, total, date_label):
               font=font(18), fill=(72, 75, 78))
     draw.text((right, 1223), "SWIPE  ›", font=font(23, bold=True),
               fill=INK, anchor="ra")
-    draw.text((left, 1303), "MARKETREVAMP  •  NEWS, NOT INVESTMENT ADVICE",
-              font=font(16, bold=True), fill=(85, 91, 95))
+    disclaimer = "MARKETREVAMP  •  NEWS, NOT INVESTMENT ADVICE"
+    disclaimer_face = font(16, bold=True)
+    bounds = draw.textbbox((left, FOOTER_DISCLAIMER_Y), disclaimer,
+                           font=disclaimer_face)
+    if bounds[3] >= 1311:
+        raise ValueError("Footer disclaimer would overlap the bottom margin")
+    draw.text((left, FOOTER_DISCLAIMER_Y), disclaimer,
+              font=disclaimer_face, fill=(85, 91, 95))
     assert image.size == (WIDTH, HEIGHT)
     return image
 
