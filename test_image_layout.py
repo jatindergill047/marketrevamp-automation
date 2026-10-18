@@ -33,7 +33,7 @@ def test():
     icon_box, word_box = ig.paste_horizontal_masthead(geometry_canvas)
     assert icon_box[2] - icon_box[0] <= 78
     assert icon_box[3] - icon_box[1] <= 78
-    assert word_box[2] - word_box[0] <= 460
+    assert word_box[2] - word_box[0] <= 410
     assert word_box[3] - word_box[1] <= 78
     assert icon_box[2] < word_box[0]
     assert abs((icon_box[0] + word_box[2]) / 2 - ig.WIDTH / 2) <= 1
