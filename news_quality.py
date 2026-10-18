@@ -135,20 +135,20 @@ def repeated_descriptive_phrase(first, second):
 # Questions about beneficiaries require a source-backed answer, not an
 # article-about-the-article teaser. Keep the rule narrow and deterministic.
 _BENEFIT_HEADLINE = re.compile(
-    r"\\b(?:who|which (?:companies|firms|businesses|players|sectors|platforms))\\b"
-    r".{0,55}\\b(?:profit|profits|benefit|benefits|gain|gains|win|wins|winners)"
-    r"|\\b(?:winners|beneficiaries)\\b", re.I,
+    r"\b(?:who|which (?:companies|firms|businesses|players|sectors|platforms))\b"
+    r".{0,55}\b(?:profit|profits|benefit|benefits|gain|gains|win|wins|winners)"
+    r"|\b(?:winners|beneficiaries)\b", re.I,
 )
 _BENEFIT_ACTOR = re.compile(
-    r"\\b(?:companies|firms|businesses|banks|lenders|issuers|investors|"
+    r"\b(?:companies|firms|businesses|banks|lenders|issuers|investors|"
     r"asset managers|custodians|custody|exchanges|platforms|networks|"
     r"protocols|providers|developers|shareholders|brokers|operators|"
-    r"miners|manufacturers|retailers|utilities|suppliers|vendors)\\b", re.I,
+    r"miners|manufacturers|retailers|utilities|suppliers|vendors)\b", re.I,
 )
 _BENEFIT_MECHANISM = re.compile(
-    r"\\b(?:revenue|fees|profits?|benefits?|beneficiaries|winners?|"
+    r"\b(?:revenue|fees|profits?|benefits?|beneficiaries|winners?|"
     r"captures?|earns?|gains?|paid|income|savings|contracts|orders|"
-    r"margin|upside)\\b", re.I,
+    r"margin|upside)\b", re.I,
 )
 
 
@@ -164,9 +164,9 @@ def contains_beneficiary_answer(sentence):
     beneficiary actually profits. Those claims still need source screening.
     """
     unresolved = re.search(
-        r"\\b(?:unclear|unknown|unanswered|remains to be seen|question is|"
+        r"\b(?:unclear|unknown|unanswered|remains to be seen|question is|"
         r"challenge is figuring out|which companies|which firms|who profits|"
-        r"who benefits|who will gain|has not identified)\\b",
+        r"who benefits|who will gain|has not identified)\b",
         sentence, re.I,
     )
     return bool(not unresolved and _BENEFIT_ACTOR.search(sentence) and
@@ -177,7 +177,7 @@ def summary_answers_headline(summary, headline):
     """Fail closed when a who-profits headline lacks beneficiary evidence."""
     if not headline_requires_beneficiary_answer(headline):
         return True
-    sentences = re.split(r"(?<=[.!?])\\s+(?=[\\\"'“‘(]*[A-Z0-9])",
+    sentences = re.split(r"(?<=[.!?])\s+(?=[\\"'“‘(]*[A-Z0-9])",
                          summary or "")
     return any(contains_beneficiary_answer(sentence) for sentence in sentences)
 
