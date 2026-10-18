@@ -228,13 +228,26 @@ def paste_horizontal_masthead(image):
 
     icon = visible_crop(icon)
     wordmark = visible_crop(wordmark)
-    icon.thumbnail((128, 128), Image.Resampling.LANCZOS)
-    wordmark.thumbnail((760, 110), Image.Resampling.LANCZOS)
 
-    # Align the original assets as an editorial lockup without stretching.
-    image.paste(icon, (77, 44 + (128 - icon.height) // 2), icon)
-    image.paste(wordmark, (225, 51 + (110 - wordmark.height) // 2),
-                wordmark)
+    # Option C: compact, centered editorial masthead. The original image
+    # components are scaled (not stretched) to give headlines priority.
+    icon.thumbnail((78, 78), Image.Resampling.LANCZOS)
+    wordmark.thumbnail((460, 78), Image.Resampling.LANCZOS)
+    gap = 18
+    total_width = icon.width + gap + wordmark.width
+    start_x = (WIDTH - total_width) // 2
+    center_y = 99
+    icon_xy = (start_x, center_y - icon.height // 2)
+    wordmark_xy = (start_x + icon.width + gap,
+                   center_y - wordmark.height // 2)
+    image.paste(icon, icon_xy, icon)
+    image.paste(wordmark, wordmark_xy, wordmark)
+    return (
+        (icon_xy[0], icon_xy[1], icon_xy[0] + icon.width,
+         icon_xy[1] + icon.height),
+        (wordmark_xy[0], wordmark_xy[1], wordmark_xy[0] + wordmark.width,
+         wordmark_xy[1] + wordmark.height),
+    )
 
 
 def draw_card(story, index, total, date_label):
@@ -258,8 +271,10 @@ def draw_card(story, index, total, date_label):
     paste_horizontal_masthead(image)
 
     draw = ImageDraw.Draw(image)
-    draw.text((225, 167), "GLOBAL NEWS  •  SMART INSIGHTS  •  BIGGER PERSPECTIVE",
-              font=font(16, bold=True), fill=(65, 74, 85))
+    tagline = "GLOBAL NEWS  •  SMART INSIGHTS  •  BIGGER PERSPECTIVE"
+    tagline_face = font(14, bold=True)
+    draw.text((WIDTH // 2, 151), tagline, font=tagline_face,
+              fill=(65, 74, 85), anchor="mt")
     draw.line((left, 203, right, 203), fill=(153, 164, 171), width=2)
 
     category = story_category(story)
