@@ -22,7 +22,9 @@ jobs:
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: marketrevamp-horizontal-masthead-preview
-          path: marketrevamp_brand_preview.png
+          path: |
+            marketrevamp_brand_preview.png
+            marketrevamp_tokenization_preview.png
           if-no-files-found: error
           retention-days: 7
       - run: python -m unittest -v test_news_quality.py
