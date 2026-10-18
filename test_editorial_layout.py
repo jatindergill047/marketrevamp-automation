@@ -63,6 +63,38 @@ class EditorialRegressionTests(unittest.TestCase):
             }, 6, 7, "Oct 17, 2026")
             self.assertEqual(image.size, (1080, 1350))
 
+    def test_disclaimer_clears_bottom_rule_and_date(self):
+        canvas = ImageDraw.Draw(Image.new("RGB", (1080, 1350), "white"))
+        face = ig.font(16, bold=True)
+        bounds = canvas.textbbox(
+            (67, ig.FOOTER_DISCLAIMER_Y),
+            "MARKETREVAMP  •  NEWS, NOT INVESTMENT ADVICE",
+            font=face,
+        )
+        self.assertGreater(bounds[1], 1270)
+        self.assertLessEqual(bounds[3], 1309)
+        self.assertGreaterEqual(1321 - bounds[3], 12)
+
+    def test_tokenization_uses_asset_certificate_not_bitcoin_symbol(self):
+        from newspaper_design import illustration_topic, draw_editorial_illustration
+        title = "Citrini sees a tokenization boom in real-world assets"
+        self.assertEqual(illustration_topic(title, "Crypto"), "tokenization")
+        self.assertEqual(illustration_topic("Bitcoin ETF inflows rise", "Crypto"),
+                         "ledger")
+        base = Image.new("RGB", (1080, 1350), (249, 248, 245))
+        token_image = base.copy()
+        bitcoin_image = base.copy()
+        self.assertTrue(draw_editorial_illustration(
+            token_image, 850, category="Crypto", headline=title))
+        self.assertTrue(draw_editorial_illustration(
+            bitcoin_image, 850, category="Crypto",
+            headline="Bitcoin ETF inflows rise"))
+        self.assertNotEqual(
+            token_image.crop((280, 910, 800, 1174)).tobytes(),
+            bitcoin_image.crop((280, 910, 800, 1174)).tobytes())
+        self.assertEqual(token_image.crop((0, 1174, 1080, 1350)).tobytes(),
+                         base.crop((0, 1174, 1080, 1350)).tobytes())
+
     def test_decorative_engraving_only_uses_available_space(self):
         from newspaper_design import draw_editorial_illustration
         image = Image.new("RGB", (1080, 1350), (249, 248, 245))

@@ -8,7 +8,8 @@ from pathlib import Path
 import re
 from html import unescape
 from urllib.parse import urlsplit, urlunsplit
-from news_quality import select_usable, CLAIM_TERMS, ATTRIBUTION, strip_section_heading
+from news_quality import (select_usable, CLAIM_TERMS, ATTRIBUTION,
+                          strip_section_heading, repeated_descriptive_phrase)
 
 
 from editorial_config import (
@@ -143,6 +144,12 @@ def generate_summary(article_text, min_words=SUMMARY_MIN_WORDS,
             if len(indices) >= 4 or total + count > max_words:
                 continue
             if used and len(tokens & used) / max(len(tokens), 1) > 0.60:
+                continue
+            # Avoid selecting two sentences that recycle the same descriptive
+            # lead (e.g. "influential research firm") without adding figures.
+            # Keep exact publisher language; choose another supported sentence.
+            if any(repeated_descriptive_phrase(ranked[previous][1], sentence)
+                   for previous in indices):
                 continue
             # A digest assembled from distant sections may join unrelated
             # developments into a misleading narrative. Keep extracts local.
