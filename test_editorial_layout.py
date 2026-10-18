@@ -45,6 +45,26 @@ class EditorialRegressionTests(unittest.TestCase):
         fit = ig._fit_editorial(draw, "AI startup launches new model", FIRST)
         self.assertEqual(" ".join(fit[5]), FIRST)
 
+    def test_larger_summary_font_keeps_full_text_and_safe_bounds(self):
+        draw = ImageDraw.Draw(Image.new("RGB", (1080, 1350), "white"))
+        headline = "Who profits as tokenization expands across financial markets?"
+        short_copy = (
+            "The analysis said custody providers and asset managers could earn "
+            "service fees by helping issuers move securities onto token networks. "
+            "Infrastructure platforms may also receive revenue for processing "
+            "digital transfers on behalf of participating institutions."
+        )
+        fit = ig._fit_editorial(draw, headline, short_copy)
+        self.assertGreaterEqual(fit[4].size, 32)
+        self.assertEqual(" ".join(fit[5]), short_copy)
+        self.assertLessEqual(fit[8], 1170)
+        # A long fully sourced summary must still fit without truncation.
+        long_copy = " ".join([short_copy, short_copy])
+        long_fit = ig._fit_editorial(draw, headline, long_copy)
+        self.assertGreaterEqual(long_fit[4].size, 22)
+        self.assertEqual(" ".join(long_fit[5]), long_copy)
+        self.assertLessEqual(long_fit[8], 1170)
+
     def test_varied_headlines_and_full_summary_render(self):
         # Use the official horizontal PNG to detect layout regressions.
         for headline in (
