@@ -132,7 +132,51 @@ def repeated_descriptive_phrase(first, second):
     return bool(phrases(first) & phrases(second))
 
 
-def screen_summary(summary, article_text):
+# Questions about beneficiaries require a source-backed answer, not an
+# article-about-the-article teaser. Keep the rule narrow and deterministic.
+_BENEFIT_HEADLINE = re.compile(
+    r"\\b(?:who|which (?:companies|firms|businesses|players|sectors|platforms))\\b"
+    r".{0,55}\\b(?:profit|profits|benefit|benefits|gain|gains|win|wins|winners)"
+    r"|\\b(?:winners|beneficiaries)\\b", re.I,
+)
+_BENEFIT_ACTOR = re.compile(
+    r"\\b(?:companies|firms|businesses|banks|lenders|issuers|investors|"
+    r"asset managers|custodians|custody|exchanges|platforms|networks|"
+    r"protocols|providers|developers|shareholders|brokers|operators|"
+    r"miners|manufacturers|retailers|utilities|suppliers|vendors)\\b", re.I,
+)
+_BENEFIT_MECHANISM = re.compile(
+    r"\\b(?:revenue|fees|profits?|benefits?|beneficiaries|winners?|"
+    r"captures?|earns?|gains?|paid|income|savings|contracts|orders|"
+    r"margin|upside)\\b", re.I,
+)
+
+
+def headline_requires_beneficiary_answer(headline):
+    """Whether the headline explicitly asks who stands to gain."""
+    return bool(_BENEFIT_HEADLINE.search(headline or ""))
+
+
+def contains_beneficiary_answer(sentence):
+    """Require an actor and a gain mechanism *within the same source sentence*.
+
+    This is a structural relevance heuristic; it is not a claim that a named
+    beneficiary actually profits. Those claims still need source screening.
+    """
+    return bool(_BENEFIT_ACTOR.search(sentence) and
+                _BENEFIT_MECHANISM.search(sentence))
+
+
+def summary_answers_headline(summary, headline):
+    """Fail closed when a who-profits headline lacks beneficiary evidence."""
+    if not headline_requires_beneficiary_answer(headline):
+        return True
+    sentences = re.split(r"(?<=[.!?])\\s+(?=[\\\"'“‘(]*[A-Z0-9])",
+                         summary or "")
+    return any(contains_beneficiary_answer(sentence) for sentence in sentences)
+
+
+def screen_summary(summary, article_text, headline=""):
     """Check exact source sentence support and sensitive-claim attribution."""
     if not isinstance(summary, str) or not isinstance(article_text, str):
         return {"passed": False, "reason": "missing_source_text"}
@@ -155,6 +199,8 @@ def screen_summary(summary, article_text):
             return {"passed": False, "reason": "summary_not_in_source"}
         if CLAIM_TERMS.search(sentence) and not ATTRIBUTION.search(sentence):
             return {"passed": False, "reason": "unattributed_sensitive_claim"}
+    if not summary_answers_headline(summary, headline):
+        return {"passed": False, "reason": "headline_answer_not_supported"}
     return {"passed": True, "reason": "source_matched_not_fact_checked"}
 
 
@@ -195,7 +241,7 @@ def select_usable(candidates, infer_category, extract, summarize, min_words=30, 
         count = len(summary.split())
         if not min_words <= count <= max_words:
             continue
-        quality = screen_summary(summary, text)
+        quality = screen_summary(summary, text, headline=choice["title"])
         if not quality["passed"]:
             continue
         story = dict(choice)
