@@ -27,6 +27,19 @@ def test():
         assert approved.width > approved.height * 2.5
         assert approved.convert("RGBA").getchannel("A").getbbox()
 
+    # Option C must be much smaller than the previous 128px/760px
+    # emblem/wordmark masthead, and the lockup must stay centered.
+    geometry_canvas = Image.new("RGB", (ig.WIDTH, ig.HEIGHT), "white")
+    icon_box, word_box = ig.paste_horizontal_masthead(geometry_canvas)
+    assert icon_box[2] - icon_box[0] <= 78
+    assert icon_box[3] - icon_box[1] <= 78
+    assert word_box[2] - word_box[0] <= 460
+    assert word_box[3] - word_box[1] <= 78
+    assert icon_box[2] < word_box[0]
+    assert abs((icon_box[0] + word_box[2]) / 2 - ig.WIDTH / 2) <= 1
+    assert 40 <= min(icon_box[1], word_box[1])
+    assert max(icon_box[3], word_box[3]) <= 141
+
     baseline = ig.background(1)
     assert all(channel > 225 for channel in baseline.getpixel((540, 520)))
     for category in ("AI", "Technology", "Crypto", "Markets"):
@@ -40,14 +53,17 @@ def test():
         assert card.size == (1080, 1350)
         assert card.mode == "RGB"
         # Both original icon and uploaded wordmark must be visibly present.
-        for rectangle in ((80, 50, 205, 167), (240, 56, 895, 158)):
+        for rectangle in (icon_box, word_box):
             assert card.crop(rectangle).tobytes() != baseline.crop(rectangle).tobytes()
+        # Outside the centered lockup there is no oversized old wordmark.
+        assert card.getpixel((110, 95)) == (249, 248, 245)
+        assert card.getpixel((980, 95)) == (249, 248, 245)
         # The category ribbon and article footer are unchanged.
         assert card.getpixel((80, 260)) == (245, 127, 19)
         assert card.getpixel((100, 1201)) != baseline.getpixel((100, 1201))
         if category == "AI":
             card.save("marketrevamp_brand_preview.png", "PNG", optimize=True)
-    print("PASS: approved horizontal PNG renders on four 1080x1350 editorial cards")
+    print("PASS: compact Option C horizontal logo is centered and renders on all four 1080x1350 editorial cards")
     print("PREVIEW: marketrevamp_brand_preview.png (offline, not published)")
 
 
