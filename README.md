@@ -86,11 +86,28 @@ The manifest's `publish_enabled` flag and successful automated tests are additio
 
 **Never commit credentials or paste them into logs.** Instagram access tokens may expire; arrange secure rotation/monitoring in the Meta developer account. The pipeline does not currently persist a refreshed token.
 
-## Hashtags in the first comment
+## Hashtags in Instagram captions
 
-New carousel manifests keep the caption's sources and disclosure but move the six hashtag labels to a separate `first_comment` field. When using the manual approval route, **review the first comment together with the caption and slides**: it is included in the fingerprint. Automatic publishing uses the same exact-package fingerprint. After successful `media_publish`, the publisher checkpoints `first_comment_status=pending`, then submits a top-level comment to the published Instagram media ID. When Meta confirms success it records the comment ID and status `posted`.
+New seven-slide carousel manifests preserve the article headline/source lines,
+follow call-to-action, and news/not-investment-advice disclaimer, then append
+`#MarketRevamp #AI #Technology #Crypto #Bitcoin #StockMarket` at the very end
+of the Instagram caption. `caption_format.py` validates the complete
+caption against Instagram's 2,200-character limit, including hashtags.
+If the caption would overflow, preparation fails closed rather than dropping
+sources or the disclaimer.
 
-This requires the Instagram comment-management permission for the chosen Meta login flow (for Instagram Login, `instagram_business_manage_comments`). If the first-comment request times out or its result is otherwise unknown, the carousel stays marked `published` and the comment remains `pending`: **inspect Instagram and reconcile manually, never republish the carousel to retry a comment**. The code is covered by offline mocks, but live comment permissions and behavior need verification after an authorized real publication.
+New manifests set `first_comment` to an empty string. This avoids the
+separate first-comment API call that had an unknown outcome after the
+October 19 publication. The existing publisher can still process an older
+explicitly prepared/approved manifest that contains a first comment; its
+uncertain-comment checkpoint remains protected against duplicate publishing.
+Previously published captions are **not** edited by this code change.
+
+The exact caption is bound to the auto-publication fingerprint; tampering with
+hashtags invalidates the saved package. Offline tests in
+`test_caption_format.py` and `test_publishing_flow.py` check the new format
+and confirm that publishing makes **zero** comments API requests for the new
+manifests.
 
 ## Persistent publishing history
 

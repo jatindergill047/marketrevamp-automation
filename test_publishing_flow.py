@@ -35,7 +35,8 @@ def main():
         # Enable publishing only inside this simulated test.
         manifest["publish_enabled"] = True
         manifest["automated_checks_passed"] = True
-        manifest["first_comment"] = "#MarketRevamp #AI"
+        manifest["caption"] += "\n\n#MarketRevamp #AI #Technology #Crypto #Bitcoin #StockMarket"
+        manifest["first_comment"] = ""
 
         image_urls = [slide.get("image_url") or slide.get("secure_url")
                       for slide in manifest["slides"]]
@@ -100,21 +101,18 @@ def main():
         ):
             publisher.main()
 
-        # The publisher writes six distinct history checkpoints:
-        # pending, container ready, publish attempt, published,
-        # first comment pending, and first comment confirmed.
-        assert len(saved_history) == 6, (
-            f"Expected six persistence checkpoints, got {len(saved_history)}"
+        # With hashtags in the caption, the publisher needs only four
+        # durable history checkpoints and never calls the comments API.
+        assert len(saved_history) == 4, (
+            f"Expected four persistence checkpoints, got {len(saved_history)}"
         )
         checkpoints = [next(iter(snapshot.values())) for snapshot in saved_history]
         assert [item["status"] for item in checkpoints] == [
             "pending", "pending", "pending", "published",
-            "published", "published",
         ]
         assert "publish_attempted_at" not in checkpoints[1]
         assert "publish_attempted_at" in checkpoints[2]
-        assert checkpoints[4]["first_comment_status"] == "pending"
-        assert checkpoints[5]["first_comment_status"] == "posted"
+        assert "first_comment_status" not in checkpoints[3]
 
         records = list(saved_history[-1].values())
         assert len(records) == 1
@@ -125,8 +123,8 @@ def main():
         assert record["instagram_media_id"] == "TEST_PUBLISHED_POST"
         assert len(record["article_urls"]) == 7
         assert record["instagram_container_id"] == "TEST_CONTAINER_8"
-        assert record["first_comment_status"] == "posted"
-        assert record["first_comment_id"] == "TEST_HASHTAG_COMMENT"
+        assert "first_comment_status" not in record
+        assert "first_comment_id" not in record
 
         assert sum(
             1 for method, endpoint in calls
@@ -144,7 +142,8 @@ def main():
         assert sum(
             1 for method, endpoint in calls
             if method == "POST" and endpoint.endswith("/comments")
-        ) == 1
+        ) == 0
+        print("PASS: Hashtags travel in the caption; no comment API requests.")
         print("PASS: No real Instagram API requests were made.")
 
 

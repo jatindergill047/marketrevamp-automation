@@ -7,6 +7,7 @@ from pathlib import Path
 from datetime import datetime, timezone, timedelta
 from urllib.parse import urlsplit, urlunsplit
 from news_quality import screen_summary
+from caption_format import compose_caption
 
 SOURCE = Path("cloudinary_uploads.json")
 OUTPUT = Path("instagram_carousel_manifest.json")
@@ -157,16 +158,10 @@ caption_lines.extend([
     "News and information only. Not investment advice."
 ])
 
-first_comment = "#MarketRevamp #AI #Technology #Crypto #Bitcoin #StockMarket"
-if len(first_comment) > 1000:
-    raise ValueError("Instagram first comment exceeds 1,000 characters")
-
-caption = "\n".join(caption_lines)
-
-if len(caption) > 2200:
-    raise ValueError(
-        "Instagram caption exceeds 2,200 characters."
-    )
+# Keep hashtags in the visible description. An empty first comment
+# prevents a second, failure-prone Instagram comments API request.
+caption = compose_caption(caption_lines)
+first_comment = ""
 
 manifest = {
     "instagram_user_id_env": "INSTAGRAM_USER_ID",
