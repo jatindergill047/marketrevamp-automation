@@ -380,14 +380,6 @@ def main():
             raise RuntimeError("Failed record includes a publish attempt; reconciliation required.")
         print("Retrying a confirmed pre-publication failure.")
 
-    # Existing exact-fingerprint records are idempotent. Different image
-    # packages still cannot re-use articles from earlier published posts.
-    if repeated:
-        raise RuntimeError(
-            f"Publishing blocked: {len(repeated)} "
-            "previously published article(s) detected."
-        )
-
     today = datetime.now(
         ZoneInfo("America/Toronto")
     ).date().isoformat()
@@ -403,6 +395,15 @@ def main():
                     "for today. Skipping."
                 )
                 return
+
+    # A distinct package for a later date must not reuse published articles.
+    # But same-day publication is already idempotently handled above, so a
+    # delayed secondary scheduled run exits cleanly instead of raising.
+    if repeated:
+        raise RuntimeError(
+            f"Publishing blocked: {len(repeated)} "
+            "previously published article(s) detected."
+        )
 
     reviewed_fingerprint = approval_fingerprint(manifest, image_urls)
     print(f"REVIEW FINGERPRINT: {reviewed_fingerprint}")

@@ -127,6 +127,40 @@ class PublishRetryTests(unittest.TestCase):
         self.assertEqual(sum(s.endswith("/media_publish") for s in calls), 1)
         self.assertEqual(sum(s.endswith("/comments") for s in calls), 1)
 
+    def test_different_package_today_is_cleanly_skipped(self):
+        from datetime import datetime
+        from zoneinfo import ZoneInfo
+        today = datetime.now(ZoneInfo("America/Toronto")).date().isoformat()
+        self.history.write_text(json.dumps({
+            "another-carousel": {
+                "status": "published", "toronto_date": today,
+                "article_urls": ["https://example.com/story0"],
+            }
+        }), encoding="utf-8")
+        with patch.object(publisher, "api_request") as api:
+            publisher.main()
+            api.assert_not_called()
+        self.assertEqual(self.saved, [])
+
+    def test_repeated_article_on_previous_day_still_blocks(self):
+        from datetime import timedelta
+        from zoneinfo import ZoneInfo
+        from datetime import datetime
+        yesterday = (
+            datetime.now(ZoneInfo("America/Toronto")).date() - timedelta(days=1)
+        ).isoformat()
+        self.history.write_text(json.dumps({
+            "yesterday": {
+                "status": "published", "toronto_date": yesterday,
+                "article_urls": ["https://example.com/story0"],
+            }
+        }), encoding="utf-8")
+        with patch.object(publisher, "api_request") as api:
+            with self.assertRaisesRegex(RuntimeError, "previously published"):
+                publisher.main()
+            api.assert_not_called()
+        self.assertEqual(self.saved, [])
+
     def test_unknown_existing_status_blocks(self):
         with patch.object(publisher, "api_request") as api:
             import hashlib
