@@ -33,6 +33,8 @@ jobs:
 
       - name: Check Toronto publishing window
         id: schedule
+        env:
+          MARKETREVAMP_SCHEDULE: ${{ github.event.schedule }}
         run: python schedule_guard.py
 
       - name: Verify production branch
@@ -73,7 +75,7 @@ jobs:
 
       - name: Test scheduling and publishing-history safeguards
         if: steps.schedule.outputs.run == 'true'
-        run: python -m unittest -v test_reliability.py test_history_reconcile.py test_approved_workflow.py test_editorial_config.py test_publish_retry.py test_news_quality.py test_seven_pipeline.py test_editorial_layout.py test_cloudinary_signing.py
+        run: python -m unittest -v test_auto_publish_gate.py test_reliability.py test_history_reconcile.py test_approved_workflow.py test_editorial_config.py test_publish_retry.py test_news_quality.py test_seven_pipeline.py test_editorial_layout.py test_cloudinary_signing.py
 
       - name: Collect latest news and generate images
         if: steps.schedule.outputs.run == 'true'
