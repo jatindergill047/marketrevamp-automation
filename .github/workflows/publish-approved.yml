@@ -79,7 +79,7 @@ jobs:
 
       - name: Validate publishing safeguards and approved-manifest simulation
         run: |
-          python -m unittest -v test_reliability.py test_history_reconcile.py test_editorial_config.py test_publish_retry.py test_news_quality.py test_seven_pipeline.py test_cloudinary_signing.py
+          python -m unittest -v test_caption_format.py test_reliability.py test_history_reconcile.py test_editorial_config.py test_publish_retry.py test_news_quality.py test_seven_pipeline.py test_cloudinary_signing.py
           python test_publishing_flow.py
 
       - name: Publish the exact manually approved carousel
