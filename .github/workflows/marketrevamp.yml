@@ -33,6 +33,8 @@ jobs:
 
       - name: Check Toronto publishing window
         id: schedule
+        env:
+          MARKETREVAMP_SCHEDULE: ${{ github.event.schedule }}
         run: python schedule_guard.py
 
       - name: Verify production branch
