@@ -41,10 +41,13 @@ class ApprovedWorkflowTests(unittest.TestCase):
             self.assertNotIn("test_history_persistence.py", content)
             self.assertIn("python -m unittest", content)
 
-    def test_automatic_workflow_never_grants_publish_flag(self):
+    def test_scheduled_workflow_still_blocks_unapproved_posts(self):
         production = Path(".github/workflows/marketrevamp.yml").read_text()
         manual = Path(".github/workflows/publish-approved.yml").read_text()
-        self.assertIn("INSTAGRAM_PUBLISH_ENABLED: 'false'", production)
+        self.assertIn("INSTAGRAM_PUBLISH_ENABLED: 'true'", production)
+        self.assertNotIn("INSTAGRAM_APPROVED_FINGERPRINT:", production)
+        self.assertNotIn("INSTAGRAM_USER_ID:", production)
+        self.assertIn("Verify unapproved carousel is blocked", production)
         self.assertNotIn("INSTAGRAM_ACCESS_TOKEN:", production)
         self.assertIn("workflow_dispatch:", manual)
         self.assertIn("INSTAGRAM_PUBLISH_ENABLED: 'true'", manual)
