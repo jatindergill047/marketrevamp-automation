@@ -21,7 +21,10 @@ jobs:
     environment: instagram-production
 
     env:
-      INSTAGRAM_PUBLISH_ENABLED: 'false'
+      # Publishing remains blocked without a carousel-specific approval hash.
+      # The scheduled workflow intentionally receives neither approval nor
+      # live Instagram credentials.
+      INSTAGRAM_PUBLISH_ENABLED: 'true'
       INSTAGRAM_PERSISTENCE_READY: 'true'
 
     steps:
@@ -103,7 +106,7 @@ jobs:
         if: steps.schedule.outputs.run == 'true'
         run: python test_publishing_flow.py
 
-      - name: Verify carousel is held for manual approval
+      - name: Verify unapproved carousel is blocked from publication
         if: steps.schedule.outputs.run == 'true'
         run: python publish_instagram.py
 
