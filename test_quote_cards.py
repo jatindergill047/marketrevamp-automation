@@ -117,6 +117,25 @@ class QuoteCardExperimentTests(unittest.TestCase):
             # Standard slide pixel content MUST remain identical.
             self.assertEqual(base.tobytes(), preview.tobytes())
 
+    def test_quote_panel_has_editorial_typography_and_safe_footer(self):
+        story = synthetic_stories()[3]
+        source_quote = best_quote(story["article_text"], story["title"])
+        image = draw_quote_card(story, 4, 7, "Oct 20, 2026", source_quote)
+        self.assertEqual(image.size, (1080, 1350))
+        # The panel has a cyan rail, bright readable body, and navy ink.
+        self.assertEqual(image.getpixel((67, 820)), (0, 158, 215))
+        self.assertEqual(image.getpixel((95, 820)), (240, 247, 250))
+        # Neither the safe margin nor footer rule is covered by the panel.
+        self.assertEqual(image.getpixel((70, 1200)), (5, 29, 61))
+        self.assertNotEqual(image.getpixel((70, 1258)), (240, 247, 250))
+        # Approved logo remains exactly the same as on a normal news card.
+        baseline = ig.draw_card(story, 4, 7, "Oct 20, 2026")
+        self.assertEqual(image.crop((280, 58, 798, 145)).tobytes(),
+                         baseline.crop((280, 58, 798, 145)).tobytes())
+        # Rendering has not rewritten the literal candidate quote or speaker.
+        self.assertEqual(source_quote["text"], QUOTE)
+        self.assertEqual(source_quote["speaker"], "Maya Chen")
+
     def test_zero_quote_fallback_stays_seven_standard_cards(self):
         stories = synthetic_stories()
         for story in stories:
