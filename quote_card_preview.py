@@ -5,7 +5,7 @@ is re-validated against literal article text before rendering.
 """
 from pathlib import Path
 
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFont
 
 from carousel_config import CAROUSEL_SIZE
 import image_generator as news
@@ -49,47 +49,75 @@ def draw_quote_card(story, index, total, date_label, quote):
     draw.text((right, 230), f"{index:02d}/{total:02d}",
               font=news.font(26, bold=True), fill=INK, anchor="ra")
 
+    # Keep the title prominent, but let the quotation own the visual focus.
     h_face, h_lines, h_lead = news._fit_text(
-        draw, headline, 930, 240, 52, 34, bold=True
+        draw, headline, 930, 235, 47, 32, bold=True
     )
     news._draw_lines(draw, h_lines, left, 300, h_face, INK, h_lead)
     h_bottom = 300 + len(h_lines) * h_lead
-    label_y = h_bottom + 21
+    label_y = h_bottom + 28
     if label_y + 54 >= 845:
         raise ValueError("Quote headline would crowd the text panel")
 
-    draw.rounded_rectangle((left, label_y, left + 235, label_y + 52),
+    draw.rounded_rectangle((left, label_y, left + 244, label_y + 52),
                            radius=22, fill=INK)
     draw.text((left + 25, label_y + 10), "DIRECT QUOTE",
               font=news.font(24, bold=True), fill=(255, 255, 255))
-    draw.line((left + 255, label_y + 28, right, label_y + 28),
+    draw.line((left + 264, label_y + 28, right, label_y + 28),
               fill=INK, width=2)
 
-    top = label_y + 69
-    text_y = top + 91
-    # Do not alter a single word: shrink locally only when needed to fit.
+    # Pull-quote design: airy typography, subtle ink rules, and one
+    # source-accurate attribution. No quotations or roles are invented.
+    top = label_y + 73
+    text_y = top + 116
+    quote_x = left + 60
+    # Preserve every word; decrease type only when the full quotation, plus
+    # its speaker attribution, fits above the publication footer.
     selected = None
-    for size in range(52, 31, -1):
+    for size in range(49, 33, -1):
         face = news.font(size)
-        lines = news.wrap_lines(draw, quote["text"], face, 804)
+        lines = news.wrap_lines(draw, quote["text"], face, 824)
         leading = size + 13
-        byline_y = text_y + len(lines) * leading + 19
-        bottom = byline_y + 74
-        if bottom <= 1140:
-            selected = (face, lines, leading, byline_y, bottom)
+        separator_y = text_y + len(lines) * leading + 15
+        attribution_label_y = separator_y + 15
+        speaker_y = attribution_label_y + 22
+        bottom = speaker_y + 55
+        if bottom <= 1135:
+            selected = (face, lines, leading, separator_y,
+                        attribution_label_y, speaker_y, bottom)
             break
     if selected is None:
         raise ValueError("Exact source quote cannot fit without clipping")
 
-    q_face, lines, leading, byline_y, bottom = selected
+    (q_face, lines, leading, separator_y,
+     attribution_label_y, speaker_y, bottom) = selected
     draw.rounded_rectangle((left, top, right, bottom),
-                           radius=17, fill=(239, 246, 249))
-    draw.rectangle((left, top, left + 8, bottom), fill=CYAN)
-    draw.text((left + 32, top + 15), "“",
-              font=news.font(76, bold=True), fill=CYAN)
-    news._draw_lines(draw, lines, left + 91, text_y, q_face, INK, leading)
-    draw.text((left + 47, byline_y), "— " + quote["speaker"],
-              font=news.font(28, bold=True), fill=INK)
+                           radius=19, fill=(240, 247, 250))
+    draw.rectangle((left, top, left + 7, bottom), fill=CYAN)
+
+    # A proper oversized editorial opening quotation mark (not a fake image)
+    # gives the card a distinct voice without changing the quoted source.
+    try:
+        opener = ImageFont.truetype(
+            "/usr/share/fonts/truetype/dejavu/DejaVuSerif.ttf", 106
+        )
+    except OSError:
+        opener = news.font(106, bold=True)
+    draw.text((left + 43, top + 2), "“",
+              font=opener, fill=CYAN)
+    draw.line((left + 128, top + 70, left + 220, top + 70),
+              fill=ORANGE, width=5)
+    news._draw_lines(draw, lines, quote_x, text_y,
+                     q_face, INK, leading)
+
+    # Separate the speaker from the quote, so the name reads as
+    # attribution rather than an extension of the quoted sentence.
+    draw.line((left + 53, separator_y, right - 52, separator_y),
+              fill=(198, 217, 227), width=2)
+    draw.text((left + 56, attribution_label_y), "ATTRIBUTED TO",
+              font=news.font(15, bold=True), fill=(84, 110, 128))
+    draw.text((left + 56, speaker_y), quote["speaker"],
+              font=news.font(27, bold=True), fill=INK)
     # This visual is always marked as a non-publishable experiment.
     draw.text((left, 1160), "EXPERIMENT  •  NOT FOR PUBLICATION",
               font=news.font(17, bold=True), fill=(110, 111, 108))
