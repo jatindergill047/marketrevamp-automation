@@ -41,7 +41,8 @@ def synthetic_stories():
             ),
             "summary": SUMMARY,
             "summary_status": "ready_for_review",
-            "selected_category": ("AI", "Technology", "Crypto", "Markets")[i % 4],
+            "selected_category": ("AI" if i == 3 else
+                                  ("AI", "Technology", "Crypto", "Markets")[i % 4]),
             "url": f"https://example.com/mock-news-{i + 1}",
             "published": "2026-10-20T15:00:00+00:00",
             "article_text": ARTICLE if i == 3 else
