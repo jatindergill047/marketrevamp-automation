@@ -25,6 +25,34 @@ news), and the **Safe Validation** pull-request workflow attaches it as a
 seven-day preview artifact. Inspect this preview before merging any future
 masthead edits. Neither rendering nor CI sends Instagram API requests.
 
+## Experimental ONE-quote-card preview (not live)
+
+This pull request introduces an **offline test only**. The production collector,
+`image_generator.py` default renderer, automatic publishing workflows and
+Instagram manifest remain unchanged. In particular, **scheduled auto-publishing
+is enabled on main**, so this quote trial must remain in its experimental PR
+branch until the new card has been reviewed and explicitly approved.
+
+The deterministic `quote_cards.py` selector allows at most **one** short
+(12–38 words) double-quoted verbatim excerpt per existing seven-slide carousel.
+It accepts only close-by attribution to a two-part capitalized speaker name;
+it never constructs, paraphrases, truncates, or edits a publisher quote.
+Ambiguous attributions and weak/missing quotes produce normal cards instead.
+The preview renderer checks quote text and speaker against the source again.
+
+Safe Validation runs `test_quote_cards.py` and
+`python run_quote_card_preview.py`. This generates seven synthetic 1080x1350
+news slides in the isolated `quote_card_trial/` directory (six unchanged
+newspaper cards, one visibly labelled experimental quote card), alongside
+`standard_card_comparison.png`, `quote_card_experiment.png` and
+`before_after.png`. The `marketrevamp-single-quote-test` GitHub Actions
+artifact contains the complete non-publishable test. No live feeds, news
+claims, Cloudinary or Instagram credentials are used to produce it.
+
+**Rollback:** close the experimental PR without merging; `main` stays
+exactly as it was. Even after approval, production integration would require
+a separate explicit reviewed change with a default-off feature gate.
+
 ## Headline-answer summaries and mobile typography
 
 The source-extractive news selector now favors concrete, source-supported
