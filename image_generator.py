@@ -10,6 +10,7 @@ from carousel_config import CAROUSEL_SIZE
 
 
 import json
+import os
 import re
 from datetime import datetime, timezone
 from pathlib import Path
@@ -257,6 +258,13 @@ def draw_card(story, index, total, date_label):
     """Adaptive editorial news layout; no generated factual imagery or paid APIs."""
     if not 1 <= index <= total == CAROUSEL_SIZE:
         raise ValueError("Expected slide index 1–7 of 7")
+    if story.get("quote_card"):
+        if (index != 1 or
+                os.environ.get("MARKETREVAMP_QUOTE_FIRST", "").lower() != "true"):
+            raise ValueError("Quote artwork requires explicit slide-1 opt-in")
+        from quote_card_preview import draw_quote_card
+        return draw_quote_card(story, index, total, date_label,
+                               story["quote_card"], experimental=False)
     summary, valid = summary_for_card(story)
     if not valid:
         raise ValueError("Cannot render a news card with an invalid summary")
@@ -356,6 +364,12 @@ def main():
     except (AttributeError, ValueError):
         dt = datetime.now(timezone.utc)
     date_label = dt.strftime("%b %d, %Y")
+
+    if os.environ.get("MARKETREVAMP_QUOTE_FIRST", "").lower() == "true":
+        from quote_first import verify_quote_first
+        verify_quote_first(stories)
+    elif any(story.get("quote_card") for story in stories):
+        raise SystemExit("Unexpected quote metadata without opt-in flag")
 
     for index, story in enumerate(stories, 1):
         path = OUTPUT / f"slide_{index:02d}.png"
