@@ -457,6 +457,7 @@ def collect_news():
         generate_summary,
         SUMMARY_MIN_WORDS,
         SUMMARY_MAX_WORDS,
+        require_quote=(os.environ.get("MARKETREVAMP_QUOTE_FIRST", "").lower() == "true"),
     )
     if os.environ.get("MARKETREVAMP_QUOTE_FIRST", "").lower() == "true":
         # Explicit live request only: refuse to proceed unless exactly one
