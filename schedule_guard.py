@@ -1,12 +1,36 @@
 """Run only the matching 18:00 Toronto schedule (EDT or EST), not both."""
 import os
+import json
+from pathlib import Path
 from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 
 TORONTO = ZoneInfo("America/Toronto")
+SINGLE_LIVE_DATE = "2026-10-25"
+SINGLE_LIVE_TRIGGER = Path(".github/marketrevamp-live-20261025.trigger")
+
+
+def valid_one_shot(now=None, trigger_path=SINGLE_LIVE_TRIGGER):
+    """Explicit dated quote-first push; ordinary pushes never prepare news."""
+    local = (now or datetime.now(TORONTO)).astimezone(TORONTO)
+    if local.date().isoformat() != SINGLE_LIVE_DATE:
+        return False
+    try:
+        payload = json.loads(Path(trigger_path).read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return False
+    return payload == {
+        "toronto_date": SINGLE_LIVE_DATE,
+        "intent": "one-time-live-seven-news-quote-first",
+        "max_quote_cards": 1,
+        "quote_slide": 1,
+    }
+
 
 
 def should_run(event, now=None, cron=None):
+    if event == "push":
+        return valid_one_shot(now)
     if event != "schedule":
         return True
     now = now or datetime.now(TORONTO)
@@ -30,4 +54,4 @@ if __name__ == "__main__":
     if output:
         with open(output, "a", encoding="utf-8") as file:
             file.write(f"run={'true' if allowed else 'false'}\n")
-    print("Toronto schedule check:", "proceed" if allowed else "skip off-hour or duplicate cron")
+    print("Toronto schedule check:", "proceed" if allowed else "skip off-hour, invalid date, or duplicate cron")
