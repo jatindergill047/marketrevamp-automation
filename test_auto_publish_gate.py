@@ -1,5 +1,6 @@
 """Offline security regression for opt-in automatic Instagram publishing."""
 import json
+import os
 import tempfile
 import unittest
 from datetime import datetime
@@ -68,7 +69,10 @@ class AutoPublishGateTests(unittest.TestCase):
                 verify_preparation_run({**GOOD_RUN, **changes}, "39349690506",
                                        repo, now=NOW)
 
+    @patch.dict(os.environ, {"REQUIRE_QUOTE_FIRST": ""})
     def test_manifest_is_exactly_seven_and_prevalidated(self):
+        # This generic fixture is intentionally not a quote-first manifest.
+        # Its behavior must not depend on a live run's environment variables.
         slides = [
             {"slide": i + 1,
              "image_url": f"https://res.cloudinary.com/demo/image/upload/{i}.png",
