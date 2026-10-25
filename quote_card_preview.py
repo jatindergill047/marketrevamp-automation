@@ -13,7 +13,7 @@ from newspaper_design import INK, CYAN, ORANGE
 from quote_cards import quote_matches_source, select_one_quote
 
 
-def draw_quote_card(story, index, total, date_label, quote):
+def draw_quote_card(story, index, total, date_label, quote, *, experimental=True):
     """Render a distinctly marked experimental card, preserving C2 branding."""
     if not 1 <= index <= total == CAROUSEL_SIZE:
         raise ValueError("Expected slide index 1–7 of 7")
@@ -118,9 +118,11 @@ def draw_quote_card(story, index, total, date_label, quote):
               font=news.font(15, bold=True), fill=(84, 110, 128))
     draw.text((left + 56, speaker_y), quote["speaker"],
               font=news.font(27, bold=True), fill=INK)
-    # This visual is always marked as a non-publishable experiment.
-    draw.text((left, 1160), "EXPERIMENT  •  NOT FOR PUBLICATION",
-              font=news.font(17, bold=True), fill=(110, 111, 108))
+    # Keep the warning on all offline test previews; a validated live card
+    # uses the same artwork without a misleading experiment watermark.
+    if experimental:
+        draw.text((left, 1160), "EXPERIMENT  •  NOT FOR PUBLICATION",
+                  font=news.font(17, bold=True), fill=(110, 111, 108))
 
     draw.line((left, 1200, right, 1200), fill=INK, width=2)
     draw.text((left, 1216), "SOURCE:", font=news.font(18, bold=True), fill=INK)
