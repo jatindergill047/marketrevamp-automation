@@ -12,6 +12,7 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 
 from publish_instagram import approval_fingerprint, load_manifest
+from schedule_guard import valid_one_shot
 
 TORONTO = ZoneInfo("America/Toronto")
 TRIGGER = Path(".github/marketrevamp-post-now.trigger")
@@ -52,7 +53,7 @@ def verify_preparation_run(data, source_run_id, repository, now=None):
     if (not isinstance(data, dict)
             or str(data.get("id")) != str(source_run_id)
             or data.get("name") != "MarketRevamp Automation"
-            or data.get("event") != "schedule"
+            or data.get("event") not in ("schedule", "push")
             or data.get("head_branch") != "main"
             or data.get("conclusion") != "success"
             or (data.get("repository") or {}).get("full_name") != repository):
@@ -60,6 +61,8 @@ def verify_preparation_run(data, source_run_id, repository, now=None):
     stamp = datetime.fromisoformat(str(data["created_at"]).replace("Z", "+00:00"))
     if stamp.astimezone(TORONTO).date().isoformat() != toronto_today(now):
         raise ValueError("Refusing to publish an artifact from a previous Toronto date")
+    if data.get("event") == "push" and not valid_one_shot(now):
+        raise ValueError("One-shot live preparation lacks its valid Toronto-date marker")
 
 
 def verify_manifest_and_fingerprint(expected=""):
@@ -70,6 +73,12 @@ def verify_manifest_and_fingerprint(expected=""):
         raise ValueError("Preparation automated checks did not pass")
     if len(manifest.get("article_urls", [])) != 7:
         raise ValueError("Expected exactly seven article URLs")
+    if os.environ.get("REQUIRE_QUOTE_FIRST") == "true":
+        if (manifest.get("quote_card_first") is not True
+                or manifest.get("quote_card_count") != 1
+                or not (manifest.get("slides") or [{}])[0].get(
+                    "alt_text", "").startswith("MarketRevamp attributed quote card:")):
+            raise ValueError("One-shot live package must have one verified quote on slide 1")
     fp = approval_fingerprint(manifest, image_urls)
     if expected and expected != fp:
         raise ValueError("One-shot artifact fingerprint changed; refusing publication")
@@ -87,11 +96,14 @@ def main():
         _set_env("EXPECTED_REVIEW_FINGERPRINT", expected)
         print(f"Validated source run ID: {source}")
     elif mode == "verify-run":
+        source = json.load(sys.stdin)
         verify_preparation_run(
-            json.load(sys.stdin), os.environ["SOURCE_RUN_ID"],
+            source, os.environ["SOURCE_RUN_ID"],
             os.environ["GITHUB_REPOSITORY"],
         )
-        print("Validated preparation branch, schedule, completion, date and repository.")
+        if source.get("event") == "push":
+            _set_env("REQUIRE_QUOTE_FIRST", "true")
+        print("Validated preparation branch, source event, completion, date and repository.")
     elif mode == "authorize":
         fp = verify_manifest_and_fingerprint(
             os.environ.get("EXPECTED_REVIEW_FINGERPRINT", "")
