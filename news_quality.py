@@ -216,11 +216,15 @@ def screen_summary(summary, article_text, headline=""):
     return {"passed": True, "reason": "source_matched_not_fact_checked"}
 
 
-def select_usable(candidates, infer_category, extract, summarize, min_words=30, max_words=90):
-    """Return seven distinct, extractable and source-derived articles or fail closed.
+def select_usable(candidates, infer_category, extract, summarize,
+                  min_words=30, max_words=90, require_quote=False):
+    """Return seven source-screened stories; optionally require a direct quote.
 
-    Prefer uncovered categories throughout fallback selection. No AI rewriting.
+    Under the one-time quote-first opt-in, scan up to twelve additional
+    source-screened candidates for a usable literal quote if the first seven
+    are not quotable. Never weaken the article integrity requirements.
     """
+    from quote_cards import best_quote
     pending = prioritize_diversity(candidates, infer_category)
     # Apply a publisher cap when the candidate pool actually has alternatives.
     # Preserve the seven-story fail-closed contract for thin-source days.
@@ -232,8 +236,16 @@ def select_usable(candidates, infer_category, extract, summarize, min_words=30, 
     selected = []
     used_categories = set()
     attempted = set()
+    quote_found = False
+    post_seven_checks = 0
 
-    while len(selected) < CAROUSEL_SIZE and pending:
+    while pending and (
+        len(selected) < CAROUSEL_SIZE
+        or (require_quote and not quote_found and post_seven_checks < 12)
+    ):
+        searching_backup = len(selected) == CAROUSEL_SIZE
+        if searching_backup:
+            post_seven_checks += 1
         # Re-prioritize missing categories after any failed extraction.
         choice = next((s for s in pending if infer_category(s) not in used_categories), pending[0])
         pending.remove(choice)
@@ -267,14 +279,35 @@ def select_usable(candidates, infer_category, extract, summarize, min_words=30, 
         # Recording source provenance is not a cross-source verification claim.
         story["source_domain"] = source_domain(story["url"])
         story.update(screening)
-        selected.append(story)
+        has_quote = bool(best_quote(text, story["title"])) if require_quote else False
+        if searching_backup:
+            if not has_quote:
+                continue
+            # Replace the lowest-priority story without losing a covered
+            # category when an equal-category candidate can be replaced.
+            matches = [i for i, old in enumerate(selected)
+                       if old["selected_category"] == story["selected_category"]]
+            replace_at = matches[-1] if matches else CAROUSEL_SIZE - 1
+            discarded = selected.pop(replace_at)
+            discarded_domain = source_domain(discarded["url"])
+            domain_counts[discarded_domain] -= 1
+            selected.append(story)
+            used_categories = {s["selected_category"] for s in selected}
+        else:
+            selected.append(story)
+            used_categories.add(story["selected_category"])
         domain_counts[domain] = domain_counts.get(domain, 0) + 1
-        used_categories.add(story["selected_category"])
+        quote_found = quote_found or has_quote
 
     if len(selected) != CAROUSEL_SIZE:
         raise RuntimeError(
             f"Only {len(selected)} fresh, distinct, usable articles available; "
             "refusing to publish an incomplete carousel."
+        )
+    if require_quote and not quote_found:
+        raise RuntimeError(
+            "No authentic attributed quote found among fresh source-screened "
+            "stories and bounded backup candidates; refusing quote-first publication."
         )
     return selected
 
