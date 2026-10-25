@@ -40,11 +40,21 @@ class LiveQuoteFirstTests(unittest.TestCase):
         from test_news_quality import GOOD_SUMMARY
         from test_quote_cards import ARTICLE
         candidates = []
+        distinct_titles = (
+            "Nvidia announces enterprise accelerator hardware",
+            "Microsoft expands robotics cloud partnerships",
+            "Apple launches accessibility keyboard features",
+            "Google publishes quantum processor benchmarking results",
+            "Tesla introduces charging adapter design",
+            "Amazon updates warehouse scheduling software",
+            "Meta demonstrates new wearable neural interface",
+            "Anthropic releases developer programming tools",
+        )
         for i in range(8):
             domain = ("first.com" if i < 3 else
                       "second.com" if i < 6 else "third.com")
             candidates.append({
-                "title": f"Company {i} publishes a distinct enterprise product update",
+                "title": distinct_titles[i],
                 "category": "Technology",
                 "url": f"https://{domain}/news/{i}",
                 "published": "2026-10-25T15:00:00+00:00",
