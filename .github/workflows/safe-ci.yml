@@ -18,8 +18,16 @@ jobs:
       - run: python -m unittest -v test_caption_format.py test_auto_publish_gate.py test_reliability.py test_history_reconcile.py test_approved_workflow.py test_editorial_config.py test_publish_retry.py test_news_quality.py test_seven_pipeline.py test_editorial_layout.py test_cloudinary_signing.py
       - run: python test_publishing_flow.py
       - run: python test_image_layout.py
-      - run: python -m unittest -v test_quote_cards.py
+      - run: python -m unittest -v test_quote_cards.py test_quote_first_live.py
       - run: python run_quote_card_preview.py
+      - run: python run_quote_first_preview.py
+      - name: Upload synthetic quote-first integration preview
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: marketrevamp-quote-first-live-format-synthetic
+          path: quote_first_preview/
+          if-no-files-found: error
+          retention-days: 7
       - name: Upload isolated quote-card experiment (never production images)
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
