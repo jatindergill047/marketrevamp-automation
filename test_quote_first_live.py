@@ -10,6 +10,7 @@ import image_generator as ig
 from auto_publish_gate import verify_manifest_and_fingerprint, verify_preparation_run
 from quote_cards import quote_matches_source
 from quote_first import promote_quote_to_first, verify_quote_first
+from news_quality import select_usable
 from quote_card_preview import draw_quote_card
 from schedule_guard import should_run, valid_one_shot
 from test_quote_cards import synthetic_stories
@@ -34,6 +35,32 @@ class LiveQuoteFirstTests(unittest.TestCase):
         self.assertTrue(quote_matches_source(result[0],
                                               result[0]["quote_card"]))
         self.assertNotIn("quote_card", stories[3])
+
+    def test_backup_source_used_when_initial_seven_lack_quotes(self):
+        from test_news_quality import GOOD_SUMMARY
+        from test_quote_cards import ARTICLE
+        candidates = []
+        for i in range(8):
+            domain = ("first.com" if i < 3 else
+                      "second.com" if i < 6 else "third.com")
+            candidates.append({
+                "title": f"Company {i} publishes a distinct enterprise product update",
+                "category": "Technology",
+                "url": f"https://{domain}/news/{i}",
+                "published": "2026-10-25T15:00:00+00:00",
+                "score": 50 - i,
+            })
+        def extract(url):
+            return GOOD_SUMMARY + (" " + ARTICLE if url.endswith("/7") else "")
+        selected = select_usable(
+            candidates, lambda story: "Technology",
+            extract, lambda text, headline: GOOD_SUMMARY,
+            require_quote=True,
+        )
+        self.assertEqual(len(selected), 7)
+        promoted = promote_quote_to_first(selected)
+        self.assertTrue(promoted[0]["url"].endswith("/7"))
+        self.assertTrue(verify_quote_first(promoted))
 
     def test_no_quote_never_creates_published_carousel(self):
         cases = synthetic_stories()
