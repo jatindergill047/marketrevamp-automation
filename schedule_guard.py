@@ -24,6 +24,7 @@ def valid_one_shot(now=None, trigger_path=SINGLE_LIVE_TRIGGER):
         "intent": "one-time-live-seven-news-quote-first",
         "max_quote_cards": 1,
         "quote_slide": 1,
+        "attempt": 2,
     }
 
 

@@ -83,8 +83,11 @@ class LiveQuoteFirstTests(unittest.TestCase):
 
     def test_live_quote_requires_opt_in_and_is_not_watermarked(self):
         story = promote_quote_to_first(synthetic_stories())[0]
-        with self.assertRaisesRegex(ValueError, "explicit slide-1 opt-in"):
-            ig.draw_card(story, 1, 7, "Oct 25, 2026")
+        # Production runs set the job-level opt-in; explicitly clear it
+        # while verifying the default-off behavior in this unit test.
+        with patch.dict(os.environ, {"MARKETREVAMP_QUOTE_FIRST": ""}):
+            with self.assertRaisesRegex(ValueError, "explicit slide-1 opt-in"):
+                ig.draw_card(story, 1, 7, "Oct 25, 2026")
         with patch.dict(os.environ, {"MARKETREVAMP_QUOTE_FIRST": "true"}):
             live = ig.draw_card(story, 1, 7, "Oct 25, 2026")
         preview = draw_quote_card(story, 1, 7, "Oct 25, 2026",
