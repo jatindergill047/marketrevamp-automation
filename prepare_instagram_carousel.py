@@ -3,10 +3,12 @@
 from carousel_config import CAROUSEL_SIZE
 
 import json
+import os
 from pathlib import Path
 from datetime import datetime, timezone, timedelta
 from urllib.parse import urlsplit, urlunsplit
 from news_quality import screen_summary
+from quote_first import verify_quote_first
 from caption_format import compose_caption
 
 SOURCE = Path("cloudinary_uploads.json")
@@ -25,6 +27,14 @@ if len(stories) != CAROUSEL_SIZE:
     raise ValueError(
         f"Expected 7 news stories, found {len(stories)}"
     )
+
+quote_first_enabled = os.environ.get("MARKETREVAMP_QUOTE_FIRST", "").lower() == "true"
+if quote_first_enabled:
+    # Mandatory: avoid Cloudinary URLs or captions that misrepresent the
+    # first slide as a real verified quote when it is not one.
+    verify_quote_first(stories)
+elif any(s.get("quote_card") for s in stories):
+    raise ValueError("Quote metadata not permitted without live opt-in")
     
 for index, story in enumerate(stories, start=1):
     # Defense in depth: speculative stories require a second independent
@@ -123,11 +133,14 @@ for number, item in enumerate(images, start=1):
         parts.scheme, parts.netloc, new_path, "", ""
     ))
 
+    story_for_alt = stories[number - 1]
+    alt_prefix = ("MarketRevamp attributed quote card: " if number == 1 and quote_first_enabled
+                  else "MarketRevamp news slide: ")
     slides.append({
         "slide": number,
         "image_url": jpeg_url,
         "is_carousel_item": True,
-        "alt_text": ("MarketRevamp news slide: " + stories[number - 1]["title"])[:950]
+        "alt_text": (alt_prefix + story_for_alt["title"])[:950]
     })
 caption_lines = [
     "🚀 MARKETREVAMP | DAILY NEWS BRIEF",
@@ -169,6 +182,8 @@ manifest = {
     "automated_checks_passed": True,
     "editorial_approved": False,
     "media_type": "CAROUSEL",
+    "quote_card_first": quote_first_enabled,
+    "quote_card_count": 1 if quote_first_enabled else 0,
     "caption": caption,
     "first_comment": first_comment,
     "article_urls": [
