@@ -1,4 +1,5 @@
 import json
+import os
 import urllib.request
 import time
 import xml.etree.ElementTree as ET
@@ -8,6 +9,7 @@ from pathlib import Path
 import re
 from html import unescape
 from urllib.parse import urlsplit, urlunsplit
+from quote_first import promote_quote_to_first
 from news_quality import (select_usable, CLAIM_TERMS, ATTRIBUTION,
                           strip_section_heading, repeated_descriptive_phrase,
                           headline_requires_beneficiary_answer,
@@ -455,7 +457,13 @@ def collect_news():
         generate_summary,
         SUMMARY_MIN_WORDS,
         SUMMARY_MAX_WORDS,
+        require_quote=(os.environ.get("MARKETREVAMP_QUOTE_FIRST", "").lower() == "true"),
     )
+    if os.environ.get("MARKETREVAMP_QUOTE_FIRST", "").lower() == "true":
+        # Explicit live request only: refuse to proceed unless exactly one
+        # real attributed quote can become the first carousel slide.
+        selected = promote_quote_to_first(selected)
+        print("One-shot request: verified direct quote promoted to slide 1")
     for story in selected:
         print(f"Selected: {story['title']} | summary words: {story['summary_word_count']}")
 

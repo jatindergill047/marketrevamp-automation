@@ -3,6 +3,12 @@ name: MarketRevamp Automation
 
 on:
   workflow_dispatch:
+  # A single, date-locked main-branch push explicitly authorized for
+  # Sunday Oct 25. This does not change the weekday schedule.
+  push:
+    branches: [main]
+    paths:
+      - '.github/marketrevamp-live-20261025.trigger'
   schedule:
     # 18:00 Toronto = 22:00 UTC (EDT) or 23:00 UTC (EST).
     - cron: '0 22 * * 1-5'
@@ -26,6 +32,8 @@ jobs:
       # live Instagram credentials.
       INSTAGRAM_PUBLISH_ENABLED: 'true'
       INSTAGRAM_PERSISTENCE_READY: 'true'
+      # Only the dated one-shot push enables the approved first-slide quote.
+      MARKETREVAMP_QUOTE_FIRST: ${{ github.event_name == 'push' && 'true' || 'false' }}
 
     steps:
       - name: Checkout repository
@@ -75,7 +83,7 @@ jobs:
 
       - name: Test scheduling and publishing-history safeguards
         if: steps.schedule.outputs.run == 'true'
-        run: python -m unittest -v test_caption_format.py test_auto_publish_gate.py test_reliability.py test_history_reconcile.py test_approved_workflow.py test_editorial_config.py test_publish_retry.py test_news_quality.py test_seven_pipeline.py test_editorial_layout.py test_cloudinary_signing.py
+        run: python -m unittest -v test_caption_format.py test_auto_publish_gate.py test_quote_cards.py test_quote_first_live.py test_reliability.py test_history_reconcile.py test_approved_workflow.py test_editorial_config.py test_publish_retry.py test_news_quality.py test_seven_pipeline.py test_editorial_layout.py test_cloudinary_signing.py
 
       - name: Collect latest news and generate images
         if: steps.schedule.outputs.run == 'true'

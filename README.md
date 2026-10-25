@@ -25,6 +25,36 @@ news), and the **Safe Validation** pull-request workflow attaches it as a
 seven-day preview artifact. Inspect this preview before merging any future
 masthead edits. Neither rendering nor CI sends Instagram API requests.
 
+## One-time requested live quote-first post (Toronto, October 25, 2026)
+
+A separately authorized, one-shot **Sunday** post is enabled by
+`.github/marketrevamp-live-20261025.trigger`, through the existing
+`MarketRevamp Automation` preparation and `Auto Publish MarketRevamp
+Carousel` publishing workflows. Only the first push to `main` that changes
+this trigger can start it; `schedule_guard.py` additionally requires the
+exact pinned Toronto date, file contents and production branch.
+
+On this single push, `MARKETREVAMP_QUOTE_FIRST=true` reorders the seven
+source-screened *fresh* articles so an exact attributed quote appears on
+slide 1. The six remaining slides retain the original approved editorial
+layout. If no suitable direct quote is available, or one fails source
+checks or 1080×1350 fitting, the run **fails closed** with no publishing.
+The resulting news-results file, artwork, Cloudinary order and caption
+must all share the same story order. The quote card uses the approved
+artwork without its test-only warning.
+
+The automatic publishing workflow accepts this push-source run only on
+the pinned local date, with a successful same-day preparation provenance,
+a seven-image manifest, a quote-first attestation, source-fingerprint
+binding, and the existing duplicate/pending publishing-history barriers.
+Ordinary push or manual dispatch cannot use the one-shot path. The
+regular Mon–Fri 18:00 Toronto schedule is unchanged, with quote mode off.
+
+This marker is intentionally unusable after 2026-10-25. It is not a
+general Sunday schedule or authorization for recurring quote posts.
+The synthetic `quote_first_preview/` artifact in Safe Validation must
+not be uploaded or published as actual news.
+
 ## Experimental ONE-quote-card preview (not live)
 
 This pull request introduces an **offline test only**. The production collector,
