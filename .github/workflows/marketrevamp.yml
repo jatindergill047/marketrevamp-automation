@@ -3,16 +3,20 @@ name: MarketRevamp Automation
 
 on:
   workflow_dispatch:
-  # A single, date-locked main-branch push explicitly authorized for
-  # Sunday Oct 25. This does not change the weekday schedule.
+  # Only explicitly dated trigger-file pushes prepare unscheduled news.
   push:
     branches: [main]
     paths:
       - '.github/marketrevamp-live-20261025.trigger'
+      - '.github/marketrevamp-live-20261026.trigger'
   schedule:
-    # 18:00 Toronto = 22:00 UTC (EDT) or 23:00 UTC (EST).
-    - cron: '0 22 * * 1-5'
-    - cron: '0 23 * * 1-5'
+    # Two spaced local opportunities: 18:13 and 19:13 Toronto, Mon–Fri.
+    # EDT: 22:13 and 23:13 UTC (Mon–Fri).
+    # EST: 23:13 UTC Mon–Fri and 00:13 UTC Tue–Sat.
+    # schedule_guard.py rejects the wrong DST offset / out-of-window events.
+    - cron: '13 22 * * 1-5'
+    - cron: '13 23 * * 1-5'
+    - cron: '13 0 * * 2-6'
 
 concurrency:
   group: marketrevamp-instagram-publishing
@@ -32,8 +36,9 @@ jobs:
       # live Instagram credentials.
       INSTAGRAM_PUBLISH_ENABLED: 'true'
       INSTAGRAM_PERSISTENCE_READY: 'true'
-      # Only the dated one-shot push enables the approved first-slide quote.
-      MARKETREVAMP_QUOTE_FIRST: ${{ github.event_name == 'push' && 'true' || 'false' }}
+      # Oct 26 catch-up and all future scheduled posts remain standard;
+      # only the already-completed Oct 25 live run was quote-first.
+      MARKETREVAMP_QUOTE_FIRST: 'false'
 
     steps:
       - name: Checkout repository
