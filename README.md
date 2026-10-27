@@ -2,6 +2,25 @@
 
 Automated **seven-slide** editorial Instagram news carousel for @marketrevampdaily. The pipeline is source-extractive and does **not** use a paid image or language-model API. Summaries are source-grounded but **not independently fact-checked**.
 
+## Weekday schedule reliability (effective October 26, 2026)
+
+GitHub-hosted scheduled workflows can occasionally be delayed or omitted,
+especially near the start of an hour. MarketRevamp now attempts preparation
+at **18:13 Toronto** and again at **19:13 Toronto** Monday–Friday. UTC
+expressions are set for both Eastern daylight and standard time, including
+the Tue–Sat UTC crossover in winter. `schedule_guard.py` validates each
+originating cron against the intended Toronto-local weekday; extra UTC
+triggers cannot publish an unrelated or weekend batch. Automatic Instagram
+publishing reuses the existing same-day history/fingerprint/duplicate locks,
+so a successful first slot cannot be posted twice by the backup slot.
+
+The missed Monday, October 26 carousel is recovered by a dedicated
+`.github/marketrevamp-live-20261026.trigger` push with seven standard
+news cards. It is valid **only on October 26 Toronto time** and cannot
+recur on later days. The October 25 quote-first publication remains a
+separate expired one-shot; recurring weekday cards are not switched to
+quote mode. Both production workflows remain separate from test fixtures.
+
 ## Architecture
 
 Weekday GitHub Actions production workflow (`.github/workflows/marketrevamp.yml`) checks the Toronto publishing window, restores the persistent history checkout, installs Python dependencies/fonts, runs safeguards, collects recent RSS news, selects seven distinct stories, renders 1080×1350 newspaper-style cards, uploads images to Cloudinary, prepares the carousel manifest, and saves artifacts for human review. Scheduled preparation runs never call Instagram directly. The `.github/workflows/publish-automatic.yml` workflow now automatically publishes a successful same-day scheduled artifact using configured production credentials; the separate `.github/workflows/publish-approved.yml` remains available for manually approved recovery without regenerating images.
