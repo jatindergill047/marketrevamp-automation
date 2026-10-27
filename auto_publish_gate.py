@@ -12,7 +12,7 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 
 from publish_instagram import approval_fingerprint, load_manifest
-from schedule_guard import valid_one_shot
+from schedule_guard import valid_one_shot, quote_first_for_one_shot
 
 TORONTO = ZoneInfo("America/Toronto")
 TRIGGER = Path(".github/marketrevamp-post-now.trigger")
@@ -79,6 +79,13 @@ def verify_manifest_and_fingerprint(expected=""):
                 or not (manifest.get("slides") or [{}])[0].get(
                     "alt_text", "").startswith("MarketRevamp attributed quote card:")):
             raise ValueError("One-shot live package must have one verified quote on slide 1")
+    if os.environ.get("REQUIRE_STANDARD_CARDS") == "true":
+        if (manifest.get("quote_card_first") is not False
+                or manifest.get("quote_card_count") != 0
+                or any(slide.get("alt_text", "").startswith(
+                    "MarketRevamp attributed quote card:")
+                    for slide in manifest.get("slides", []))):
+            raise ValueError("Catch-up package must contain seven standard news cards")
     fp = approval_fingerprint(manifest, image_urls)
     if expected and expected != fp:
         raise ValueError("One-shot artifact fingerprint changed; refusing publication")
@@ -102,7 +109,10 @@ def main():
             os.environ["GITHUB_REPOSITORY"],
         )
         if source.get("event") == "push":
-            _set_env("REQUIRE_QUOTE_FIRST", "true")
+            if quote_first_for_one_shot():
+                _set_env("REQUIRE_QUOTE_FIRST", "true")
+            else:
+                _set_env("REQUIRE_STANDARD_CARDS", "true")
         print("Validated preparation branch, source event, completion, date and repository.")
     elif mode == "authorize":
         fp = verify_manifest_and_fingerprint(
