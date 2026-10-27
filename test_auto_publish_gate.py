@@ -69,7 +69,7 @@ class AutoPublishGateTests(unittest.TestCase):
                 verify_preparation_run({**GOOD_RUN, **changes}, "39349690506",
                                        repo, now=NOW)
 
-    @patch.dict(os.environ, {"REQUIRE_QUOTE_FIRST": ""})
+    @patch.dict(os.environ, {"REQUIRE_QUOTE_FIRST": "", "REQUIRE_STANDARD_CARDS": ""})
     def test_manifest_is_exactly_seven_and_prevalidated(self):
         # This generic fixture is intentionally not a quote-first manifest.
         # Its behavior must not depend on a live run's environment variables.
