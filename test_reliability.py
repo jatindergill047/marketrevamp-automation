@@ -48,19 +48,19 @@ class ReliabilityTests(unittest.TestCase):
 
     def test_only_dst_correct_utc_cron_runs(self):
         tz = ZoneInfo("America/Toronto")
-        summer = datetime(2026, 10, 19, 18, tzinfo=tz)
-        winter = datetime(2026, 12, 21, 18, tzinfo=tz)
-        self.assertTrue(should_run("schedule", summer, "0 22 * * 1-5"))
-        self.assertFalse(should_run("schedule", summer, "0 23 * * 1-5"))
-        self.assertTrue(should_run("schedule", winter, "0 23 * * 1-5"))
-        self.assertFalse(should_run("schedule", winter, "0 22 * * 1-5"))
-        # A late 20:47 GitHub delivery should still run the right cron.
+        summer = datetime(2026, 10, 19, 18, 14, tzinfo=tz)
+        winter = datetime(2026, 12, 21, 18, 14, tzinfo=tz)
+        self.assertTrue(should_run("schedule", summer, "13 22 * * 1-5"))
+        self.assertFalse(should_run("schedule", summer, "13 0 * * 2-6"))
+        self.assertTrue(should_run("schedule", winter, "13 23 * * 1-5"))
+        self.assertFalse(should_run("schedule", winter, "13 22 * * 1-5"))
+        # Late deliveries remain eligible for either genuine local run.
         self.assertTrue(should_run("schedule", summer.replace(hour=20, minute=47),
-                                   "0 22 * * 1-5"))
-        self.assertFalse(should_run("schedule", summer.replace(hour=20),
-                                    "0 23 * * 1-5"))
+                                   "13 22 * * 1-5"))
+        self.assertTrue(should_run("schedule", summer.replace(hour=20, minute=47),
+                                  "13 23 * * 1-5"))
         self.assertFalse(should_run("schedule", summer.replace(hour=22),
-                                    "0 22 * * 1-5"))
+                                    "13 22 * * 1-5"))
 
     def test_published_urls(self):
         with tempfile.TemporaryDirectory() as directory:
