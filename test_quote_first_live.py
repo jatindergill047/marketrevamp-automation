@@ -104,9 +104,16 @@ class LiveQuoteFirstTests(unittest.TestCase):
     def test_one_shot_cannot_recur_after_pinned_date(self):
         self.assertTrue(valid_one_shot(SUNDAY))
         self.assertTrue(should_run("push", now=SUNDAY))
-        self.assertFalse(valid_one_shot(MONDAY))
-        self.assertFalse(should_run("push", now=MONDAY))
+        # A separately authorized Oct 26 standard-news catch-up is valid
+        # on its own date, but Oct 25 quote mode must not carry over.
+        self.assertTrue(valid_one_shot(MONDAY))
+        self.assertTrue(should_run("push", now=MONDAY))
         self.assertTrue(should_run("workflow_dispatch", now=MONDAY))
+        from schedule_guard import quote_first_for_one_shot
+        self.assertFalse(quote_first_for_one_shot(MONDAY))
+        TUESDAY = datetime(2026, 10, 27, 10, 0, tzinfo=TORONTO)
+        self.assertFalse(valid_one_shot(TUESDAY))
+        self.assertFalse(should_run("push", now=TUESDAY))
 
     def test_one_shot_publishing_rejects_nonmatching_preparation(self):
         approved = {
