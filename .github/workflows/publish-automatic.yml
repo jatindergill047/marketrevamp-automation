@@ -70,7 +70,21 @@ jobs:
       - name: Restore publishing history
         run: cp publishing-history/instagram_publish_history.json instagram_publish_history.json
 
+      - name: Check source artifact exists before publishing
+        id: artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          count=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$SOURCE_RUN_ID/artifacts?name=marketrevamp-instagram-carousel" --jq '[.artifacts[] | select(.expired == false)] | length')
+          if [ "$count" -eq 1 ]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Preparation run has no valid carousel artifact; publishing safely skipped."
+          fi
+
       - name: Download exact prepared carousel
+        if: steps.artifact.outputs.available == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -79,14 +93,17 @@ jobs:
           test -s instagram_carousel_manifest.json
 
       - name: Run offline publishing safety checks
+        if: steps.artifact.outputs.available == 'true'
         run: |
           python -m unittest -v test_caption_format.py test_auto_publish_gate.py test_approved_workflow.py test_reliability.py test_history_reconcile.py test_publish_retry.py test_news_quality.py test_seven_pipeline.py test_cloudinary_signing.py
           python test_publishing_flow.py
 
       - name: Bind authorization to exact manifest and seven images
+        if: steps.artifact.outputs.available == 'true'
         run: python auto_publish_gate.py authorize
 
       - name: Publish once and checkpoint Instagram history
+        if: steps.artifact.outputs.available == 'true'
         env:
           INSTAGRAM_ACCESS_TOKEN: ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
           INSTAGRAM_USER_ID: ${{ vars.INSTAGRAM_USER_ID }}
