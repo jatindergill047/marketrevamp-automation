@@ -59,7 +59,9 @@ class ReliabilityTests(unittest.TestCase):
                                    "13 22 * * 1-5"))
         self.assertTrue(should_run("schedule", summer.replace(hour=20, minute=47),
                                   "13 23 * * 1-5"))
-        self.assertFalse(should_run("schedule", summer.replace(hour=22),
+        self.assertTrue(should_run("schedule", summer.replace(hour=22),
+                                   "13 22 * * 1-5"))
+        self.assertFalse(should_run("schedule", summer.replace(hour=23, minute=30),
                                     "13 22 * * 1-5"))
 
     def test_published_urls(self):
