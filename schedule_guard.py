@@ -87,13 +87,13 @@ def should_run(event, now=None, cron=None):
     if event != "schedule":
         return True
     local = (now or datetime.now(TORONTO)).astimezone(TORONTO)
-    if local.weekday() >= 5 or not (18 <= local.hour <= 21):
+    if local.weekday() >= 5 or not (18 <= local.hour <= 23):
         return False
     if cron is None:
         # Tests or manual guard callers can inspect the operating window.
         return True
     for expected, intended in expected_crons(local):
-        if cron.strip() == expected and intended <= local <= intended + timedelta(hours=3):
+        if cron.strip() == expected and intended <= local <= intended + timedelta(hours=5):
             return True
     return False
 
