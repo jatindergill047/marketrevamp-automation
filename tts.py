@@ -9,6 +9,11 @@ from pathlib import Path
 
 from reel_config import VOICE
 
+# Conservative prosody tuning for a conversational news-presenter delivery.
+# These are TTS controls, not a guarantee of human-sounding speech.
+VOICE_RATE = "-5%"
+VOICE_PITCH = "-2Hz"
+
 
 class ReelBuildError(RuntimeError):
     """An optional Reel audio build step failed."""
@@ -34,7 +39,7 @@ def speak(text: str, out_path: str | Path) -> Path:
     for attempt in range(3):
         try:
             destination.unlink(missing_ok=True)
-            asyncio.run(edge_tts.Communicate(text, VOICE).save(str(destination)))
+            asyncio.run(edge_tts.Communicate(text, VOICE, rate=VOICE_RATE, pitch=VOICE_PITCH).save(str(destination)))
             if not destination.is_file() or destination.stat().st_size == 0:
                 raise ReelBuildError("TTS produced no audio")
             return destination
