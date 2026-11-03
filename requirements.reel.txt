@@ -1,0 +1,2 @@
+# Optional Reel-only dependency; production carousel lock is unchanged.
+edge-tts==7.3.1
