@@ -5,7 +5,7 @@ Opt-in only. The existing carousel and publishing path must remain unchanged unt
 | ID | Item | Status | Commit | Notes |
 | --- | --- | --- | --- | --- |
 | R1 | Config, flag, deps | BLOCKED | 10bed773, 1ca46e7 | Config and unit tests committed; pinned edge-tts resolution, requirements.lock regeneration, full suite, and pip-audit blocked by unavailable package-index access. No dependency files modified. |
-| R2 | Narration builder | TODO | - | - |
+| R2 | Narration builder | DOING | - | Implementing and verifying narration normalization |
 | R3 | TTS module | TODO | - | - |
 | R4 | 9:16 composite renderer | TODO | - | - |
 | R5 | ASS captions + assembly | TODO | - | - |
