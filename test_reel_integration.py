@@ -16,9 +16,10 @@ from reel_frames import compose
 from reel_manifest import load_reel_metadata
 
 
-@unittest.skipUnless(shutil.which("ffmpeg") and shutil.which("ffprobe"), "ffmpeg and ffprobe required")
 class ReelIntegrationTests(unittest.TestCase):
     def test_seven_segment_mp4_and_mock_cloudinary(self):
+        self.assertIsNotNone(shutil.which("ffmpeg"), "ffmpeg is required for R11")
+        self.assertIsNotNone(shutil.which("ffprobe"), "ffprobe is required for R11")
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             frames, audios, narrations = [], [], []
