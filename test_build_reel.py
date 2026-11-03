@@ -21,6 +21,18 @@ class BuildReelTests(unittest.TestCase):
             self.assertGreaterEqual(len(dialogues), 2)
             self.assertTrue(all(line.count(r"\N") <= 1 for line in dialogues))
 
+    def test_captions_stop_before_quiet_story_pause(self):
+        with tempfile.TemporaryDirectory() as folder:
+            path = build_reel.write_captions(
+                "A development worth watching.", 6, Path(folder) / "pause.ass",
+                spoken_seconds=4,
+            )
+            dialogues = [line for line in path.read_text().splitlines()
+                         if line.startswith("Dialogue:")]
+            self.assertTrue(dialogues)
+            self.assertIn("0:00:04.00", dialogues[-1])
+            self.assertNotIn("0:00:06.00", dialogues[-1])
+
     def test_rejects_mismatched_inputs(self):
         with self.assertRaises(ReelBuildError):
             build_reel.build_reel(["frame.png"], [], ["narration"], "out.mp4")
