@@ -1,0 +1,1 @@
+Authorized exactly one synthetic Cloudinary staging video upload on 2026-11-03. Never publish Instagram. Feature branch only.
