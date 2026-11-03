@@ -11,7 +11,7 @@ Status: **NOT READY FOR PRODUCTION**. The R14 preview workflow generates a ficti
 - Fictional seven-story preview; each scene uses existing slide composer, voice, zoompan, ASS subtitles.
 - FFprobe validates codec and 1080x1920 output; segment metadata checks continuity and narration length.
 - CI uploads a preview MP4, contact sheet, timing JSON, and QA report as a GitHub Actions artifact (not Cloudinary).
-- CI run result and artifact must be inspected before marking R14 automated verification complete.
+- R14 run 41708885799 succeeded and artifact 13266831667 was downloaded and inspected. FFprobe independently confirmed H.264/AAC, 1080x1920 and 53.619 seconds; timing manifest planned 53.44 seconds. A 3-second frame showed oversized three-line subtitle chunks and sparse editorial slides. Changes eeddb93 and ba9bf96 enlarge headlines, add summary body, and shorten caption chunks; updated output awaits CI verification.
 
 ## Open launch blockers
 1. Human watch/listen review of the actual MP4 for pronunciation, audible silence, subtitle timing and readability, and pacing.
