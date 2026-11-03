@@ -34,7 +34,7 @@ class ReelIntegrationTests(unittest.TestCase):
                 narrations.append(f"Story {i} test narration.")
             output = root / "reel.mp4"
             timing = root / "reel_segments.json"
-            build_reel(frames, audios, narrations, output, timing, fps=12)
+            build_reel(frames, audios, narrations, output, timing, fps=2)
             self.assertGreater(output.stat().st_size, 1000)
             data = json.loads(timing.read_text())
             self.assertEqual(len(data["segments"]), 7)
