@@ -543,7 +543,8 @@ def main():
     })
     save_history(history)
 
-    print(f"Instagram carousel published: {published['id']}")
+    media_label = "Reel" if is_reel else "carousel"
+    print(f"Instagram {media_label} published: {published['id']}")
 
     if first_comment:
         # A failed or timed-out comments request may still have succeeded.
