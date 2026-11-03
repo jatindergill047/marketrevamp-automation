@@ -6,7 +6,7 @@ Opt-in only. The existing carousel and publishing path must remain unchanged unt
 | --- | --- | --- | --- | --- |
 | R1 | Config, flag, deps | BLOCKED | 10bed773, 1ca46e7 | Config and unit tests committed; pinned edge-tts resolution, requirements.lock regeneration, full suite, and pip-audit blocked by unavailable package-index access. No dependency files modified. |
 | R2 | Narration builder | DONE | e5b23da, 65e2d53 | Builder and tests committed; local equivalent implementation passed 4 tests and compileall. Full repository suite not run; R1 dependency blocker remains. |
-| R3 | TTS module | DOING | - | Implementing retry-safe TTS and ffprobe duration |
+| R3 | TTS module | DONE | 88c52ab, 71da717 | Five isolated unit tests passed locally; full repository suite not run, live edge-tts unavailable until R1 dependencies are resolved. |
 | R4 | 9:16 composite renderer | TODO | - | - |
 | R5 | ASS captions + assembly | TODO | - | - |
 | R6 | Cloudinary video upload | TODO | - | - |
