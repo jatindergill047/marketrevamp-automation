@@ -370,9 +370,21 @@ def main():
 
     repeated = set(normalized_urls) & previously_published
 
+    is_reel = manifest.get("media_kind") == "reel"
+    if is_reel:
+        if os.getenv("REEL_ENABLED", "false").lower() != "true":
+            raise RuntimeError("Reel publishing requires REEL_ENABLED=true")
+        from reel_security import validated_reel
+        validated_reel(manifest)
+
     fingerprint = hashlib.sha256(
         json.dumps(image_urls, sort_keys=True).encode()
     ).hexdigest()
+
+    if is_reel:
+        fingerprint = hashlib.sha256(
+            ("reel:" + approval_fingerprint(manifest, image_urls)).encode()
+        ).hexdigest()
 
     print("Validated seven unique Cloudinary image URLs.")
 
