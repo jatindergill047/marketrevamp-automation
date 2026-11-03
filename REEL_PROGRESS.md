@@ -8,7 +8,7 @@ Opt-in only. The existing carousel and publishing path must remain unchanged unt
 | R2 | Narration builder | DONE | e5b23da, 65e2d53 | Builder and tests committed; local equivalent implementation passed 4 tests and compileall. Full repository suite not run; R1 dependency blocker remains. |
 | R3 | TTS module | DONE | 88c52ab, 71da717 | Five isolated unit tests passed locally; full repository suite not run, live edge-tts unavailable until R1 dependencies are resolved. |
 | R4 | 9:16 composite renderer | DONE | e2a4b1b, 56b36b9 | Three focused tests passed locally (1080x1920, foreground contrast, source preservation, invalid inputs); full repository suite remains unverified. |
-| R5 | ASS captions + assembly | TODO | - | - |
+| R5 | ASS captions + assembly | DOING | - | Implementing ffmpeg assembly, captions, timing, and tests |
 | R6 | Cloudinary video upload | TODO | - | - |
 | R7 | Manifest reel block | TODO | - | - |
 | R8 | Fingerprint + gate extension | TODO | - | - |
