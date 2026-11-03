@@ -11,7 +11,7 @@ Opt-in only. The existing carousel and publishing path must remain unchanged unt
 | R5 | ASS captions + assembly | DOING | - | Implementing ffmpeg assembly, captions, timing, and tests |
 | R6 | Cloudinary video upload | IMPLEMENTED / UNVERIFIED | ca3f3b8, 1a17bea, 4724a48 | Separate MP4 upload to /video/upload, signed/unsigned fields, HTTPS URL validation and four mocked tests committed; tests not executed. |
 | R7 | Manifest reel block | IMPLEMENTED / UNVERIFIED | 99175d8, e90241d, 3740269 | Optional Reel metadata and validation committed; fallback retains legacy manifest. Tests and fingerprint integration not yet executed. |
-| R8 | Fingerprint + gate extension | TODO | - | - |
+| R8 | Fingerprint + gate extension | IMPLEMENTED / UNVERIFIED | 093324d, c1a6797, e5a9924, eebef36 | Reel URL/cover/duration/caption validation, distinct approval fingerprint, REEL_ENABLED authorization gate, and three offline tests committed. Tests not executed; R9 dispatch remains pending. |
 | R9 | Publish dispatch + history | TODO | - | - |
 | R10 | Workflow wiring | TODO | - | - |
 | R11 | Tests | TODO | - | - |
