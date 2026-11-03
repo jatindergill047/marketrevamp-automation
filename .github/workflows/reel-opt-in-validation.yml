@@ -36,7 +36,7 @@ jobs:
         run: pip install -r requirements.reel.txt && pip check
       - name: Run offline Reel safety checks
         run: |
-          python -m unittest -v test_reel_config.py test_reel_script.py test_tts.py test_reel_frames.py test_build_reel.py test_reel_cloudinary.py test_reel_manifest.py test_reel_security.py test_reel_publish.py test_prepare_reel.py
+          python -m unittest -v test_reel_config.py test_reel_script.py test_tts.py test_reel_frames.py test_build_reel.py test_reel_cloudinary.py test_reel_manifest.py test_reel_security.py test_reel_publish.py test_prepare_reel.py test_reel_recovery.py
           python -m compileall -q prepare_reel.py reel_config.py reel_script.py tts.py reel_frames.py build_reel.py reel_cloudinary.py reel_manifest.py reel_security.py reel_publish.py
       - name: Run existing carousel regression checks
         run: |
