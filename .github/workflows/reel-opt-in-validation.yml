@@ -1,0 +1,30 @@
+name: MarketRevamp Reel Opt-in Validation
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-reel:
+    runs-on: ubuntu-latest
+    env:
+      REEL_ENABLED: 'false'
+      REEL_UPLOAD_ENABLED: 'false'
+      INSTAGRAM_PUBLISH_ENABLED: 'false'
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+      - name: Install existing pinned dependencies
+        run: pip install -r requirements.lock
+      - name: Run offline Reel safety checks
+        run: |
+          python -m unittest -v test_reel_config.py test_reel_script.py test_tts.py test_reel_frames.py test_build_reel.py test_reel_cloudinary.py test_reel_manifest.py test_reel_security.py test_reel_publish.py
+          python -m compileall -q prepare_reel.py reel_config.py reel_script.py tts.py reel_frames.py build_reel.py reel_cloudinary.py reel_manifest.py reel_security.py reel_publish.py
+      - name: Verify disabled Reel path
+        run: python prepare_reel.py
