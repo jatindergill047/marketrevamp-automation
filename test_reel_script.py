@@ -16,7 +16,7 @@ class NarrationTests(unittest.TestCase):
         )
         self.assertEqual(
             result,
-            "1 of 7. Open A I and B T C beat S and P five hundred. an-THROP-ik tracks Naz-dak",
+            "Open A I and B T C beat S and P five hundred. an-THROP-ik tracks Naz-dak",
         )
 
     def test_missing_headline(self):
@@ -29,7 +29,7 @@ class NarrationTests(unittest.TestCase):
         stories = [{"headline": "First", "summary": "One"}, {"headline": "Second", "summary": "Two"}]
         self.assertEqual(
             build_all(stories),
-            ["1 of 2. First. One", "2 of 2. Second. Two"],
+            ["First. One", "Second. Two"],
         )
 
 
