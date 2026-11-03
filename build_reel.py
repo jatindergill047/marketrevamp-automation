@@ -37,11 +37,11 @@ def write_captions(text, seconds, destination):
         raise ReelBuildError("Caption text and duration are required")
     chunks = []
     while words:
-        chunk = words[:12]
-        del words[:12]
-        lines = textwrap.wrap(" ".join(chunk), width=34, break_long_words=False)
+        chunk = words[:8]
+        del words[:8]
+        lines = textwrap.wrap(" ".join(chunk), width=29, break_long_words=False)
         if len(lines) > 2:
-            lines = [" ".join(chunk[:6]), " ".join(chunk[6:])]
+            lines = [" ".join(chunk[:4]), " ".join(chunk[4:])]
         chunks.append(r"\N".join(_escape_ass(line) for line in lines))
     per_chunk = seconds / len(chunks)
     header = (
