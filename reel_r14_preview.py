@@ -3,6 +3,7 @@ import json
 import os
 import subprocess
 from pathlib import Path
+import textwrap
 
 from PIL import Image, ImageDraw, ImageFont
 from build_reel import build_reel
@@ -28,15 +29,18 @@ def main():
     root.mkdir(exist_ok=True)
     frames, voices = [], []
     narrations = build_all([{"headline": h, "summary": s} for h, s in STORIES])
-    font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 54)
+    font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 75)
     small = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 29)
+    body_font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 43)
     for index, ((headline, summary), narration) in enumerate(zip(STORIES, narrations), 1):
         slide = Image.new("RGB", (1080, 1350), (21, 27, 40))
         draw = ImageDraw.Draw(slide)
         draw.rectangle((0, 0, 1080, 18), fill=(220, 46, 51))
         draw.text((65, 85), "MARKETREVAMP  /  EDITORIAL DEMO", font=small, fill=(240, 240, 240))
-        draw.text((65, 400), headline.upper(), font=font, fill=(255, 255, 255))
-        draw.text((65, 520), "SAMPLE STORY — NOT REAL NEWS", font=small, fill=(245, 130, 130))
+        draw.text((65, 320), headline.upper(), font=font, fill=(255, 255, 255))
+        for line_no, line in enumerate(textwrap.wrap(summary, width=38)):
+            draw.text((65, 510 + line_no * 67), line, font=body_font, fill=(225, 229, 236))
+        draw.text((65, 900), "FICTIONAL DEMO — NOT REAL NEWS", font=small, fill=(245, 130, 130))
         draw.text((65, 1080), f"TECH  /  STORY {index:02d} OF 07", font=small, fill=(210, 210, 210))
         path = root / f"slide_{index:02d}.png"
         slide.save(path)
