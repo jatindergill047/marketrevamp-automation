@@ -9,6 +9,7 @@ on:
       - 'prepare_reel.py'
       - 'test_reel_*.py'
       - 'test_prepare_reel.py'
+      - 'test_reel_integration.py'
       - 'requirements.reel.txt'
       - '.github/workflows/reel-opt-in-validation.yml'
 
@@ -41,5 +42,7 @@ jobs:
         run: |
           python -m unittest -v test_auto_publish_gate.py test_reliability.py test_publish_retry.py
           python test_publishing_flow.py
+      - name: Run R11 synthetic MP4 and mocked Cloudinary integration
+        run: python -m unittest -v test_reel_integration.py
       - name: Verify disabled Reel path
         run: python prepare_reel.py
