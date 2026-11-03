@@ -39,6 +39,8 @@ jobs:
       # Oct 26 catch-up and all future scheduled posts remain standard;
       # only the already-completed Oct 25 live run was quote-first.
       MARKETREVAMP_QUOTE_FIRST: 'false'
+      REEL_ENABLED: 'false'
+      REEL_UPLOAD_ENABLED: 'false'
 
     steps:
       - name: Checkout repository
@@ -104,6 +106,28 @@ jobs:
           CLOUDINARY_API_KEY: ${{ secrets.CLOUDINARY_API_KEY }}
           CLOUDINARY_API_SECRET: ${{ secrets.CLOUDINARY_API_SECRET }}
         run: python upload_to_cloudinary.py
+
+      - name: Install optional Reel dependencies
+        if: steps.schedule.outputs.run == 'true' && env.REEL_ENABLED == 'true'
+        run: |
+          pip install -r requirements.reel.txt
+          sudo apt-get update -qq
+          sudo apt-get install -y ffmpeg
+
+      - name: Generate optional Reel
+        if: steps.schedule.outputs.run == 'true' && env.REEL_ENABLED == 'true'
+        continue-on-error: true
+        run: python prepare_reel.py
+
+      - name: Preserve optional Reel video
+        if: steps.schedule.outputs.run == 'true' && env.REEL_ENABLED == 'true'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: marketrevamp-reel-preview
+          path: |
+            reel_output/marketrevamp_reel.mp4
+            reel_segments.json
+          if-no-files-found: warn
 
       - name: Prepare Instagram carousel
         if: steps.schedule.outputs.run == 'true'
