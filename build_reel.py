@@ -43,7 +43,12 @@ def write_captions(text, seconds, destination, spoken_seconds=None):
         if len(lines) > 2:
             lines = [" ".join(chunk[:4]), " ".join(chunk[4:])]
         chunks.append(r"\N".join(_escape_ass(line) for line in lines))
-    # Keep subtitles inside the actual spoken interval, leaving the\n    # inter-story quiet beat visually uncluttered.\n    caption_seconds = seconds if spoken_seconds is None else min(seconds, spoken_seconds)\n    if caption_seconds <= 0:\n        raise ReelBuildError("Spoken caption duration must be positive")\n    per_chunk = caption_seconds / len(chunks)
+    # Keep subtitles inside the actual spoken interval, leaving the
+    # inter-story quiet beat visually uncluttered.
+    caption_seconds = seconds if spoken_seconds is None else min(seconds, spoken_seconds)
+    if caption_seconds <= 0:
+        raise ReelBuildError("Spoken caption duration must be positive")
+    per_chunk = caption_seconds / len(chunks)
     header = (
         "[Script Info]\nScriptType: v4.00+\nPlayResX: 1080\nPlayResY: 1920\n"
         "[V4+ Styles]\nFormat: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, "
