@@ -23,7 +23,12 @@ def build_narration(story, index, total):
     if not headline:
         raise ValueError("Story headline is required")
     summary = clean_text(story.get("summary"))
-    # Prefer an editor-approved spoken script when provided. Never invent\n    # implications or facts from a headline alone.\n    spoken = clean_text(story.get("narration_text"))\n    if spoken:\n        return spoken\n    return f"{headline.rstrip('.!?')}. {summary}".strip()
+    # Prefer an editor-approved spoken script when provided. Never invent
+    # implications or facts from a headline alone.
+    spoken = clean_text(story.get("narration_text"))
+    if spoken:
+        return spoken
+    return f"{headline.rstrip('.!?')}. {summary}".strip()
 
 
 def build_all(stories):
