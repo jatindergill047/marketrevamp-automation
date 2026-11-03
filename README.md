@@ -1,5 +1,7 @@
 # MarketRevamp Automation
 
+> **Experimental Reels (feature branch only):** See [REELS_RUNBOOK.md](REELS_RUNBOOK.md) for the R12 architecture, setup, safety, rollback, and launch checklist. Reel creation/upload is default-off, not approved for production or Instagram publishing; the existing carousel workflow remains unchanged.
+
 Automated **seven-slide** editorial Instagram news carousel for @marketrevampdaily. The pipeline is source-extractive and does **not** use a paid image or language-model API. Summaries are source-grounded but **not independently fact-checked**.
 
 ## Weekday schedule reliability (effective October 26, 2026)
