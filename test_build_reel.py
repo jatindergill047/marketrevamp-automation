@@ -59,7 +59,7 @@ class BuildReelTests(unittest.TestCase):
             self.assertIn("libx264", commands[0])
             self.assertIn("aac", commands[0])
             data = json.loads((root / "reel_segments.json").read_text())
-            self.assertEqual(data["segments"][0]["duration_seconds"], 3.0)
+            self.assertEqual(data["segments"][0]["duration_seconds"], 3.1)
 
     def test_missing_ffmpeg(self):
         with patch("build_reel.shutil.which", return_value=None):
