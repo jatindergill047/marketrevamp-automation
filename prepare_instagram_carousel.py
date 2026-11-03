@@ -193,6 +193,27 @@ manifest = {
 }
 
 
+# R7: Optional Reel metadata is only read when explicitly enabled. A missing,
+# invalid, or failed Reel build leaves the carousel manifest byte-for-byte
+# unchanged, including its existing approval fingerprint.
+if os.environ.get("REEL_ENABLED", "false").strip().lower() == "true":
+    try:
+        from reel_manifest import load_reel_metadata
+
+        reel = load_reel_metadata(Path("cloudinary_reel_upload.json"))
+        if reel is not None:
+            manifest["media_kind"] = "reel"
+            manifest["reel"] = {
+                "video_url": reel["video_url"],
+                "cover_url": slides[0]["image_url"],
+                "duration_seconds": reel["duration_seconds"],
+                "caption": caption,
+            }
+    except (OSError, ValueError, TypeError, KeyError) as exc:
+        print(f"Optional Reel unavailable; keeping carousel: {exc}")
+
+
+
 OUTPUT.write_text(
     json.dumps(manifest, indent=2),
     encoding="utf-8"
