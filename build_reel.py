@@ -30,7 +30,7 @@ def _timestamp(seconds):
     return f"{hours}:{minutes:02d}:{secs:02d}.{cs:02d}"
 
 
-def write_captions(text, seconds, destination):
+def write_captions(text, seconds, destination, spoken_seconds=None):
     """Write two-line maximum ASS captions in the reserved lower band."""
     words = str(text).split()
     if not words or seconds <= 0:
@@ -43,7 +43,7 @@ def write_captions(text, seconds, destination):
         if len(lines) > 2:
             lines = [" ".join(chunk[:4]), " ".join(chunk[4:])]
         chunks.append(r"\N".join(_escape_ass(line) for line in lines))
-    per_chunk = seconds / len(chunks)
+    # Keep subtitles inside the actual spoken interval, leaving the\n    # inter-story quiet beat visually uncluttered.\n    caption_seconds = seconds if spoken_seconds is None else min(seconds, spoken_seconds)\n    if caption_seconds <= 0:\n        raise ReelBuildError("Spoken caption duration must be positive")\n    per_chunk = caption_seconds / len(chunks)
     header = (
         "[Script Info]\nScriptType: v4.00+\nPlayResX: 1080\nPlayResY: 1920\n"
         "[V4+ Styles]\nFormat: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, "
@@ -86,7 +86,7 @@ def build_reel(frames, audios, narrations, output_path, segments_path=None, fps=
             seconds = max(MIN_SLIDE_SECONDS, voice_seconds + SLIDE_PAD_SECONDS)
             if not math.isfinite(seconds):
                 raise ReelBuildError("Invalid segment duration")
-            subtitle = write_captions(narration, seconds, temporary / f"captions_{i}.ass")
+            subtitle = write_captions(narration, seconds, temporary / f"captions_{i}.ass", spoken_seconds=voice_seconds)
             clip = temporary / f"segment_{i:02d}.mp4"
             frames_count = math.ceil(seconds * fps)
             # Scale slightly larger before cropping so zoompan never reveals edges.
