@@ -23,9 +23,9 @@ def build_narration(story, index, total):
     if not headline:
         raise ValueError("Story headline is required")
     summary = clean_text(story.get("summary"))
-    return f"{index} of {total}. {headline}. {summary}".strip()
+    return f"{headline}. {summary}".strip()
 
 
 def build_all(stories):
-    """Build numbered narration for all stories."""
+    """Build natural narration without spoken story numbering."""
     return [build_narration(story, index, len(stories)) for index, story in enumerate(stories, start=1)]
