@@ -4,7 +4,7 @@ Opt-in only. The existing carousel and publishing path must remain unchanged unt
 
 | ID | Item | Status | Commit | Notes |
 | --- | --- | --- | --- | --- |
-| R1 | Config, flag, deps | TODO | - | - |
+| R1 | Config, flag, deps | DOING | - | Implementing configuration; dependency lock and audit pending |
 | R2 | Narration builder | TODO | - | - |
 | R3 | TTS module | TODO | - | - |
 | R4 | 9:16 composite renderer | TODO | - | - |
