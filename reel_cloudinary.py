@@ -1,5 +1,6 @@
 """Upload optional Reel MP4 media to Cloudinary; no Instagram actions."""
 import json
+import secrets
 import urllib.parse
 import urllib.request
 from pathlib import Path
@@ -12,7 +13,7 @@ def upload_video(path, cloud, preset, api_key="", api_secret=""):
         raise ValueError("Expected a nonempty MP4 file")
     if not cloud or not preset or "/" in cloud:
         raise ValueError("Missing or invalid Cloudinary configuration")
-    boundary = "MarketRevampReelBoundary"
+    boundary = "MarketRevampReel" + secrets.token_hex(12)
     body = bytearray()
     for key, value in upload_fields(preset, api_key, api_secret):
         body.extend(f'--{boundary}\r\nContent-Disposition: form-data; name="{key}"\r\n\r\n{value}\r\n'.encode())
