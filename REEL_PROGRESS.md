@@ -10,7 +10,7 @@ Opt-in only. The existing carousel and publishing path must remain unchanged unt
 | R4 | 9:16 composite renderer | DONE | e2a4b1b, 56b36b9 | Three focused tests passed locally (1080x1920, foreground contrast, source preservation, invalid inputs); full repository suite remains unverified. |
 | R5 | ASS captions + assembly | DOING | - | Implementing ffmpeg assembly, captions, timing, and tests |
 | R6 | Cloudinary video upload | IMPLEMENTED / UNVERIFIED | ca3f3b8, 1a17bea, 4724a48 | Separate MP4 upload to /video/upload, signed/unsigned fields, HTTPS URL validation and four mocked tests committed; tests not executed. |
-| R7 | Manifest reel block | TODO | - | - |
+| R7 | Manifest reel block | IMPLEMENTED / UNVERIFIED | 99175d8, e90241d, 3740269 | Optional Reel metadata and validation committed; fallback retains legacy manifest. Tests and fingerprint integration not yet executed. |
 | R8 | Fingerprint + gate extension | TODO | - | - |
 | R9 | Publish dispatch + history | TODO | - | - |
 | R10 | Workflow wiring | TODO | - | - |
