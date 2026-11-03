@@ -19,6 +19,8 @@ def prepare():
     stories = json.loads(Path("news_results.json").read_text(encoding="utf-8"))["selected_stories"]
     if len(stories) != 7:
         raise ValueError("Reel requires seven stories")
+    if not all(isinstance(s, dict) and s.get("title") and s.get("summary") for s in stories):
+        raise ValueError("Reel stories require title and summary")
     narrations = build_all([{"headline": s["title"], "summary": s["summary"]} for s in stories])
     root = Path("reel_output")
     root.mkdir(exist_ok=True)
