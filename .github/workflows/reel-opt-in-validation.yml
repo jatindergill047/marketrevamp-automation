@@ -22,6 +22,8 @@ jobs:
           python-version: '3.12'
       - name: Install existing pinned dependencies
         run: pip install -r requirements.lock
+      - name: Install optional pinned Reel TTS dependency
+        run: pip install -r requirements.reel.txt && pip check
       - name: Run offline Reel safety checks
         run: |
           python -m unittest -v test_reel_config.py test_reel_script.py test_tts.py test_reel_frames.py test_build_reel.py test_reel_cloudinary.py test_reel_manifest.py test_reel_security.py test_reel_publish.py test_prepare_reel.py
