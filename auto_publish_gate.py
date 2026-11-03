@@ -86,6 +86,13 @@ def verify_manifest_and_fingerprint(expected=""):
                     "MarketRevamp attributed quote card:")
                     for slide in manifest.get("slides", []))):
             raise ValueError("Catch-up package must contain seven standard news cards")
+    if manifest.get("media_kind") == "reel":
+        if os.environ.get("REEL_ENABLED", "false").strip().lower() != "true":
+            raise ValueError("Reel publication requires REEL_ENABLED=true")
+        from reel_security import validated_reel
+        validated_reel(manifest)
+    elif manifest.get("media_kind", "carousel") != "carousel":
+        raise ValueError("Unsupported media kind")
     fp = approval_fingerprint(manifest, image_urls)
     if expected and expected != fp:
         raise ValueError("One-shot artifact fingerprint changed; refusing publication")
