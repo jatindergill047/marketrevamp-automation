@@ -7,6 +7,12 @@ on:
     paths:
       - 'reel_*.py'
       - 'prepare_reel.py'
+      - 'build_reel.py'
+      - 'test_build_reel.py'
+      - 'tts.py'
+      - 'test_tts.py'
+      - '.github/workflows/marketrevamp.yml'
+      - 'test_reel_workflow_wiring.py'
       - 'test_reel_*.py'
       - 'test_prepare_reel.py'
       - 'test_reel_integration.py'
