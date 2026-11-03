@@ -493,9 +493,10 @@ def main():
         "created_at": int(time.time()),
         "article_urls": normalized_urls,
         "image_urls": image_urls,
-        "media_kind": "reel" if is_reel else "carousel",
         "instagram_container_id": None,
     }
+    if is_reel:
+        history[fingerprint]["media_kind"] = "reel"
     save_history(history)
 
     print("Publishing attempt recorded as pending.")
