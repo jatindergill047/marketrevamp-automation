@@ -500,9 +500,19 @@ def main():
     print("Publishing attempt recorded as pending.")
 
     try:
-        carousel_id = create_ready_carousel(
-            account_id, token, image_urls, manifest, history, fingerprint, caption
-        )
+        if is_reel:
+            from reel_publish import reel_payload
+            result = api_request(
+                "POST", f"{account_id}/media", token, reel_payload(manifest)
+            )
+            carousel_id = result["id"]
+            history[fingerprint]["instagram_container_id"] = carousel_id
+            save_history(history)
+            wait_for_container(carousel_id, token)
+        else:
+            carousel_id = create_ready_carousel(
+                account_id, token, image_urls, manifest, history, fingerprint, caption
+            )
     except Exception:
         history[fingerprint]["status"] = "failed"
         history[fingerprint]["failed_at"] = int(time.time())
