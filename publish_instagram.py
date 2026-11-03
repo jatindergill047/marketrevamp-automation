@@ -204,6 +204,12 @@ def approval_fingerprint(manifest, image_urls):
             for slide in manifest.get("slides", [])
         ],
     }
+    if manifest.get("media_kind") == "reel":
+        from reel_security import validated_reel
+        reviewed["media_kind"] = "reel"
+        reviewed["reel"] = validated_reel(manifest)
+    elif manifest.get("media_kind", "carousel") != "carousel":
+        raise ValueError("Unsupported media kind")
     canonical = json.dumps(reviewed, sort_keys=True, separators=(",", ":"),
                            ensure_ascii=False)
     return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
