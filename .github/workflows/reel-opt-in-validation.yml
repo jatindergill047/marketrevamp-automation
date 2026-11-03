@@ -2,6 +2,15 @@ name: MarketRevamp Reel Opt-in Validation
 
 on:
   workflow_dispatch:
+  push:
+    branches: [feature/reels-opt-in]
+    paths:
+      - 'reel_*.py'
+      - 'prepare_reel.py'
+      - 'test_reel_*.py'
+      - 'test_prepare_reel.py'
+      - 'requirements.reel.txt'
+      - '.github/workflows/reel-opt-in-validation.yml'
 
 permissions:
   contents: read
