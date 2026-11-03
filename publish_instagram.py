@@ -273,7 +273,9 @@ def api_request(method, endpoint, token, payload=None):
 
 
 def wait_for_container(container_id, token):
-    for _ in range(20):
+    from reel_config import REEL_CONTAINER_POLLS
+    max_polls = REEL_CONTAINER_POLLS if os.getenv('REEL_ENABLED') == 'true' else 20
+    for _ in range(max_polls):
         result = api_request(
             "GET",
             container_id,
