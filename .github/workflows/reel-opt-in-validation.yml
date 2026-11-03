@@ -62,5 +62,20 @@ jobs:
         run: |
           echo 'R13 real voice outcome: ${{ steps.r13_voice.outcome }}'
           echo 'External voice failures do not imply staging approval.'
+      - name: R14 generate preview and QA report (no uploads)
+        timeout-minutes: 18
+        run: python reel_r14_preview.py
+      - name: Preserve R14 preview for visual review
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: marketrevamp-r14-editorial-demo
+          path: |
+            r14_preview/marketrevamp_r14_demo.mp4
+            r14_preview/contact_sheet.jpg
+            r14_preview/segments.json
+            r14_preview/QA_REPORT.md
+          retention-days: 7
+          if-no-files-found: warn
       - name: Verify disabled Reel path
         run: python prepare_reel.py
