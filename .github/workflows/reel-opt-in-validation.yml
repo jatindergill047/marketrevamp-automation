@@ -77,5 +77,16 @@ jobs:
             r14_preview/QA_REPORT.md
           retention-days: 7
           if-no-files-found: warn
+      - name: R15 generate natural voice A/B/C samples (no uploads)
+        timeout-minutes: 8
+        run: python reel_r15_voice_comparison.py
+      - name: Preserve R15 voice comparison for listening review
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: marketrevamp-r15-voice-comparison
+          path: r15_voice_comparison/
+          retention-days: 7
+          if-no-files-found: warn
       - name: Verify disabled Reel path
         run: python prepare_reel.py
