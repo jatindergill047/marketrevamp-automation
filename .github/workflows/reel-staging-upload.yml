@@ -1,0 +1,42 @@
+name: MarketRevamp Reel Staging Upload (Manual Only)
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_staging:
+        description: 'Type STAGING_ONLY to authorize a test video upload; never Instagram'
+        required: true
+        type: string
+permissions:
+  contents: read
+jobs:
+  stage-video:
+    if: github.ref == 'refs/heads/feature/reels-opt-in' && inputs.confirm_staging == 'STAGING_ONLY'
+    runs-on: ubuntu-latest
+    environment: reels-staging
+    timeout-minutes: 25
+    env:
+      REEL_ENABLED: 'false'
+      REEL_UPLOAD_ENABLED: 'false'
+      INSTAGRAM_PUBLISH_ENABLED: 'false'
+      CLOUDINARY_CLOUD_NAME: ${{ vars.CLOUDINARY_CLOUD_NAME }}
+      CLOUDINARY_UPLOAD_PRESET: ${{ vars.CLOUDINARY_UPLOAD_PRESET }}
+      CLOUDINARY_API_KEY: ${{ secrets.CLOUDINARY_API_KEY }}
+      CLOUDINARY_API_SECRET: ${{ secrets.CLOUDINARY_API_SECRET }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+      - name: Enforce staging-only configuration
+        run: |
+          test "$CLOUDINARY_UPLOAD_PRESET" = 'marketrevamp_reels_staging'
+          test -n "$CLOUDINARY_CLOUD_NAME"
+          test -n "$CLOUDINARY_API_KEY"
+          test -n "$CLOUDINARY_API_SECRET"
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.lock
+          pip install -r requirements.reel.txt
+          sudo apt-get update -qq && sudo apt-get install -y ffmpeg
+      - name: Upload isolated synthetic sample and verify Cloudinary playback
+        run: python reel_staging_upload.py
