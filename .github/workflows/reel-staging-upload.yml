@@ -1,9 +1,5 @@
-name: MarketRevamp Reel Staging Upload (One-time Authorized)
+name: MarketRevamp Reel Staging Upload (Manual Only)
 on:
-  push:
-    branches: [feature/reels-opt-in]
-    paths:
-      - 'reel_staging_one_time_trigger.txt'
   workflow_dispatch:
     inputs:
       confirm_staging:
@@ -14,7 +10,7 @@ permissions:
   contents: read
 jobs:
   stage-video:
-    if: github.ref == 'refs/heads/feature/reels-opt-in' && ((github.event_name == 'push' && github.event.head_commit.message == 'Authorize one synthetic Cloudinary staging upload') || (github.event_name == 'workflow_dispatch' && inputs.confirm_staging == 'STAGING_ONLY'))
+    if: github.ref == 'refs/heads/feature/reels-opt-in' && inputs.confirm_staging == 'STAGING_ONLY'
     runs-on: ubuntu-latest
     environment: reels-staging
     timeout-minutes: 25
