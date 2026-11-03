@@ -52,5 +52,15 @@ jobs:
           ffprobe -version
       - name: Run R11 synthetic MP4 and mocked Cloudinary integration
         run: python -m unittest -v test_reel_integration.py
+      - name: R13 real TTS staging smoke (external service; no uploads)
+        id: r13_voice
+        continue-on-error: true
+        timeout-minutes: 12
+        run: python reel_staging_smoke.py
+      - name: Report R13 external voice status
+        if: always()
+        run: |
+          echo 'R13 real voice outcome: ${{ steps.r13_voice.outcome }}'
+          echo 'External voice failures do not imply staging approval.'
       - name: Verify disabled Reel path
         run: python prepare_reel.py
