@@ -13,7 +13,7 @@ Opt-in only. The existing carousel and publishing path must remain unchanged unt
 | R7 | Manifest reel block | IMPLEMENTED / UNVERIFIED | 99175d8, e90241d, 3740269 | Optional Reel metadata and validation committed; fallback retains legacy manifest. Tests and fingerprint integration not yet executed. |
 | R8 | Fingerprint + gate extension | IMPLEMENTED / UNVERIFIED | 093324d, c1a6797, e5a9924, eebef36 | Reel URL/cover/duration/caption validation, distinct approval fingerprint, REEL_ENABLED authorization gate, and three offline tests committed. Tests not executed; R9 dispatch remains pending. |
 | R9 | Publish dispatch + history | IMPLEMENTED / UNVERIFIED | db20e0b, 80ed106, ea30acf, 0b8227b, 5e8c702 | Opt-in REELS container dispatch and existing publish/history checkpoints integrated; carousel path retained. Tests not executed; no live publish. |
-| R10 | Workflow wiring | PARTIAL / UNVERIFIED | 1a403fb, 837f886, 0f7e80a, 9442bdc, f1c5e5a, 738de8b, 6300a10 | Manual offline-only workflow, opt-in orchestrator, pinned edge-tts 7.3.1 in requirements.reel.txt, Reel and carousel regressions configured. No workflow executed; full transitive lock and end-to-end render pending. Production workflows unchanged. |
+| R10 | Workflow wiring | IMPLEMENTED / CI PENDING | 1a403fb, 837f886, 9442bdc, f1c5e5a, 738de8b, 6300a10, 04a3c0d, 786c532 | Isolated opt-in orchestrator, optional TTS pin and feature-branch push CI for offline Reel/carousel tests. No production workflows changed; no CI result observed; end-to-end render, Cloudinary upload and transitive lock unverified. |
 | R11 | Tests | TODO | - | - |
 | R12 | Docs | TODO | - | - |
 
