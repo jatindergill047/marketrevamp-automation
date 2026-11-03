@@ -14,6 +14,13 @@ from reel_config import VOICE
 VOICE_RATE = "-5%"
 VOICE_PITCH = "-2Hz"
 
+# Preview-only candidates: compare actual generated audio before selecting a voice.
+VOICE_CANDIDATES = {
+    "ava": "en-US-AvaNeural",
+    "andrew": "en-US-AndrewNeural",
+    "jenny": "en-US-JennyNeural",
+}
+
 
 class ReelBuildError(RuntimeError):
     """An optional Reel audio build step failed."""
@@ -24,7 +31,7 @@ def available() -> bool:
     return shutil.which("ffprobe") is not None
 
 
-def speak(text: str, out_path: str | Path) -> Path:
+def speak(text: str, out_path: str | Path, *, voice: str | None = None, rate: str | None = None, pitch: str | None = None) -> Path:
     """Generate MP3 narration with three attempts, raising on failure."""
     if not isinstance(text, str) or not text.strip():
         raise ReelBuildError("Cannot synthesize empty narration")
@@ -39,7 +46,7 @@ def speak(text: str, out_path: str | Path) -> Path:
     for attempt in range(3):
         try:
             destination.unlink(missing_ok=True)
-            asyncio.run(edge_tts.Communicate(text, VOICE, rate=VOICE_RATE, pitch=VOICE_PITCH).save(str(destination)))
+            asyncio.run(edge_tts.Communicate(text, voice or VOICE, rate=rate or VOICE_RATE, pitch=pitch or VOICE_PITCH).save(str(destination)))
             if not destination.is_file() or destination.stat().st_size == 0:
                 raise ReelBuildError("TTS produced no audio")
             return destination
