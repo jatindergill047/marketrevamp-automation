@@ -23,7 +23,7 @@ def build_narration(story, index, total):
     if not headline:
         raise ValueError("Story headline is required")
     summary = clean_text(story.get("summary"))
-    return f"{headline}. {summary}".strip()
+    return f"{headline.rstrip('.!?')}. {summary}".strip()
 
 
 def build_all(stories):
