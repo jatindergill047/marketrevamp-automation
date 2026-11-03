@@ -19,6 +19,14 @@ class NarrationTests(unittest.TestCase):
             "Open A I and B T C beat S and P five hundred. an-THROP-ik tracks Naz-dak",
         )
 
+    def test_storytelling_script_overrides_headline_summary(self):
+        story = {
+            "headline": "AI research",
+            "summary": "An evaluation update",
+            "narration_text": "Here's what changed. Researchers are testing a new evaluation approach. The question is how well it works in practice.",
+        }
+        self.assertEqual(build_narration(story, 1, 7), story["narration_text"])
+
     def test_missing_headline(self):
         for headline in ("", "  ", "🚀", None):
             with self.subTest(headline=headline):
