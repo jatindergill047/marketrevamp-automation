@@ -436,5 +436,29 @@
     "publish_attempted_at": 1793680270,
     "instagram_media_id": "17997168137994893",
     "published_at": 1793680276
+  },
+  "85b4176ee7aa72393f91c0120879e7d95048db507ed0319a8c7dc14f7818af78": {
+    "status": "pending",
+    "toronto_date": "2026-11-03",
+    "created_at": 1793763013,
+    "article_urls": [
+      "https://techcrunch.com/2026/11/03/anthropic-is-working-on-a-system-to-prove-ai-models-identity",
+      "https://arstechnica.com/ai/2026/11/google-will-let-schools-skip-ai-tools-but-they-have-to-give-up-search-too",
+      "https://www.cnbc.com/2026/11/03/amd-amd-q3-earnings-report-2026-.html",
+      "https://www.cnbc.com/2026/11/03/binance-breach-puts-custody-at-center-of-crypto-infrastructure-trade.html",
+      "https://www.cnbc.com/2026/11/03/apple-earnings-john-ternus-faces-first-test-amid-high-memory-costs.html",
+      "https://techcrunch.com/2026/11/03/ted-schleins-ballistic-ventures-seeks-490m-for-new-funds-amid-ai-driven-cybersecurity-boom",
+      "https://techcrunch.com/2026/11/03/ai-inference-startup-fal-doubles-its-valuation-to-16b-as-demand-surges"
+    ],
+    "image_urls": [
+      "https://res.cloudinary.com/y0ln6ixr/image/upload/f_jpg/v1793762982/ncxeganjb7nf6s8cwlos.png",
+      "https://res.cloudinary.com/y0ln6ixr/image/upload/f_jpg/v1793762983/gx4dmjwabsfayoq7bnnu.png",
+      "https://res.cloudinary.com/y0ln6ixr/image/upload/f_jpg/v1793762984/nd19qhga6empv3km7neu.png",
+      "https://res.cloudinary.com/y0ln6ixr/image/upload/f_jpg/v1793762984/t6qdi4yjudpuh1jgf0hw.png",
+      "https://res.cloudinary.com/y0ln6ixr/image/upload/f_jpg/v1793762985/c2lpk3stxwss6btlzkke.png",
+      "https://res.cloudinary.com/y0ln6ixr/image/upload/f_jpg/v1793762986/p89glrm955dwru1ysrip.png",
+      "https://res.cloudinary.com/y0ln6ixr/image/upload/f_jpg/v1793762986/fdpeqg5arnfwy8mqghix.png"
+    ],
+    "instagram_container_id": null
   }
 }
