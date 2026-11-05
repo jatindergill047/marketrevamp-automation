@@ -465,7 +465,7 @@
     "published_at": 1793763050
   },
   "3e70eb48e0a5b46688132a62273323b3dc8050bac83f57011458f341f91b71fa": {
-    "status": "pending",
+    "status": "published",
     "toronto_date": "2026-11-04",
     "created_at": 1793850338,
     "article_urls": [
@@ -487,6 +487,8 @@
       "https://res.cloudinary.com/y0ln6ixr/image/upload/f_jpg/v1793850306/k31oejqldshhgstn7xeh.png"
     ],
     "instagram_container_id": "18130775836801321",
-    "publish_attempted_at": 1793850374
+    "publish_attempted_at": 1793850374,
+    "instagram_media_id": "18176455933455543",
+    "published_at": 1793850381
   }
 }
