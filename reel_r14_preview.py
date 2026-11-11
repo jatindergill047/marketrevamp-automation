@@ -9,30 +9,30 @@ from PIL import Image, ImageDraw, ImageFont
 from build_reel import build_continuous_reel
 from reel_frames import compose
 from reel_script import build_connected_all, connected_script
-from tts import speak, duration
+from tts import speak_with_boundaries, duration
 
 STORIES = [
     ("AI research", "Researchers test a new way to evaluate AI systems",
      "Researchers introduce a hypothetical new evaluation method for AI systems.",
-     "In this fictional scenario, researchers introduce a new method for evaluating AI systems."),
+     "This is a fictional technology briefing, not real news. First, researchers are testing a new way to evaluate AI systems. The demo does not establish whether it works better than existing methods."),
     ("Semiconductors", "Experimental processor targets lower energy use",
      "A fictional chipmaker announces an experimental energy efficient processor.",
-     "A fictional chipmaker has announced an experimental processor designed to use less energy."),
+     "A fictional chipmaker is developing a processor intended to use less energy. No independent performance results are included in this example."),
     ("Blockchain", "Sample network proposes faster transaction settlement",
      "A sample blockchain project proposes faster transaction settlement.",
-     "A hypothetical blockchain project is proposing faster transaction settlement."),
+     "A hypothetical blockchain network proposes faster settlement. The example provides no measured transaction speeds."),
     ("Cybersecurity", "Security team releases defensive checklist",
      "An illustrative security team publishes a new defensive checklist.",
-     "An illustrative security team has released a new defensive checklist."),
+     "An illustrative security team has released a defensive checklist. The specific recommendations are not provided in this demo."),
     ("Cloud computing", "Cloud provider tests data center cooling approach",
      "A fictional cloud provider tests more efficient data center cooling.",
-     "A fictional cloud provider is testing a more efficient approach to data center cooling."),
+     "A fictional cloud provider is testing a different cooling approach. This example includes no verified energy savings."),
     ("Digital payments", "Payments company explores cross border settlement",
      "A sample payments company explores cross border settlement.",
-     "A sample payments company is exploring cross-border settlement."),
+     "A sample payments company is exploring cross-border settlement, but the demo gives no launch date."),
     ("Market outlook", "Analysts review technology sector risks",
      "Analysts in this fictional scenario review technology sector risks.",
-     "In this fictional market update, analysts are reviewing risks across the technology sector."),
+     "Finally, fictional analysts are reviewing technology sector risks. Across these examples, the proposals remain unverified, and none should be treated as a real-world announcement."),
 ]
 
 def main():
@@ -60,9 +60,9 @@ def main():
         slide.save(path)
         frames.append(compose(path, index, root / f"frame_{index:02d}.png"))
 
-    voice = speak(connected_script([{"narration_text": script} for _, _, _, script in STORIES]), root / "continuous_voice.mp3")
+    voice, boundaries = speak_with_boundaries(connected_script([{"narration_text": script} for _, _, _, script in STORIES]), root / "continuous_voice.mp3", root / "word_boundaries.json")
     video = build_continuous_reel(frames, voice, narrations, root / "marketrevamp_r14_demo.mp4",
-                                  root / "segments.json", fps=5)
+                                  root / "segments.json", fps=5, boundaries_path=boundaries)
     data = json.loads((root / "segments.json").read_text())
     probe = subprocess.run(["ffprobe", "-v", "error", "-show_entries",
                             "stream=codec_name,codec_type,width,height:format=duration",
@@ -74,6 +74,7 @@ def main():
     assert any(s.get("codec_type") == "audio" and s.get("codec_name") == "aac" for s in streams)
     assert len(data["segments"]) == 7
     assert data["audio_mode"] == "single_continuous_tts"
+    assert data["chapter_timing"] == "tts_word_boundaries"
     assert abs(data["duration_seconds"] - duration(voice)) < 0.01
     assert all(data["segments"][i]["end_seconds"] <= data["segments"][i+1]["start_seconds"] + 0.002
                for i in range(6))
@@ -89,7 +90,7 @@ def main():
         "- AI narration: one continuous edge-tts file generated.\n"
         "- Video: 1080x1920 H.264 and AAC verified with ffprobe.\n"
         "- Captions: ASS burn-in by build_reel; visual legibility requires human inspection.\n"
-        "- Timing: seven word-weighted approximate chapters; actual word alignment not verified.\n"
+        "- Timing: seven chapters aligned to service-provided word boundaries; human sync QA still required.\n"
         "- Motion: existing gentle zoompan; no crossfade transitions implemented.\n"
         "- Branding: placeholder text only; official logo asset NOT verified.\n"
         "- Audio pronunciation, subtitle sync and Instagram safe zones require human QA.\n"
