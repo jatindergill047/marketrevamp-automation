@@ -34,7 +34,7 @@ def build_narration(story, index, total):
     if index == 1:
         return f"{headline_sentence} {summary}".strip()
     if index % 3 == 2:
-        return f"Meanwhile, {headline[0].lower() + headline[1:].rstrip('.!?')}. {summary}".strip()
+        return f"Meanwhile, another headline: {headline_sentence} {summary}".strip()
     if index % 3 == 0:
         return f"Next up: {headline_sentence} {summary}".strip()
     return f"Here's another development: {headline_sentence} {summary}".strip()
