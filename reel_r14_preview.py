@@ -8,7 +8,7 @@ import textwrap
 from PIL import Image, ImageDraw, ImageFont
 from build_reel import build_reel
 from reel_frames import compose
-from reel_script import build_all
+from reel_script import build_connected_all
 from tts import speak, duration
 
 STORIES = [
@@ -42,7 +42,7 @@ def main():
     root = Path("r14_preview")
     root.mkdir(exist_ok=True)
     frames, voices = [], []
-    narrations = build_all([{"headline": h, "summary": s, "category": category, "narration_text": script} for category, h, s, script in STORIES])
+    narrations = build_connected_all([{"headline": h, "summary": s, "category": category, "narration_text": script} for category, h, s, script in STORIES])
     font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 75)
     small = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 29)
     body_font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 43)
