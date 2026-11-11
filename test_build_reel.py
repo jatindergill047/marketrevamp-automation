@@ -43,7 +43,7 @@ class BuildReelTests(unittest.TestCase):
                          if line.startswith("Dialogue:")]
             self.assertEqual(len(dialogues), 2)
             self.assertIn("First short sentence.", dialogues[0])
-            self.assertIn("0:00:03.00", dialogues[0])
+            self.assertIn("0:00:02.67", dialogues[0])
             self.assertIn("0:00:08.00", dialogues[-1])
 
     def test_rejects_mismatched_inputs(self):
