@@ -1,6 +1,7 @@
 """Build opt-in narrated 9:16 Reels from rendered slides and audio."""
 import json
 import math
+import re
 import shutil
 import subprocess
 import tempfile
@@ -35,20 +36,25 @@ def write_captions(text, seconds, destination, spoken_seconds=None):
     words = str(text).split()
     if not words or seconds <= 0:
         raise ReelBuildError("Caption text and duration are required")
+    # Prefer phrase boundaries; avoid changing spoken text or fabricating timestamps.
     chunks = []
-    while words:
-        chunk = words[:8]
-        del words[:8]
+    remaining = words[:]
+    while remaining:
+        limit = min(8, len(remaining))
+        boundary = next((j for j in range(3, limit + 1)
+                         if re.search(r"[.!?;:,]$", remaining[j - 1])), limit)
+        chunk = remaining[:boundary]
+        del remaining[:boundary]
         lines = textwrap.wrap(" ".join(chunk), width=29, break_long_words=False)
         if len(lines) > 2:
             lines = [" ".join(chunk[:4]), " ".join(chunk[4:])]
-        chunks.append(r"\N".join(_escape_ass(line) for line in lines))
+        chunks.append((r"\N".join(_escape_ass(line) for line in lines), len(chunk)))
     # Keep subtitles inside the actual spoken interval, leaving the
     # inter-story quiet beat visually uncluttered.
     caption_seconds = seconds if spoken_seconds is None else min(seconds, spoken_seconds)
     if caption_seconds <= 0:
         raise ReelBuildError("Spoken caption duration must be positive")
-    per_chunk = caption_seconds / len(chunks)
+    # Approximate phrase timing by word count, not equal time per subtitle.\n    # Exact word alignment requires timestamps from the TTS service.\n    total_words = sum(count for _, count in chunks)
     header = (
         "[Script Info]\nScriptType: v4.00+\nPlayResX: 1080\nPlayResY: 1920\n"
         "[V4+ Styles]\nFormat: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, "
@@ -58,10 +64,15 @@ def write_captions(text, seconds, destination, spoken_seconds=None):
         f"-1,0,0,0,100,100,0,0,1,2,0,8,65,65,{CAPTION_BAND_TOP + 38},1\n"
         "[Events]\nFormat: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\n"
     )
-    events = [
-        f"Dialogue: 0,{_timestamp(i * per_chunk)},{_timestamp((i + 1) * per_chunk)},Default,,0,0,0,,{chunk}\n"
-        for i, chunk in enumerate(chunks)
-    ]
+    events = []
+    offset = 0
+    for chunk, count in chunks:
+        start = caption_seconds * offset / total_words
+        offset += count
+        end = caption_seconds * offset / total_words
+        events.append(
+            f"Dialogue: 0,{_timestamp(start)},{_timestamp(end)},Default,,0,0,0,,{chunk}\\n"
+        )
     target = Path(destination)
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text(header + "".join(events), encoding="utf-8")
