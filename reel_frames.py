@@ -46,7 +46,17 @@ def compose(slide_path: str | Path, index: int, out_path: str | Path) -> Path:
     overlay = Image.new("RGBA", (REEL_WIDTH, REEL_HEIGHT), (0, 0, 0, 0))
     drawing = ImageDraw.Draw(overlay)
     drawing.rectangle((0, CAPTION_BAND_TOP, REEL_WIDTH, CAPTION_BAND_BOTTOM), fill=(0, 0, 0, 175))
-    drawing.text((54, 68), "MARKETREVAMP", fill="white", font=_font(48), stroke_width=1, stroke_fill="black")
+    # Use the repository's official horizontal logo when available; keep a
+    # readable wordmark fallback for synthetic tests without brand assets.
+    logo_path = Path(__file__).resolve().parent / "marketrevamp_logo_horizontal.png"
+    if logo_path.is_file():
+        with Image.open(logo_path) as logo_source:
+            logo = logo_source.convert("RGBA")
+            logo.thumbnail((680, 110), Image.Resampling.LANCZOS)
+            overlay.alpha_composite(logo, (54, 55))
+    else:
+        drawing.text((54, 68), "MARKETREVAMP", fill="white", font=_font(48),
+                     stroke_width=1, stroke_fill="black")
     counter = f"{index:02d}/07"
     font = _font(38)
     bbox = drawing.textbbox((0, 0), counter, font=font)
