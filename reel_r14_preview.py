@@ -28,7 +28,7 @@ def main():
     root = Path("r14_preview")
     root.mkdir(exist_ok=True)
     frames, voices = [], []
-    narrations = build_all([{"headline": h, "summary": s} for h, s in STORIES])
+    narrations = build_all([{"headline": h, "summary": s, "category": h} for h, s in STORIES])
     font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 75)
     small = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 29)
     body_font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 43)
