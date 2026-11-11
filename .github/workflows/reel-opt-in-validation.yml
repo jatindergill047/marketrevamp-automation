@@ -44,8 +44,8 @@ jobs:
         run: pip install -r requirements.reel.txt && pip check
       - name: Run offline Reel safety checks
         run: |
-          python -m unittest -v test_reel_config.py test_reel_script.py test_tts.py test_reel_frames.py test_build_reel.py test_reel_cloudinary.py test_reel_manifest.py test_reel_security.py test_reel_publish.py test_prepare_reel.py test_reel_recovery.py test_reel_launch_docs.py test_reel_workflow_wiring.py test_reel_r25_editorial.py test_reel_r26_review.py
-          python -m compileall -q prepare_reel.py reel_config.py reel_script.py tts.py reel_frames.py build_reel.py reel_cloudinary.py reel_manifest.py reel_security.py reel_publish.py reel_r25_editorial.py reel_r25_preview.py reel_r26_review.py
+          python -m unittest -v test_reel_config.py test_reel_script.py test_tts.py test_reel_frames.py test_build_reel.py test_reel_cloudinary.py test_reel_manifest.py test_reel_security.py test_reel_publish.py test_prepare_reel.py test_reel_recovery.py test_reel_launch_docs.py test_reel_workflow_wiring.py test_reel_r25_editorial.py test_reel_r26_review.py test_reel_r27_draft.py
+          python -m compileall -q prepare_reel.py reel_config.py reel_script.py tts.py reel_frames.py build_reel.py reel_cloudinary.py reel_manifest.py reel_security.py reel_publish.py reel_r25_editorial.py reel_r25_preview.py reel_r26_review.py reel_r27_draft.py
       - name: Run existing carousel regression checks
         run: |
           python -m unittest -v test_auto_publish_gate.py test_reliability.py test_publish_retry.py
