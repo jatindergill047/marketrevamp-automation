@@ -87,6 +87,21 @@ class BuildReelTests(unittest.TestCase):
                     build_reel.build_continuous_reel([frame], audio, ["Reviewed words."],
                         root / "output.mp4", boundaries_path=timings)
 
+    def test_r25_word_timed_captions(self):
+        with tempfile.TemporaryDirectory() as folder:
+            words = [
+                {"start_seconds": 0.3, "duration_seconds": 0.2},
+                {"start_seconds": 1.1, "duration_seconds": 0.4},
+                {"start_seconds": 2.0, "duration_seconds": 0.3},
+            ]
+            path = build_reel.write_captions(
+                "One two three.", 4, Path(folder) / "timed.ass", word_timings=words)
+            lines = [line for line in path.read_text().splitlines()
+                     if line.startswith("Dialogue:")]
+            self.assertEqual(len(lines), 1)
+            self.assertIn("0:00:00.30", lines[0])
+            self.assertIn("0:00:02.30", lines[0])
+
     def test_missing_ffmpeg(self):
         with patch("build_reel.shutil.which", return_value=None):
             with self.assertRaises(ReelBuildError):
