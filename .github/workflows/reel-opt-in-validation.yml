@@ -80,6 +80,7 @@ jobs:
             r14_preview/marketrevamp_r14_demo.mp4
             r14_preview/contact_sheet.jpg
             r14_preview/segments.json
+            r14_preview/word_boundaries.json
             r14_preview/QA_REPORT.md
           retention-days: 7
           if-no-files-found: warn
