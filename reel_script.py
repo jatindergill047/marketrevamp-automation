@@ -26,8 +26,18 @@ def build_narration(story, index, total):
     # Prefer an editor-approved spoken script when provided. Never invent
     # implications or facts from a headline alone.
     spoken = clean_text(story.get("narration_text"))
-    body = spoken or f"{headline.rstrip('.!?')}. {summary}".strip()
-    return body
+    if spoken:
+        return spoken
+    # Vary delivery without inventing a hook, conclusion, or causal claim.
+    # Editorial scripts always take precedence over generated phrasing.
+    headline_sentence = headline.rstrip(".!?") + "."
+    if index == 1:
+        return f"{headline_sentence} {summary}".strip()
+    if index % 3 == 2:
+        return f"Meanwhile, {headline[0].lower() + headline[1:].rstrip('.!?')}. {summary}".strip()
+    if index % 3 == 0:
+        return f"Next up: {headline_sentence} {summary}".strip()
+    return f"Here's another development: {headline_sentence} {summary}".strip()
 
 
 def build_all(stories):
