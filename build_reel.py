@@ -194,7 +194,7 @@ def build_continuous_reel(frames, audio, narrations, output_path, segments_path=
                             "end_seconds": round(boundaries[i + 1] / fps, 3),
                             "narration": narration})
         manifest = root / "concat.txt"
-        manifest.write_text("".join(f"file '{clip.as_posix()}'\\n" for clip in clips))
+        manifest.write_text("".join(f"file '{clip.as_posix()}'\n" for clip in clips))
         visuals = root / "visuals.mp4"
         _run(["ffmpeg", "-y", "-loglevel", "error", "-f", "concat", "-safe", "0",
               "-i", str(manifest), "-c", "copy", str(visuals)])
@@ -207,5 +207,5 @@ def build_continuous_reel(frames, audio, narrations, output_path, segments_path=
     metadata.parent.mkdir(parents=True, exist_ok=True)
     metadata.write_text(json.dumps({"duration_seconds": round(voice_seconds, 3),
         "audio_mode": "single_continuous_tts", "chapter_timing": "estimated_word_weighted",
-        "segments": records}, indent=2) + "\\n", encoding="utf-8")
+        "segments": records}, indent=2) + "\n", encoding="utf-8")
     return output
