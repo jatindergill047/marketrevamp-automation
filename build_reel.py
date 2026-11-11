@@ -193,13 +193,28 @@ def build_continuous_reel(frames, audio, narrations, output_path, segments_path=
         if any(a >= z for a, z in zip(aligned, aligned[1:])):
             raise ReelBuildError("Word boundaries must increase")
         per_story_timings = []
-        for i, story in enumerate(story_tokens):
-            first, last = starts[i], starts[i] + len(story)
+        for i, script in enumerate(narrations):
+            # ASS captions group whitespace-delimited words, whereas the
+            # TTS alignment tokenizes punctuation and hyphenated words.
+            # Map every displayed word to its first and last speech token.
+            first = starts[i]
             chapter_start = aligned[i]
-            per_story_timings.append([
-                {"start_seconds": max(0.0, float(events[token_event_indices[j]]["start_seconds"]) - chapter_start),
-                 "duration_seconds": float(events[token_event_indices[j]]["duration_seconds"])}
-                for j in range(first, last)])
+            cursor = first
+            word_times = []
+            for displayed_word in script.split():
+                parts = tokens(displayed_word)
+                if not parts:
+                    raise ReelBuildError("Caption word has no speech tokens")
+                start_event = events[token_event_indices[cursor]]
+                end_event = events[token_event_indices[cursor + len(parts) - 1]]
+                start_time = max(0.0, float(start_event["start_seconds"]) - chapter_start)
+                end_time = float(end_event["start_seconds"]) + float(end_event["duration_seconds"]) - chapter_start
+                word_times.append({"start_seconds": start_time,
+                                   "duration_seconds": max(0.0, end_time - start_time)})
+                cursor += len(parts)
+            if cursor != first + len(story_tokens[i]):
+                raise ReelBuildError("Caption tokens do not match narration")
+            per_story_timings.append(word_times)
         timing_mode = "tts_word_boundaries"
     # Use exact frame counts to avoid gaps between chapters.
     total_frames = max(len(frames), math.ceil(voice_seconds * fps))
