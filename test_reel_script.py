@@ -16,7 +16,7 @@ class NarrationTests(unittest.TestCase):
         )
         self.assertEqual(
             result,
-            "Open A I and B T C beat S and P five hundred. an-THROP-ik tracks Naz-dak",
+            "Open A I and B T C beat S and P five hundred. an-THROP-ik tracks Naz-dak.",
         )
 
     def test_storytelling_script_overrides_headline_summary(self):
@@ -77,7 +77,7 @@ class NarrationTests(unittest.TestCase):
         stories = [{"headline": "First", "summary": "One"}, {"headline": "Second", "summary": "Two"}]
         self.assertEqual(
             build_all(stories),
-            ["First. One", "Second. Two"],
+            ["First. One.", "Second. Two."],
         )
 
 
