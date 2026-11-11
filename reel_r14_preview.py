@@ -12,13 +12,27 @@ from reel_script import build_all
 from tts import speak, duration
 
 STORIES = [
-    ("AI research", "Researchers test a new way to evaluate AI systems", "Researchers introduce a hypothetical new evaluation method for AI systems."),
-    ("Semiconductors", "Experimental processor targets lower energy use", "A fictional chipmaker announces an experimental energy efficient processor."),
-    ("Blockchain", "Sample network proposes faster transaction settlement", "A sample blockchain project proposes faster transaction settlement."),
-    ("Cybersecurity", "Security team releases defensive checklist", "An illustrative security team publishes a new defensive checklist."),
-    ("Cloud computing", "Cloud provider tests data center cooling approach", "A fictional cloud provider tests more efficient data center cooling."),
-    ("Digital payments", "Payments company explores cross border settlement", "A sample payments company explores cross border settlement."),
-    ("Market outlook", "Analysts review technology sector risks", "Analysts in this fictional scenario review technology sector risks."),
+    ("AI research", "Researchers test a new way to evaluate AI systems",
+     "Researchers introduce a hypothetical new evaluation method for AI systems.",
+     "In this fictional scenario, researchers introduce a new method for evaluating AI systems."),
+    ("Semiconductors", "Experimental processor targets lower energy use",
+     "A fictional chipmaker announces an experimental energy efficient processor.",
+     "A fictional chipmaker has announced an experimental processor designed to use less energy."),
+    ("Blockchain", "Sample network proposes faster transaction settlement",
+     "A sample blockchain project proposes faster transaction settlement.",
+     "A hypothetical blockchain project is proposing faster transaction settlement."),
+    ("Cybersecurity", "Security team releases defensive checklist",
+     "An illustrative security team publishes a new defensive checklist.",
+     "An illustrative security team has released a new defensive checklist."),
+    ("Cloud computing", "Cloud provider tests data center cooling approach",
+     "A fictional cloud provider tests more efficient data center cooling.",
+     "A fictional cloud provider is testing a more efficient approach to data center cooling."),
+    ("Digital payments", "Payments company explores cross border settlement",
+     "A sample payments company explores cross border settlement.",
+     "A sample payments company is exploring cross-border settlement."),
+    ("Market outlook", "Analysts review technology sector risks",
+     "Analysts in this fictional scenario review technology sector risks.",
+     "In this fictional market update, analysts are reviewing risks across the technology sector."),
 ]
 
 def main():
@@ -28,11 +42,11 @@ def main():
     root = Path("r14_preview")
     root.mkdir(exist_ok=True)
     frames, voices = [], []
-    narrations = build_all([{"headline": h, "summary": s, "category": category} for category, h, s in STORIES])
+    narrations = build_all([{"headline": h, "summary": s, "category": category, "narration_text": script} for category, h, s, script in STORIES])
     font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 75)
     small = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 29)
     body_font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 43)
-    for index, ((category, headline, summary), narration) in enumerate(zip(STORIES, narrations), 1):
+    for index, ((category, headline, summary, script), narration) in enumerate(zip(STORIES, narrations), 1):
         slide = Image.new("RGB", (1080, 1350), (21, 27, 40))
         draw = ImageDraw.Draw(slide)
         draw.rectangle((0, 0, 1080, 18), fill=(220, 46, 51))
