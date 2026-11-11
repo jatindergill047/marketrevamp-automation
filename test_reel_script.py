@@ -2,7 +2,7 @@
 
 import unittest
 
-from reel_script import build_all, build_narration, build_connected_all
+from reel_script import build_all, build_narration, build_connected_all, connected_script
 
 
 class NarrationTests(unittest.TestCase):
@@ -90,10 +90,11 @@ class NarrationTests(unittest.TestCase):
         ]
         result = build_connected_all(stories)
         self.assertEqual(len(result), 3)
-        self.assertTrue(result[0].startswith("Here's what we're watching today."))
-        self.assertTrue(result[-1].startswith("And one final development."))
+        self.assertEqual(result[0], stories[0]["narration_text"])
+        self.assertEqual(result[-1], stories[-1]["narration_text"])
         self.assertTrue(all(story["narration_text"] in segment
                             for story, segment in zip(stories, result)))
+        self.assertEqual(connected_script(stories), " ".join(result))
         self.assertTrue(all(not segment.startswith(story["category"] + ".")
                             for story, segment in zip(stories, result)))
 
