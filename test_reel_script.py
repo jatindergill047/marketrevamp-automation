@@ -32,7 +32,7 @@ class NarrationTests(unittest.TestCase):
                  "summary": "A pilot is underway."}
         self.assertEqual(
             build_narration(story, 1, 7),
-            "Blockchain. New settlement test. A pilot is underway.",
+            "New settlement test. A pilot is underway.",
         )
 
     def test_category_spoken_before_editor_approved_script(self):
@@ -40,7 +40,7 @@ class NarrationTests(unittest.TestCase):
                  "narration_text": "A prototype was introduced."}
         self.assertEqual(
             build_narration(story, 2, 7),
-            "Semiconductors. A prototype was introduced.",
+            "A prototype was introduced.",
         )
 
     def test_missing_headline(self):
