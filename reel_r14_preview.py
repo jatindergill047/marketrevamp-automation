@@ -60,8 +60,9 @@ def main():
         slide.save(path)
         frames.append(compose(path, index, root / f"frame_{index:02d}.png"))
 
-    video = build_reel(frames, voices, narrations, root / "marketrevamp_r14_demo.mp4",
-                       root / "segments.json", fps=5)
+    voice = speak(connected_script([{"narration_text": script} for _, _, _, script in STORIES]), root / "continuous_voice.mp3")
+    video = build_continuous_reel(frames, voice, narrations, root / "marketrevamp_r14_demo.mp4",
+                                  root / "segments.json", fps=5)
     data = json.loads((root / "segments.json").read_text())
     probe = subprocess.run(["ffprobe", "-v", "error", "-show_entries",
                             "stream=codec_name,codec_type,width,height:format=duration",
