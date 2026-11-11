@@ -54,7 +54,9 @@ def write_captions(text, seconds, destination, spoken_seconds=None):
     caption_seconds = seconds if spoken_seconds is None else min(seconds, spoken_seconds)
     if caption_seconds <= 0:
         raise ReelBuildError("Spoken caption duration must be positive")
-    # Approximate phrase timing by word count, not equal time per subtitle.\n    # Exact word alignment requires timestamps from the TTS service.\n    total_words = sum(count for _, count in chunks)
+    # Approximate phrase timing by word count, not equal time per subtitle.
+    # Exact word alignment requires timestamps from the TTS service.
+    total_words = sum(count for _, count in chunks)
     header = (
         "[Script Info]\nScriptType: v4.00+\nPlayResX: 1080\nPlayResY: 1920\n"
         "[V4+ Styles]\nFormat: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, "
@@ -71,7 +73,7 @@ def write_captions(text, seconds, destination, spoken_seconds=None):
         offset += count
         end = caption_seconds * offset / total_words
         events.append(
-            f"Dialogue: 0,{_timestamp(start)},{_timestamp(end)},Default,,0,0,0,,{chunk}\\n"
+            f"Dialogue: 0,{_timestamp(start)},{_timestamp(end)},Default,,0,0,0,{chunk}\n"
         )
     target = Path(destination)
     target.parent.mkdir(parents=True, exist_ok=True)
