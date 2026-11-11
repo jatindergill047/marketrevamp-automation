@@ -145,7 +145,7 @@ def build_reel(frames, audios, narrations, output_path, segments_path=None, fps=
     return output
 
 
-def build_continuous_reel(frames, audio, narrations, output_path, segments_path=None, fps=5):
+def build_continuous_reel(frames, audio, narrations, output_path, segments_path=None, fps=5, boundaries_path=None):
     """R23 preview: one uninterrupted audio track, seven synchronized visual chapters.
 
     Chapter boundaries use word-weighted estimates, NOT actual TTS word timestamps.
@@ -160,11 +160,35 @@ def build_continuous_reel(frames, audio, narrations, output_path, segments_path=
     voice_seconds = duration(audio)
     word_counts = [len(script.split()) for script in narrations]
     total_words = sum(word_counts)
+    timing_mode = "estimated_word_weighted"
+    aligned = None
+    if boundaries_path is not None:
+        events = json.loads(Path(boundaries_path).read_text(encoding="utf-8"))
+        def tokens(s):
+            return re.findall(r"[a-z0-9]+", str(s).casefold())
+        spoken_tokens = [tokens(e.get("text", "")) for e in events]
+        story_tokens = [tokens(s) for s in narrations]
+        flattened = [token for group in spoken_tokens for token in group]
+        expected = [token for group in story_tokens for token in group]
+        if flattened != expected:
+            raise ReelBuildError("Word boundaries do not match reviewed narration")
+        starts = []
+        offset = 0
+        for story in story_tokens:
+            starts.append(offset)
+            offset += len(story)
+        token_event_indices = [i for i, group in enumerate(spoken_tokens) for _ in group]
+        aligned = [0.0] + [float(events[token_event_indices[n]]["start_seconds"])
+                           for n in starts[1:]] + [voice_seconds]
+        if any(a >= z for a, z in zip(aligned, aligned[1:])):
+            raise ReelBuildError("Word boundaries must increase")
+        timing_mode = "tts_word_boundaries"
     # Use exact frame counts to avoid gaps between chapters.
     total_frames = max(len(frames), math.ceil(voice_seconds * fps))
     boundaries = [0]
     for i in range(1, len(frames)):
-        proposed = round(total_frames * sum(word_counts[:i]) / total_words)
+        proposed = (round(aligned[i] * fps) if aligned is not None else
+                    round(total_frames * sum(word_counts[:i]) / total_words))
         boundaries.append(max(boundaries[-1] + 1, min(proposed, total_frames - (len(frames) - i))))
     boundaries.append(total_frames)
     output = Path(output_path)
@@ -206,6 +230,6 @@ def build_continuous_reel(frames, audio, narrations, output_path, segments_path=
     metadata = Path(segments_path) if segments_path else output.with_name("reel_segments.json")
     metadata.parent.mkdir(parents=True, exist_ok=True)
     metadata.write_text(json.dumps({"duration_seconds": round(voice_seconds, 3),
-        "audio_mode": "single_continuous_tts", "chapter_timing": "estimated_word_weighted",
+        "audio_mode": "single_continuous_tts", "chapter_timing": timing_mode,
         "segments": records}, indent=2) + "\n", encoding="utf-8")
     return output
