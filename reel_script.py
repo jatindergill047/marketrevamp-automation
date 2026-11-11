@@ -44,3 +44,29 @@ def build_narration(story, index, total):
 def build_all(stories):
     """Build natural narration without spoken story numbering."""
     return [build_narration(story, index, len(stories)) for index, story in enumerate(stories, start=1)]
+
+
+def build_connected_all(stories):
+    """Experimental connected briefing from explicitly reviewed spoken scripts.
+
+    Refuse to synthesize commentary from headlines: the caller must supply
+    fact-checked narration_text for every story. Transitions make no factual
+    claims and never announce categories.
+    """
+    if not stories:
+        raise ValueError("Connected briefing requires stories")
+    if any(not isinstance(story, dict) or not clean_text(story.get("narration_text"))
+           for story in stories):
+        raise ValueError("Connected briefing requires reviewed narration_text for every story")
+    segments = []
+    for index, story in enumerate(stories):
+        script = clean_text(story["narration_text"])
+        if index == 0:
+            prefix = "Here's what we're watching today. "
+        elif index == len(stories) - 1:
+            prefix = "And one final development. "
+        else:
+            prefix = ("There's another development worth watching. " if index % 2 else
+                      "Here's what else stands out. ")
+        segments.append(prefix + script)
+    return segments
