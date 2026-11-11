@@ -28,16 +28,20 @@ def build_narration(story, index, total):
     spoken = clean_text(story.get("narration_text"))
     if spoken:
         return spoken
-    # Vary delivery without inventing a hook, conclusion, or causal claim.
-    # Editorial scripts always take precedence over generated phrasing.
+    # Cinematic documentary fallback: factual lead, measured beat, sourced context.
+    # Avoid synthetic rhetorical questions, invented consequences, or repeated bridges.
+    # Optional reviewed hook/impact are only used when explicitly supplied.
+    hook = clean_text(story.get("editorial_hook"))
+    impact = clean_text(story.get("editorial_impact"))
     headline_sentence = headline.rstrip(".!?") + "."
-    if index == 1:
-        return f"{headline_sentence} {summary}".strip()
-    if index % 3 == 2:
-        return f"Meanwhile, another headline: {headline_sentence} {summary}".strip()
-    if index % 3 == 0:
-        return f"Next up: {headline_sentence} {summary}".strip()
-    return f"Here's another development: {headline_sentence} {summary}".strip()
+    parts = [hook.rstrip(".!?") + "." if hook else headline_sentence]
+    if hook and headline.casefold() not in hook.casefold():
+        parts.append(headline_sentence)
+    if summary:
+        parts.append(summary)
+    if impact and impact.casefold() not in summary.casefold():
+        parts.append(impact.rstrip(".!?") + ".")
+    return " … ".join(parts)
 
 
 def build_all(stories):
