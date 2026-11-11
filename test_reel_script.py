@@ -95,6 +95,8 @@ class NarrationTests(unittest.TestCase):
         self.assertTrue(all(story["narration_text"] in segment
                             for story, segment in zip(stories, result)))
         self.assertEqual(connected_script(stories), " ".join(result))
+        self.assertNotIn("watching today", connected_script(stories))
+        self.assertNotIn("development worth watching", connected_script(stories))
         self.assertTrue(all(not segment.startswith(story["category"] + ".")
                             for story, segment in zip(stories, result)))
 
