@@ -102,6 +102,30 @@ class BuildReelTests(unittest.TestCase):
             self.assertIn("0:00:00.30", lines[0])
             self.assertIn("0:00:02.30", lines[0])
 
+    def test_r25_hyphenated_caption_word_alignment(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            frame, audio = root / "frame.png", root / "voice.mp3"
+            frame.write_bytes(b"frame")
+            audio.write_bytes(b"audio")
+            timings = root / "boundaries.json"
+            timings.write_text(json.dumps([
+                {"text": "Cross", "start_seconds": 0.1, "duration_seconds": 0.2},
+                {"text": "border", "start_seconds": 0.3, "duration_seconds": 0.2},
+                {"text": "payments", "start_seconds": 0.6, "duration_seconds": 0.3},
+            ]))
+            commands = []
+            def fake_run(args):
+                commands.append(args)
+                Path(args[-1]).write_bytes(b"video")
+            with patch("build_reel.shutil.which", return_value="/usr/bin/ffmpeg"), \
+                 patch("build_reel.duration", return_value=2.0), \
+                 patch("build_reel._run", side_effect=fake_run):
+                build_reel.build_continuous_reel(
+                    [frame], audio, ["Cross-border payments."], root / "video.mp4",
+                    fps=5, boundaries_path=timings)
+            self.assertEqual(len(commands), 3)
+
     def test_missing_ffmpeg(self):
         with patch("build_reel.shutil.which", return_value=None):
             with self.assertRaises(ReelBuildError):
