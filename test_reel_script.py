@@ -2,7 +2,7 @@
 
 import unittest
 
-from reel_script import build_all, build_narration
+from reel_script import build_all, build_narration, build_connected_all
 
 
 class NarrationTests(unittest.TestCase):
@@ -77,6 +77,25 @@ class NarrationTests(unittest.TestCase):
                 )
                 self.assertEqual(narration, script)
                 self.assertFalse(narration.startswith(category + "."))
+
+    def test_connected_briefing_requires_reviewed_scripts(self):
+        with self.assertRaisesRegex(ValueError, "reviewed narration_text"):
+            build_connected_all([{"headline": "A", "summary": "Unreviewed"}])
+
+    def test_connected_briefing_uses_reviewed_facts_and_no_categories(self):
+        stories = [
+            {"category": "AI", "narration_text": "Researchers announced a pilot."},
+            {"category": "Blockchain", "narration_text": "The proposal remains under review."},
+            {"category": "Markets", "narration_text": "No launch date was provided."},
+        ]
+        result = build_connected_all(stories)
+        self.assertEqual(len(result), 3)
+        self.assertTrue(result[0].startswith("Here's what we're watching today."))
+        self.assertTrue(result[-1].startswith("And one final development."))
+        self.assertTrue(all(story["narration_text"] in segment
+                            for story, segment in zip(stories, result)))
+        self.assertTrue(all(not segment.startswith(story["category"] + ".")
+                            for story, segment in zip(stories, result)))
 
     def test_missing_headline(self):
         for headline in ("", "  ", "🚀", None):
