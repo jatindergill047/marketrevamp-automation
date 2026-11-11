@@ -6,9 +6,9 @@ from pathlib import Path
 import textwrap
 
 from PIL import Image, ImageDraw, ImageFont
-from build_reel import build_reel
+from build_reel import build_continuous_reel
 from reel_frames import compose
-from reel_script import build_connected_all
+from reel_script import build_connected_all, connected_script
 from tts import speak, duration
 
 STORIES = [
@@ -41,7 +41,7 @@ def main():
         raise RuntimeError("R14 preview must never publish or upload")
     root = Path("r14_preview")
     root.mkdir(exist_ok=True)
-    frames, voices = [], []
+    frames = []
     narrations = build_connected_all([{"headline": h, "summary": s, "category": category, "narration_text": script} for category, h, s, script in STORIES])
     font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 75)
     small = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 29)
@@ -59,7 +59,7 @@ def main():
         path = root / f"slide_{index:02d}.png"
         slide.save(path)
         frames.append(compose(path, index, root / f"frame_{index:02d}.png"))
-        voices.append(speak(narration, root / f"voice_{index:02d}.mp3"))
+
     video = build_reel(frames, voices, narrations, root / "marketrevamp_r14_demo.mp4",
                        root / "segments.json", fps=5)
     data = json.loads((root / "segments.json").read_text())
@@ -72,8 +72,8 @@ def main():
                (s.get("width"), s.get("height")) == (1080, 1920) for s in streams)
     assert any(s.get("codec_type") == "audio" and s.get("codec_name") == "aac" for s in streams)
     assert len(data["segments"]) == 7
-    for segment, voice in zip(data["segments"], voices):
-        assert segment["duration_seconds"] >= duration(voice)
+    assert data["audio_mode"] == "single_continuous_tts"
+    assert abs(data["duration_seconds"] - duration(voice)) < 0.01
     assert all(data["segments"][i]["end_seconds"] <= data["segments"][i+1]["start_seconds"] + 0.002
                for i in range(6))
     contact = Image.new("RGB", (1080 * 4, 1920 * 2), (0, 0, 0))
@@ -85,10 +85,10 @@ def main():
     (root / "QA_REPORT.md").write_text(
         "# R14 automated preview QA\n\n"
         "- Source: fictional editorial demo, not verified news.\n"
-        "- AI narration: seven real edge-tts files generated.\n"
+        "- AI narration: one continuous edge-tts file generated.\n"
         "- Video: 1080x1920 H.264 and AAC verified with ffprobe.\n"
         "- Captions: ASS burn-in by build_reel; visual legibility requires human inspection.\n"
-        "- Timing: seven nonoverlapping segments, each at least voice duration.\n"
+        "- Timing: seven word-weighted approximate chapters; actual word alignment not verified.\n"
         "- Motion: existing gentle zoompan; no crossfade transitions implemented.\n"
         "- Branding: placeholder text only; official logo asset NOT verified.\n"
         "- Audio pronunciation, subtitle sync and Instagram safe zones require human QA.\n"
