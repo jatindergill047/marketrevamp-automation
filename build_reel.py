@@ -143,3 +143,69 @@ def build_reel(frames, audios, narrations, output_path, segments_path=None, fps=
     metadata.parent.mkdir(parents=True, exist_ok=True)
     metadata.write_text(json.dumps({"duration_seconds": round(elapsed, 3), "segments": records}, indent=2) + "\n", encoding="utf-8")
     return output
+
+
+def build_continuous_reel(frames, audio, narrations, output_path, segments_path=None, fps=5):
+    """R23 preview: one uninterrupted audio track, seven synchronized visual chapters.
+
+    Chapter boundaries use word-weighted estimates, NOT actual TTS word timestamps.
+    """
+    if not frames or len(frames) != len(narrations) or not all(str(s).strip() for s in narrations):
+        raise ReelBuildError("Continuous Reel requires matching frames and scripts")
+    audio = Path(audio)
+    if not audio.is_file() or not all(Path(frame).is_file() for frame in frames):
+        raise ReelBuildError("Missing continuous Reel media")
+    if shutil.which("ffmpeg") is None or fps <= 0:
+        raise ReelBuildError("ffmpeg unavailable or invalid frame rate")
+    voice_seconds = duration(audio)
+    word_counts = [len(script.split()) for script in narrations]
+    total_words = sum(word_counts)
+    # Use exact frame counts to avoid gaps between chapters.
+    total_frames = max(len(frames), math.ceil(voice_seconds * fps))
+    boundaries = [0]
+    for i in range(1, len(frames)):
+        proposed = round(total_frames * sum(word_counts[:i]) / total_words)
+        boundaries.append(max(boundaries[-1] + 1, min(proposed, total_frames - (len(frames) - i))))
+    boundaries.append(total_frames)
+    output = Path(output_path)
+    output.parent.mkdir(parents=True, exist_ok=True)
+    records = []
+    with tempfile.TemporaryDirectory(prefix="marketrevamp_r23_") as folder:
+        root = Path(folder)
+        clips = []
+        for i, (frame, narration) in enumerate(zip(frames, narrations)):
+            count = boundaries[i + 1] - boundaries[i]
+            seconds = count / fps
+            subtitle = write_captions(narration, seconds, root / f"caption_{i}.ass")
+            clip = root / f"visual_{i}.mp4"
+            zoom = f"min(1+on/{max(count-1,1)}*{ZOOM_MAX-1:.6f},{ZOOM_MAX:.6f})"
+            filters = (
+                f"scale={REEL_WIDTH*2}:{REEL_HEIGHT*2},"
+                f"zoompan=z='{zoom}':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':"
+                f"d={count}:s={REEL_WIDTH}x{REEL_HEIGHT}:fps={fps},"
+                f"ass={subtitle.as_posix()},format=yuv420p"
+            )
+            _run(["ffmpeg", "-y", "-loglevel", "error", "-loop", "1", "-i", str(frame),
+                  "-vf", filters, "-frames:v", str(count), "-an", "-c:v", "libx264",
+                  "-preset", "veryfast", "-crf", "22", "-pix_fmt", "yuv420p", str(clip)])
+            clips.append(clip)
+            records.append({"index": i + 1, "start_seconds": round(boundaries[i] / fps, 3),
+                            "duration_seconds": round(seconds, 3),
+                            "end_seconds": round(boundaries[i + 1] / fps, 3),
+                            "narration": narration})
+        manifest = root / "concat.txt"
+        manifest.write_text("".join(f"file '{clip.as_posix()}'\\n" for clip in clips))
+        visuals = root / "visuals.mp4"
+        _run(["ffmpeg", "-y", "-loglevel", "error", "-f", "concat", "-safe", "0",
+              "-i", str(manifest), "-c", "copy", str(visuals)])
+        _run(["ffmpeg", "-y", "-loglevel", "error", "-i", str(visuals), "-i", str(audio),
+              "-map", "0:v:0", "-map", "1:a:0", "-c:v", "copy", "-c:a", "aac",
+              "-b:a", "160k", "-shortest", "-movflags", "+faststart", str(output)])
+    if not output.is_file() or output.stat().st_size == 0:
+        raise ReelBuildError("Continuous Reel output was not created")
+    metadata = Path(segments_path) if segments_path else output.with_name("reel_segments.json")
+    metadata.parent.mkdir(parents=True, exist_ok=True)
+    metadata.write_text(json.dumps({"duration_seconds": round(voice_seconds, 3),
+        "audio_mode": "single_continuous_tts", "chapter_timing": "estimated_word_weighted",
+        "segments": records}, indent=2) + "\\n", encoding="utf-8")
+    return output
