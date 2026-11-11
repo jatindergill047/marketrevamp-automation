@@ -26,9 +26,11 @@ def build_narration(story, index, total):
     # Prefer an editor-approved spoken script when provided. Never invent
     # implications or facts from a headline alone.
     spoken = clean_text(story.get("narration_text"))
-    if spoken:
-        return spoken
-    return f"{headline.rstrip('.!?')}. {summary}".strip()
+    body = spoken or f"{headline.rstrip('.!?')}. {summary}".strip()
+    category = clean_text(story.get("category"))
+    if category:
+        return f"{category.rstrip('.!?')}. {body}"
+    return body
 
 
 def build_all(stories):
