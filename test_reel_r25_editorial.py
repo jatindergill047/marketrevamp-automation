@@ -4,6 +4,8 @@ import tempfile
 import unittest
 from pathlib import Path
 from reel_r25_editorial import validate_stories, build_review_package
+from reel_r25_preview import render_reviewed_preview
+from unittest.mock import patch
 
 def sample():
     return [{"title": f"Headline {i}", "summary": "Reviewed detail.",
@@ -13,6 +15,18 @@ def sample():
              "editorial_approved": True} for i in range(7)]
 
 class EditorialTests(unittest.TestCase):
+    def test_preview_requires_approval_before_media_or_tts(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            stories = sample()
+            stories[0]["editorial_approved"] = False
+            source = root / "news_results.json"
+            source.write_text(json.dumps({"selected_stories": stories}))
+            with patch("reel_r25_preview.speak_with_boundaries") as synth:
+                with self.assertRaisesRegex(ValueError, "approval"):
+                    render_reviewed_preview(source, root / "missing_images", root / "review")
+                synth.assert_not_called()
+
     def test_requires_seven(self):
         with self.assertRaises(ValueError):
             validate_stories(sample()[:6])
