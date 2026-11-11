@@ -27,9 +27,6 @@ def build_narration(story, index, total):
     # implications or facts from a headline alone.
     spoken = clean_text(story.get("narration_text"))
     body = spoken or f"{headline.rstrip('.!?')}. {summary}".strip()
-    category = clean_text(story.get("category"))
-    if category:
-        return f"{category.rstrip('.!?')}. {body}"
     return body
 
 
