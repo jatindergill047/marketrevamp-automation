@@ -33,6 +33,19 @@ class BuildReelTests(unittest.TestCase):
             self.assertIn("0:00:04.00", dialogues[-1])
             self.assertNotIn("0:00:06.00", dialogues[-1])
 
+    def test_phrase_boundary_and_word_weighted_caption_timing(self):
+        with tempfile.TemporaryDirectory() as folder:
+            path = build_reel.write_captions(
+                "First short sentence. Then five more words follow now.",
+                10, Path(folder) / "phrases.ass", spoken_seconds=8,
+            )
+            dialogues = [line for line in path.read_text().splitlines()
+                         if line.startswith("Dialogue:")]
+            self.assertEqual(len(dialogues), 2)
+            self.assertIn("First short sentence.", dialogues[0])
+            self.assertIn("0:00:03.00", dialogues[0])
+            self.assertIn("0:00:08.00", dialogues[-1])
+
     def test_rejects_mismatched_inputs(self):
         with self.assertRaises(ReelBuildError):
             build_reel.build_reel(["frame.png"], [], ["narration"], "out.mp4")
