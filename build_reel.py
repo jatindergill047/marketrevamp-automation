@@ -73,7 +73,7 @@ def write_captions(text, seconds, destination, spoken_seconds=None):
         offset += count
         end = caption_seconds * offset / total_words
         events.append(
-            f"Dialogue: 0,{_timestamp(start)},{_timestamp(end)},Default,,0,0,0,{chunk}\n"
+            f"Dialogue: 0,{_timestamp(start)},{_timestamp(end)},Default,,0,0,0,,{chunk}\n"
         )
     target = Path(destination)
     target.parent.mkdir(parents=True, exist_ok=True)
