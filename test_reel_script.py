@@ -16,7 +16,7 @@ class NarrationTests(unittest.TestCase):
         )
         self.assertEqual(
             result,
-            "Open A I and B T C beat S and P five hundred. an-THROP-ik tracks Naz-dak",
+            "Open A I and B T C beat S and P five hundred. … an-THROP-ik tracks Naz-dak",
         )
 
     def test_storytelling_script_overrides_headline_summary(self):
@@ -32,7 +32,7 @@ class NarrationTests(unittest.TestCase):
                  "summary": "A pilot is underway."}
         self.assertEqual(
             build_narration(story, 1, 7),
-            "New settlement test. A pilot is underway.",
+            "New settlement test. … A pilot is underway.",
         )
 
     def test_category_spoken_before_editor_approved_script(self):
@@ -43,16 +43,25 @@ class NarrationTests(unittest.TestCase):
             "A prototype was introduced.",
         )
 
-    def test_hybrid_editorial_varies_openers_without_categories(self):
+    def test_documentary_fallback_avoids_repeated_bridges_and_categories(self):
         stories = [{"headline": f"Headline {i}", "summary": "Verified detail.",
                     "category": "Blockchain"} for i in range(1, 8)]
         narrations = build_all(stories)
-        self.assertEqual(narrations[0], "Headline 1. Verified detail.")
-        self.assertTrue(narrations[1].startswith("Meanwhile, another headline:"))
-        self.assertTrue(narrations[2].startswith("Next up:"))
-        self.assertTrue(narrations[3].startswith("Here's another development:"))
-        self.assertTrue(narrations[4].startswith("Meanwhile, another headline:"))
+        self.assertEqual(narrations[0], "Headline 1. … Verified detail.")
+        self.assertEqual(narrations[6], "Headline 7. … Verified detail.")
         self.assertTrue(all(not line.startswith("Blockchain.") for line in narrations))
+        self.assertTrue(all("Meanwhile" not in line and "Next up" not in line
+                            for line in narrations))
+
+    def test_reviewed_documentary_hook_and_impact(self):
+        story = {"headline": "New chip introduced", "summary": "The prototype uses less power.",
+                 "editorial_hook": "A prototype could reshape the discussion",
+                 "editorial_impact": "Independent testing is still pending"}
+        self.assertEqual(
+            build_narration(story, 3, 7),
+            "A prototype could reshape the discussion. … New chip introduced. … "
+            "The prototype uses less power. … Independent testing is still pending.",
+        )
 
     def test_approved_script_remains_verbatim_for_later_story(self):
         story = {"headline": "Update", "summary": "Context",
@@ -69,7 +78,7 @@ class NarrationTests(unittest.TestCase):
         stories = [{"headline": "First", "summary": "One"}, {"headline": "Second", "summary": "Two"}]
         self.assertEqual(
             build_all(stories),
-            ["First. One", "Meanwhile, another headline: Second. Two"],
+            ["First. … One", "Second. … Two"],
         )
 
 
