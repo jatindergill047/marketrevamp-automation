@@ -31,7 +31,7 @@ def _timestamp(seconds):
     return f"{hours}:{minutes:02d}:{secs:02d}.{cs:02d}"
 
 
-def write_captions(text, seconds, destination, spoken_seconds=None):
+def write_captions(text, seconds, destination, spoken_seconds=None, word_timings=None):
     """Write two-line maximum ASS captions in the reserved lower band."""
     words = str(text).split()
     if not words or seconds <= 0:
@@ -68,10 +68,19 @@ def write_captions(text, seconds, destination, spoken_seconds=None):
     )
     events = []
     offset = 0
+    if word_timings is not None and len(word_timings) != total_words:
+        raise ReelBuildError("Caption word timings do not match narration")
     for chunk, count in chunks:
-        start = caption_seconds * offset / total_words
+        if word_timings is not None:
+            start = max(0.0, float(word_timings[offset]["start_seconds"]))
+            last = word_timings[offset + count - 1]
+            end = min(seconds, float(last["start_seconds"]) + float(last["duration_seconds"]))
+            if end <= start:
+                raise ReelBuildError("Invalid caption word timestamps")
+        else:
+            start = caption_seconds * offset / total_words
+            end = caption_seconds * (offset + count) / total_words
         offset += count
-        end = caption_seconds * offset / total_words
         events.append(
             f"Dialogue: 0,{_timestamp(start)},{_timestamp(end)},Default,,0,0,0,,{chunk}\n"
         )
@@ -162,6 +171,7 @@ def build_continuous_reel(frames, audio, narrations, output_path, segments_path=
     total_words = sum(word_counts)
     timing_mode = "estimated_word_weighted"
     aligned = None
+    per_story_timings = None
     if boundaries_path is not None:
         events = json.loads(Path(boundaries_path).read_text(encoding="utf-8"))
         def tokens(s):
@@ -182,6 +192,14 @@ def build_continuous_reel(frames, audio, narrations, output_path, segments_path=
                            for n in starts[1:]] + [voice_seconds]
         if any(a >= z for a, z in zip(aligned, aligned[1:])):
             raise ReelBuildError("Word boundaries must increase")
+        per_story_timings = []
+        for i, story in enumerate(story_tokens):
+            first, last = starts[i], starts[i] + len(story)
+            chapter_start = aligned[i]
+            per_story_timings.append([
+                {"start_seconds": max(0.0, float(events[token_event_indices[j]]["start_seconds"]) - chapter_start),
+                 "duration_seconds": float(events[token_event_indices[j]]["duration_seconds"])}
+                for j in range(first, last)])
         timing_mode = "tts_word_boundaries"
     # Use exact frame counts to avoid gaps between chapters.
     total_frames = max(len(frames), math.ceil(voice_seconds * fps))
@@ -200,7 +218,8 @@ def build_continuous_reel(frames, audio, narrations, output_path, segments_path=
         for i, (frame, narration) in enumerate(zip(frames, narrations)):
             count = boundaries[i + 1] - boundaries[i]
             seconds = count / fps
-            subtitle = write_captions(narration, seconds, root / f"caption_{i}.ass")
+            subtitle = write_captions(narration, seconds, root / f"caption_{i}.ass",
+                                      word_timings=per_story_timings[i] if per_story_timings else None)
             clip = root / f"visual_{i}.mp4"
             zoom = f"min(1+on/{max(count-1,1)}*{ZOOM_MAX-1:.6f},{ZOOM_MAX:.6f})"
             filters = (
