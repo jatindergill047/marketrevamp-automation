@@ -74,6 +74,19 @@ class BuildReelTests(unittest.TestCase):
             data = json.loads((root / "reel_segments.json").read_text())
             self.assertEqual(data["segments"][0]["duration_seconds"], 3.1)
 
+    def test_r24_rejects_mismatched_word_boundaries(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            frame, audio = root / "frame.png", root / "audio.mp3"
+            frame.write_bytes(b"frame")
+            audio.write_bytes(b"audio")
+            timings = root / "boundaries.json"
+            timings.write_text(json.dumps([{"text": "Different", "start_seconds": 0.0}]))
+            with patch("build_reel.shutil.which", return_value="/usr/bin/ffmpeg"), patch("build_reel.duration", return_value=2.0):
+                with self.assertRaisesRegex(ReelBuildError, "do not match"):
+                    build_reel.build_continuous_reel([frame], audio, ["Reviewed words."],
+                        root / "output.mp4", boundaries_path=timings)
+
     def test_missing_ffmpeg(self):
         with patch("build_reel.shutil.which", return_value=None):
             with self.assertRaises(ReelBuildError):
