@@ -21,7 +21,7 @@ def prepare():
         raise ValueError("Reel requires seven stories")
     if not all(isinstance(s, dict) and s.get("title") and s.get("summary") for s in stories):
         raise ValueError("Reel stories require title and summary")
-    narrations = build_all([{"headline": s["title"], "summary": s["summary"]} for s in stories])
+    narrations = build_all([{"headline": s["title"], "summary": s["summary"], "category": s.get("category"), "narration_text": s.get("narration_text")} for s in stories])
     root = Path("reel_output")
     root.mkdir(exist_ok=True)
     frames, audios = [], []
