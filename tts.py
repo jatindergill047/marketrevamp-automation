@@ -76,3 +76,41 @@ def duration(path: str | Path) -> float:
         return value
     except (OSError, subprocess.SubprocessError, ValueError, KeyError, TypeError, json.JSONDecodeError) as exc:
         raise ReelBuildError("Could not determine audio duration") from exc
+
+
+def speak_with_boundaries(text, out_path, boundaries_path):
+    """Synthesize once and save service-provided WordBoundary offsets in seconds."""
+    if not isinstance(text, str) or not text.strip():
+        raise ReelBuildError("Cannot synthesize empty narration")
+    try:
+        import edge_tts
+    except ImportError as exc:
+        raise ReelBuildError("edge-tts is not installed") from exc
+    destination, timing = Path(out_path), Path(boundaries_path)
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    timing.parent.mkdir(parents=True, exist_ok=True)
+
+    async def generate():
+        events = []
+        with destination.open("wb") as audio:
+            communicator = edge_tts.Communicate(text, VOICE, rate=VOICE_RATE,
+                                                 pitch=VOICE_PITCH, boundary="WordBoundary")
+            async for chunk in communicator.stream():
+                if chunk["type"] == "audio":
+                    audio.write(chunk["data"])
+                elif chunk["type"] == "WordBoundary":
+                    events.append({"text": chunk["text"],
+                                   "start_seconds": chunk["offset"] / 10000000,
+                                   "duration_seconds": chunk["duration"] / 10000000})
+        return events
+
+    try:
+        events = asyncio.run(generate())
+        if not events or not destination.is_file() or destination.stat().st_size == 0:
+            raise ReelBuildError("TTS returned no word boundaries or audio")
+        timing.write_text(json.dumps(events, indent=2) + "\n", encoding="utf-8")
+        return destination, timing
+    except Exception as exc:
+        destination.unlink(missing_ok=True)
+        timing.unlink(missing_ok=True)
+        raise ReelBuildError("R24 timed TTS synthesis failed") from exc
