@@ -69,13 +69,13 @@ class NarrationTests(unittest.TestCase):
 
     def test_preview_categories_are_not_spoken_as_headlines(self):
         from reel_r14_preview import STORIES
-        for category, headline, summary in STORIES:
+        for category, headline, summary, script in STORIES:
             with self.subTest(category=category):
                 self.assertNotEqual(category.casefold(), headline.casefold())
                 narration = build_narration(
-                    {"category": category, "headline": headline, "summary": summary}, 1, 7
+                    {"category": category, "headline": headline, "summary": summary, "narration_text": script}, 1, 7
                 )
-                self.assertTrue(narration.startswith(headline + "."))
+                self.assertEqual(narration, script)
                 self.assertFalse(narration.startswith(category + "."))
 
     def test_missing_headline(self):
