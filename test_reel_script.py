@@ -27,6 +27,22 @@ class NarrationTests(unittest.TestCase):
         }
         self.assertEqual(build_narration(story, 1, 7), story["narration_text"])
 
+    def test_category_spoken_before_story(self):
+        story = {"category": "Blockchain", "headline": "New settlement test",
+                 "summary": "A pilot is underway."}
+        self.assertEqual(
+            build_narration(story, 1, 7),
+            "Blockchain. New settlement test. A pilot is underway.",
+        )
+
+    def test_category_spoken_before_editor_approved_script(self):
+        story = {"category": "Semiconductors", "headline": "Chip update",
+                 "narration_text": "A prototype was introduced."}
+        self.assertEqual(
+            build_narration(story, 2, 7),
+            "Semiconductors. A prototype was introduced.",
+        )
+
     def test_missing_headline(self):
         for headline in ("", "  ", "🚀", None):
             with self.subTest(headline=headline):
