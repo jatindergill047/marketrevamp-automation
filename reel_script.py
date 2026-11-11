@@ -28,20 +28,17 @@ def build_narration(story, index, total):
     spoken = clean_text(story.get("narration_text"))
     if spoken:
         return spoken
-    # Cinematic documentary fallback: factual lead, measured beat, sourced context.
-    # Avoid synthetic rhetorical questions, invented consequences, or repeated bridges.
-    # Optional reviewed hook/impact are only used when explicitly supplied.
-    hook = clean_text(story.get("editorial_hook"))
+    # Professional anchor fallback: lead with verified headline, then concise
+    # context and an optional editor-reviewed consequence. No spoken categories,
+    # artificial transitions, dramatic hooks, or ellipsis pauses.
     impact = clean_text(story.get("editorial_impact"))
-    headline_sentence = headline.rstrip(".!?") + "."
-    parts = [hook.rstrip(".!?") + "." if hook else headline_sentence]
-    if hook and headline.casefold() not in hook.casefold():
-        parts.append(headline_sentence)
-    if summary:
-        parts.append(summary)
-    if impact and impact.casefold() not in summary.casefold():
-        parts.append(impact.rstrip(".!?") + ".")
-    return " … ".join(parts)
+    lead = headline if headline.endswith((".", "!", "?")) else headline + "."
+    parts = [lead]
+    if summary and summary.casefold().rstrip(".!?") != headline.casefold().rstrip(".!?"):
+        parts.append(summary if summary.endswith((".", "!", "?")) else summary + ".")
+    if impact and impact.casefold().rstrip(".!?") not in " ".join(parts).casefold():
+        parts.append(impact if impact.endswith((".", "!", "?")) else impact + ".")
+    return " ".join(parts)
 
 
 def build_all(stories):
