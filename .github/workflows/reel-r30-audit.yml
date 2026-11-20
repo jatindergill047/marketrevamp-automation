@@ -1,0 +1,46 @@
+name: MarketRevamp R30 Audit R29 Real News
+
+on:
+  push:
+    branches: [feature/reels-opt-in]
+    paths:
+      - '.github/r30-audit.trigger'
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  audit-r29:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      REEL_ENABLED: 'false'
+      REEL_UPLOAD_ENABLED: 'false'
+      INSTAGRAM_PUBLISH_ENABLED: 'false'
+    steps:
+      - name: Checkout isolated feature branch
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Refuse production branch
+        run: test "$GITHUB_REF" = "refs/heads/feature/reels-opt-in"
+      - name: Download actual R29 review package
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: marketrevamp-r29-real-news-editorial-review
+          run-id: 44783607389
+          github-token: ${{ github.token }}
+          path: r29_input
+      - name: Audit seven R29 source-linked stories
+        run: python reel_r30_audit.py --input r29_input/r29_review/draft_stories.json --output r30_review/audit.json
+      - name: Upload R30 editorial findings
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: marketrevamp-r30-editorial-audit
+          path: r30_review/audit.json
+          if-no-files-found: warn
+      - name: Keep video gated pending independent verification
+        run: |
+          echo 'R30 editorial audit complete; flagged items require human source review.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'No MP4, uploads, or publishing are authorized by this workflow.' >> "$GITHUB_STEP_SUMMARY"
