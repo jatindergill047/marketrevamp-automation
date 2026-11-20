@@ -1,0 +1,86 @@
+{
+  "r31_status": "source_reviewed_editorial_draft_not_approved",
+  "source_date": "2026-11-20",
+  "publication": "disabled",
+  "editorial_approved": false,
+  "notes": "Seven distinct editorial subjects. Source articles were reviewed externally; independent corroboration of all material claims is not complete. No audio or publishing authorized.",
+  "selected_stories": [
+    {
+      "story": 1,
+      "category": "AI",
+      "title": "Anthropic CEO pledges to pace AI development after Nasdaq debut",
+      "summary": "At Anthropic's Nasdaq debut, CEO Dario Amodei said the company would slow training or deployment when needed to assess safety and keep AI under human control.",
+      "editorial_impact": "The pledge puts AI safety commitments under the spotlight as investors evaluate the newly public company.",
+      "narration_text": "Anthropic's chief executive says AI development must not outrun safety. At the company's Nasdaq debut, Dario Amodei pledged to pace training and deployment, even under commercial pressure.",
+      "source_url": "https://techcrunch.com/2026/11/19/at-nasdaq-opening-bell-anthropic-ceo-recommits-to-pacing-ai-development/",
+      "fact_check_status": "source_reviewed_pending_independent_corroboration",
+      "editorial_approved": false
+    },
+    {
+      "story": 2,
+      "category": "Technology",
+      "title": "Amazon uses shopping app to oppose NYC delivery bill",
+      "summary": "Amazon placed messages on its website and app opposing a proposed New York City delivery law. The bill would require certain delivery contractors to become direct employees.",
+      "editorial_impact": "The dispute raises questions about delivery labor rules and the use of major shopping platforms for lobbying.",
+      "narration_text": "Amazon is bringing a political dispute directly to shoppers. Its website and app now urge customers to oppose a New York City delivery bill that could change how delivery workers are employed.",
+      "source_url": "https://arstechnica.com/tech-policy/2026/11/amazon-takes-its-fight-against-nyc-delivery-bill-to-shoppers-with-in-app-pop-up/",
+      "fact_check_status": "source_reviewed_pending_independent_corroboration",
+      "editorial_approved": false
+    },
+    {
+      "story": 3,
+      "category": "Crypto",
+      "title": "Bitcoin drops as technology shares face selling pressure",
+      "summary": "CoinDesk reported bitcoin near 61,300 dollars late Thursday, with technology stocks also under pressure following Anthropic's market debut.",
+      "editorial_impact": "The decline highlights bitcoin's exposure to risk appetite and leveraged trading rather than reliable short-term safe-haven behavior.",
+      "narration_text": "In crypto, bitcoin slid toward sixty-one thousand three hundred dollars as technology shares weakened. The sell-off underscores how quickly digital assets can move with broader risk sentiment.",
+      "source_url": "https://www.coindesk.com/markets/2026/11/20/bitcoin-hits-four-month-low-after-anthropic-s-ipo-as-tech-stocks-wilt",
+      "fact_check_status": "source_reviewed_pending_independent_corroboration",
+      "editorial_approved": false
+    },
+    {
+      "story": 4,
+      "category": "AI",
+      "title": "Google adds computer-use features to Gemini for Mac",
+      "summary": "Google announced that Gemini for macOS can navigate native apps and websites to perform tasks. The initial release is limited to English-speaking subscribers in the United States.",
+      "editorial_impact": "AI assistants are moving from answering questions toward taking actions across desktop software.",
+      "narration_text": "Google is bringing computer control to Gemini on the Mac. The assistant can navigate apps and websites to complete tasks, with user controls to pause or approve actions.",
+      "source_url": "https://techcrunch.com/2026/11/19/google-gives-gemini-the-ability-to-use-your-mac-for-you/",
+      "fact_check_status": "source_reviewed_pending_independent_corroboration",
+      "editorial_approved": false
+    },
+    {
+      "story": 5,
+      "category": "Technology",
+      "title": "Meta employees report possible privacy leaks in Muse AI agent",
+      "summary": "TechCrunch, citing Reuters, reported employee concerns that test versions of Meta's Muse assistant surfaced information belonging to other accounts. Meta said employee builds differ from public versions.",
+      "editorial_impact": "The reported incidents underline privacy risks in assistants that access personal data across services.",
+      "narration_text": "But more capable assistants also create privacy risks. Meta employees reportedly saw its Muse agent surface information from other accounts. Meta says employee test versions differ from the public app.",
+      "source_url": "https://techcrunch.com/2026/11/19/metas-ai-agent-muse-is-mixing-up-conversations-and-exposing-private-data-report-says/",
+      "fact_check_status": "source_reviewed_pending_independent_corroboration",
+      "editorial_approved": false
+    },
+    {
+      "story": 6,
+      "category": "Technology",
+      "title": "Superhuman expands its Go AI assistant across workplace tools",
+      "summary": "Superhuman announced a more personalized Go assistant, agents in Docs, and integrations with third-party services.",
+      "editorial_impact": "The launch reflects growing competition to make AI agents part of everyday workplace workflows.",
+      "narration_text": "Meanwhile, Superhuman is expanding its Go assistant across documents, email, and connected workplace tools. The race is shifting toward agents that can coordinate work across applications.",
+      "source_url": "https://techcrunch.com/2026/11/19/superhuman-pushes-its-go-assistant-everywhere/",
+      "fact_check_status": "source_reviewed_pending_independent_corroboration",
+      "editorial_approved": false
+    },
+    {
+      "story": 7,
+      "category": "Markets",
+      "title": "Everful raises $48.5 million for AI-enabled factory sourcing",
+      "summary": "Everful announced a 48.5 million dollar Series A to expand its platform connecting smaller retailers with Chinese factories and managing sourcing and logistics.",
+      "editorial_impact": "The funding shows continued investment in technology that reshapes cross-border commerce and supply chains.",
+      "narration_text": "And in startup funding, Everful raised forty-eight point five million dollars to connect retailers with Chinese factories. The platform combines sourcing, logistics, and software in a competitive global trade market.",
+      "source_url": "https://techcrunch.com/2026/11/19/former-alibaba-execs-everful-raises-48-5m-to-connect-retailers-with-chinese-factories/",
+      "fact_check_status": "source_reviewed_pending_independent_corroboration",
+      "editorial_approved": false
+    }
+  ]
+}
