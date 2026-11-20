@@ -1,0 +1,50 @@
+name: MarketRevamp R33 Editorial Storyboard Package
+
+on:
+  push:
+    branches: [feature/reels-opt-in]
+    paths: ['.github/r33-storyboard.trigger']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-storyboard:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      REEL_ENABLED: 'false'
+      REEL_UPLOAD_ENABLED: 'false'
+      INSTAGRAM_PUBLISH_ENABLED: 'false'
+    steps:
+      - name: Checkout isolated feature branch
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Refuse production branch
+        run: test "$GITHUB_REF" = "refs/heads/feature/reels-opt-in"
+      - name: Validate source-linked storyboard generator
+        run: python -m unittest -v test_reel_r32_storyboard.py
+      - name: Build seven-story review package
+        run: python reel_r32_storyboard.py --input r31_review/curated_stories.json --output r33_review
+      - name: Verify output is unapproved and unpublished
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p = json.loads(Path('r33_review/storyboard.json').read_text())
+          assert p['publication'] == 'disabled'
+          assert p['render'] == 'not_started'
+          assert len(p['stories']) == 7
+          assert all(s['editorial_approved'] is False for s in p['stories'])
+          PY
+      - name: Upload source-linked storyboard for editorial review
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: marketrevamp-r33-storyboard-review
+          path: r33_review/
+          retention-days: 7
+          if-no-files-found: error
+      - name: Explain outstanding render gates
+        run: |
+          echo 'Seven source-linked narration drafts are available for editorial verification.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'No story is approved, and no MP4, upload or Instagram publication has occurred.' >> "$GITHUB_STEP_SUMMARY"
