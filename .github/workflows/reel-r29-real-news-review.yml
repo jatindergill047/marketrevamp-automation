@@ -1,6 +1,10 @@
 name: MarketRevamp R29 Real-News Review (No Publishing)
 
 on:
+  push:
+    branches: [feature/reels-opt-in]
+    paths:
+      - '.github/r29-review.trigger'
   workflow_dispatch:
 
 permissions:
