@@ -1,0 +1,100 @@
+name: MarketRevamp IG Reel Container Preflight (Never Publishes)
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: 'Type CONTAINER_ONLY: creates a temporary Reel container, never publishes'
+        required: true
+        type: string
+      video_url:
+        description: 'Existing HTTPS Cloudinary staging video URL, 3-90 seconds, MP4'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  process-reel-container-only:
+    if: github.ref == 'refs/heads/main' && inputs.confirmation == 'CONTAINER_ONLY'
+    runs-on: ubuntu-latest
+    environment: instagram-production
+    timeout-minutes: 12
+    env:
+      REEL_ENABLED: 'false'
+      REEL_UPLOAD_ENABLED: 'false'
+      INSTAGRAM_PUBLISH_ENABLED: 'false'
+      INSTAGRAM_ACCESS_TOKEN: ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
+      INSTAGRAM_USER_ID: ${{ vars.INSTAGRAM_USER_ID }}
+      CLOUDINARY_CLOUD_NAME: ${{ vars.CLOUDINARY_CLOUD_NAME }}
+      INPUT_VIDEO_URL: ${{ inputs.video_url }}
+    steps:
+      - name: Checkout verified production API wrapper (read-only)
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+      - name: Install existing dependencies
+        run: pip install -r requirements.lock
+      - name: Test real Instagram Reel processing without publishing
+        run: |
+          python - <<'PY'
+          import json, os, time
+          from pathlib import Path
+          from urllib.parse import urlsplit
+          from publish_instagram import api_request
+
+          assert all(os.environ.get(k) == 'false' for k in
+                     ('REEL_ENABLED', 'REEL_UPLOAD_ENABLED', 'INSTAGRAM_PUBLISH_ENABLED'))
+          url = os.environ.get('INPUT_VIDEO_URL', '')
+          cloud = os.environ.get('CLOUDINARY_CLOUD_NAME', '')
+          token = os.environ.get('INSTAGRAM_ACCESS_TOKEN', '')
+          account_id = os.environ.get('INSTAGRAM_USER_ID', '')
+          parsed = urlsplit(url)
+          if (not cloud or not cloud.replace('-', '').replace('_', '').isalnum()
+                  or parsed.scheme != 'https'
+                  or parsed.netloc != 'res.cloudinary.com'
+                  or not parsed.path.startswith('/' + cloud + '/video/upload/')
+                  or not parsed.path.lower().endswith('.mp4')
+                  or parsed.query or parsed.fragment):
+              raise RuntimeError('Only this MarketRevamp Cloudinary HTTPS staging MP4 is allowed')
+          if not token or not account_id.isdigit():
+              raise RuntimeError('Instagram environment credentials are unavailable')
+
+          created = api_request('POST', f'{account_id}/media', token, {
+              'media_type': 'REELS',
+              'video_url': url,
+              'caption': 'UNPUBLISHED MARKETREVAMP CONTAINER TEST — NEVER RELEASE',
+              'share_to_feed': 'false',
+          })
+          container_id = str(created.get('id', ''))
+          if not container_id.isdigit():
+              raise RuntimeError('Instagram returned no container ID')
+
+          for attempt in range(18):
+              result = api_request('GET', container_id, token,
+                                   {'fields': 'status_code'})
+              status = result.get('status_code')
+              if status == 'FINISHED':
+                  Path('instagram-reel-container-test.json').write_text(
+                      json.dumps({'container_id': container_id,
+                                  'processing_status': 'FINISHED',
+                                  'instagram_published': False}, indent=2) + '\n')
+                  print('REEL CONTAINER PROCESSING SUCCESS; NO PUBLICATION')
+                  break
+              if status in ('ERROR', 'EXPIRED') or status not in ('IN_PROGRESS',):
+                  raise RuntimeError(f'Container processing stopped: {status}')
+              if attempt < 17:
+                  time.sleep(10)
+          else:
+              raise RuntimeError('Container processing timed out')
+          PY
+      - name: Save nonpublishing processing evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: marketrevamp-instagram-reel-container-preflight
+          path: instagram-reel-container-test.json
+          retention-days: 7
+          if-no-files-found: error
