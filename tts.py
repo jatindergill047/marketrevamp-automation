@@ -11,10 +11,10 @@ from reel_config import VOICE
 
 # Conservative prosody tuning for a conversational news-presenter delivery.
 # These are TTS controls, not a guarantee of human-sounding speech.
-VOICE_RATE = "-5%"
-VOICE_PITCH = "-2Hz"
+VOICE_RATE = "-2%"
+VOICE_PITCH = "-1Hz"
 
-# Preview-only candidates: compare actual generated audio before selecting a voice.
+# Optional alternate voices for future review; production choice is in reel_config.VOICE.
 VOICE_CANDIDATES = {
     "ava": "en-US-AvaNeural",
     "andrew": "en-US-AndrewNeural",
