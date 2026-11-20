@@ -51,7 +51,7 @@ class TTSTests(unittest.TestCase):
             with patch.dict("sys.modules", {"edge_tts": fake_edge}):
                 self.assertEqual(tts.speak("Hello", output), output)
                 self.assertEqual(output.read_bytes(), b"audio")
-                fake_edge.Communicate.assert_called_once_with("Hello", tts.VOICE, rate="-5%", pitch="-2Hz")
+                fake_edge.Communicate.assert_called_once_with("Hello", tts.VOICE, rate="-2%", pitch="-1Hz")
 
 
 if __name__ == "__main__":
