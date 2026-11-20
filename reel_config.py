@@ -17,7 +17,8 @@ CAPTION_BAND_BOTTOM = 1790
 MIN_SLIDE_SECONDS = 3.0
 SLIDE_PAD_SECONDS = 1.0
 ZOOM_MAX = 1.06
-VOICE = "en-US-AvaNeural"
+# Approved voice for future opt-in MarketRevamp Reel previews (R44 listening selection).
+VOICE = "en-US-AndrewNeural"
 REEL_CONTAINER_POLLS = 40
 PRONUNCIATIONS = {
     "S&P 500": "S and P five hundred",
