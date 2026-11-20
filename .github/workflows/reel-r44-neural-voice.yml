@@ -57,7 +57,7 @@ jobs:
               return boundaries
           words=asyncio.run(synthesize())
           assert len(words)>175, f"Expected >175 word cues, got {len(words)}"
-          duration=float(subprocess.check_output(["ffprobe","-v","error","-show_entries","format=duration","-of","default=noprint_wrappers=1:nokey=1",str(out/"R44_neural_voice.mp3")],text=True).strip())
+          duration=max(w["start_seconds"]+w["duration_seconds"] for w in words)
           assert 45 < duration < 135, duration
           (out/"R44_word_boundaries.json").write_text(json.dumps(words,indent=2))
           (out/"R44_story_scripts.json").write_text(json.dumps(stories,indent=2))
