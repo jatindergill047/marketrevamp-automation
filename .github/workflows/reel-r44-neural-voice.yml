@@ -1,0 +1,82 @@
+name: MarketRevamp R44 Neural Voice Review (No Publishing)
+
+on:
+  push:
+    branches: [feature/reels-opt-in]
+    paths: ['.github/workflows/reel-r44-neural-voice.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  synthesize-review-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      REEL_ENABLED: 'false'
+      REEL_UPLOAD_ENABLED: 'false'
+      INSTAGRAM_PUBLISH_ENABLED: 'false'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Refuse production branch
+        run: test "$GITHUB_REF" = "refs/heads/feature/reels-opt-in"
+      - name: Install review TTS dependency
+        run: python -m pip install --disable-pip-version-check 'edge-tts>=7,<9'
+      - name: Synthesize original neural narration and real WordBoundary timings
+        run: |
+          python - <<'PY'
+          import asyncio
+          import json
+          import subprocess
+          from pathlib import Path
+          import edge_tts
+          
+          out = Path("r44_neural_review")
+          out.mkdir(exist_ok=True)
+          stories = [
+            "Anthropic's chief executive says AI development must not outrun safety. At the company's Nasdaq debut, Dario Amodei pledged to pace training and deployment, even under commercial pressure.",
+            "Amazon is bringing a political dispute directly to shoppers. Its website and app now urge customers to oppose a New York City delivery bill that could change how delivery workers are employed.",
+            "In crypto markets, bitcoin faced selling pressure alongside technology shares. The decline highlights how closely cryptocurrency prices can move with broader market sentiment.",
+            "Google is bringing computer control to Gemini on the Mac. The assistant can navigate apps and websites to complete tasks, with user controls to pause or approve actions.",
+            "A report says Meta employees testing its Muse assistant encountered messages that appeared to belong to other accounts. Meta says employee test builds differ from the public version.",
+            "Meanwhile, Superhuman is expanding its Go assistant across documents, email, and connected workplace tools. The race is shifting toward agents that can coordinate work across applications.",
+            "And in startup funding, Everful raised forty-eight point five million dollars to connect retailers with Chinese factories. The platform combines sourcing, logistics, and software in a competitive global trade market."
+          ]
+          script = " ".join(stories)
+          voice = "en-US-AndrewNeural"
+          async def synthesize():
+              stream = edge_tts.Communicate(script, voice=voice, rate="-2%", pitch="-1Hz", boundary="WordBoundary")
+              boundaries=[]
+              with (out/"R44_neural_voice.mp3").open("wb") as audio:
+                  async for chunk in stream.stream():
+                      if chunk["type"]=="audio":
+                          audio.write(chunk["data"])
+                      elif chunk["type"]=="WordBoundary":
+                          boundaries.append({"text":chunk["text"],"start_seconds":chunk["offset"]/10000000,"duration_seconds":chunk["duration"]/10000000})
+              return boundaries
+          words=asyncio.run(synthesize())
+          assert len(words)>175, f"Expected >175 word cues, got {len(words)}"
+          duration=float(subprocess.check_output(["ffprobe","-v","error","-show_entries","format=duration","-of","default=noprint_wrappers=1:nokey=1",str(out/"R44_neural_voice.mp3")],text=True).strip())
+          assert 45 < duration < 135, duration
+          (out/"R44_word_boundaries.json").write_text(json.dumps(words,indent=2))
+          (out/"R44_story_scripts.json").write_text(json.dumps(stories,indent=2))
+          (out/"R44_QA.json").write_text(json.dumps({"version":"R44","voice":voice,"duration_sec":duration,"word_boundaries":len(words),"review_only":True,"publication":False,"bit_coin_exact_price_claim":False},indent=2))
+          print(f"VOICE_READY: {duration:.2f}s, {len(words)} word boundaries")
+          
+          PY
+      - name: Validate publishing is off
+        run: |
+          python - <<'PY'
+          import json
+          p=json.load(open('r44_neural_review/R44_QA.json'))
+          assert p['publication'] is False and p['review_only'] is True
+          assert p['word_boundaries'] > 175
+          PY
+      - name: Upload review-only voice and alignment
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: marketrevamp-r44-neural-voice-word-align
+          path: r44_neural_review/
+          retention-days: 7
+          if-no-files-found: error
