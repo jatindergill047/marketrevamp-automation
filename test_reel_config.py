@@ -27,7 +27,7 @@ class ReelConfigTests(unittest.TestCase):
         self.assertLess(reel_config.SAFE_TOP, reel_config.CAPTION_BAND_TOP)
         self.assertLess(reel_config.CAPTION_BAND_TOP, reel_config.CAPTION_BAND_BOTTOM)
         self.assertLess(reel_config.CAPTION_BAND_BOTTOM, reel_config.REEL_HEIGHT)
-        self.assertEqual(reel_config.VOICE, "en-US-AvaNeural")
+        self.assertEqual(reel_config.VOICE, "en-US-AndrewNeural")
         self.assertEqual(reel_config.REEL_CONTAINER_POLLS, 40)
         self.assertEqual(len(reel_config.PRONUNCIATIONS), 5)
 
