@@ -1,5 +1,6 @@
 """Manual-only Cloudinary staging upload smoke test. Never touches Instagram."""
 import os
+import json
 import subprocess
 import tempfile
 import urllib.request
@@ -24,7 +25,7 @@ def main():
         subprocess.run(["ffmpeg", "-nostdin", "-y", "-loglevel", "error",
                         "-f", "lavfi", "-i", "color=c=black:s=1080x1920:r=5",
                         "-f", "lavfi", "-i", "anullsrc=r=44100:cl=mono",
-                        "-t", "2", "-c:v", "libx264", "-preset", "ultrafast",
+                        "-t", "9", "-c:v", "libx264", "-preset", "ultrafast",
                         "-pix_fmt", "yuv420p", "-c:a", "aac",
                         "-movflags", "+faststart", str(video)],
                        check=True, timeout=120)
@@ -39,6 +40,15 @@ def main():
             status = response.status
         if status not in (200, 206) or not content:
             raise RuntimeError("Staging playback probe failed")
+        # Only an isolated staging URL is emitted for the next no-publish container test.
+        result_path = Path("reel_staging_output.json")
+        result_path.write_text(json.dumps({
+            "secure_url": url, "public_id": result.get("public_id"),
+            "resource_type": "video", "instagram_published": False
+        }, indent=2) + "\n", encoding="utf-8")
+        if os.environ.get("GITHUB_OUTPUT"):
+            with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as handle:
+                handle.write(f"video_url={url}\n")
         print("STAGING VIDEO UPLOAD PASS: Cloudinary HTTPS playback reachable")
         print("Staging public_id:", result.get("public_id", "(missing)"))
         print("No Instagram publishing performed. Test media should be removed after review.")
