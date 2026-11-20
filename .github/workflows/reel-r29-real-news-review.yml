@@ -1,0 +1,62 @@
+name: MarketRevamp R29 Real-News Review (No Publishing)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  prepare-review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      REEL_ENABLED: 'false'
+      REEL_UPLOAD_ENABLED: 'false'
+      INSTAGRAM_PUBLISH_ENABLED: 'false'
+      MARKETREVAMP_QUOTE_FIRST: 'false'
+    steps:
+      - name: Checkout isolated Reel feature branch
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Refuse production branch
+        run: |
+          test "$GITHUB_REF" = "refs/heads/feature/reels-opt-in"
+      - name: Restore read-only publishing history
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: publishing-history
+          path: publishing-history
+          persist-credentials: false
+      - name: Copy duplicate-prevention history
+        run: cp publishing-history/instagram_publish_history.json instagram_publish_history.json
+      - name: Python 3.12
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+      - name: Install pinned dependencies
+        run: pip install -r requirements.lock
+      - name: Install fonts
+        run: python prepare_fonts.py
+      - name: Collect fresh real news in isolated runner
+        run: python news_collector.py
+      - name: Independently select seven Reel stories and prepare editorial draft
+        run: python reel_r28_selection.py --input news_results.json --history instagram_publish_history.json --output r29_review
+      - name: Render seven branded draft slides (no upload)
+        run: |
+          cp r29_review/reel_news_results.json news_results.json
+          python image_generator.py
+      - name: Preserve source-linked editorial review and slides
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: marketrevamp-r29-real-news-editorial-review
+          path: |
+            r29_review/
+            instagram_images/slide_*.png
+          retention-days: 7
+          if-no-files-found: warn
+      - name: Explain render gate
+        run: |
+          echo 'R29 real-news selection and slides prepared for editorial review.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'No voice/video is rendered until all seven scripts are source-verified and explicitly approved.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Use reel_r26_review.py with approved input to render a review-only MP4.' >> "$GITHUB_STEP_SUMMARY"
