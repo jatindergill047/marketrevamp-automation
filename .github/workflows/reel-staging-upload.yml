@@ -1,8 +1,8 @@
-name: MarketRevamp Reel Staging Upload (Manual Only)
+name: MarketRevamp Reel Staging Upload (No Instagram)
 on:
   push:
     branches: [feature/reels-opt-in]
-    paths: ['.github/r46-staging.trigger']
+    paths: ['.github/r46-staging.trigger', '.github/r48-cloudinary-url.trigger']
   workflow_dispatch:
     inputs:
       confirm_staging:
@@ -54,3 +54,11 @@ jobs:
           sudo apt-get update -qq && sudo apt-get install -y ffmpeg
       - name: Upload isolated synthetic sample and verify Cloudinary playback
         run: python reel_staging_upload.py
+
+      - name: Save confirmed nonpublishing Cloudinary staging URL
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: marketrevamp-r48-cloudinary-staging-url
+          path: reel_staging_output.json
+          retention-days: 7
+          if-no-files-found: error
