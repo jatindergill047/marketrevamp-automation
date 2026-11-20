@@ -30,3 +30,19 @@ Date: 2026-11-20 (America/Toronto). This file is an operational record, **not** 
 
 - Reel opt-in validation: https://github.com/jatindergill047/marketrevamp-automation/actions/runs/44832781627
 - R44 successful neural-voice job: https://github.com/jatindergill047/marketrevamp-automation/actions/runs/44830089082
+
+## R46–R48 execution evidence (2026-11-20 Toronto)
+
+- PASS: R46 Cloudinary video/upload and HTTPS playback. [Run 44835680312](https://github.com/jatindergill047/marketrevamp-automation/actions/runs/44835680312).
+- PASS: R46 release/editorial/fingerprint safety tests, plus R47 nonpublishing container-unit tests. [Run 44836101211](https://github.com/jatindergill047/marketrevamp-automation/actions/runs/44836101211).
+- PARTIAL: R47 Cloudinary staging stage passed; Instagram stage failed **before any steps ran**, so no Instagram Reel container was tested. Do not claim Instagram success. [Run 44836118299](https://github.com/jatindergill047/marketrevamp-automation/actions/runs/44836118299).
+- PASS: R48 isolated nine-second synthetic Cloudinary sample uploaded and staging URL saved as artifact. [Run 44836583508](https://github.com/jatindergill047/marketrevamp-automation/actions/runs/44836583508). Synthetic asset is not a publishable news Reel.
+- READY FOR REVIEW: [PR #60](https://github.com/jatindergill047/marketrevamp-automation/pull/60) contains one main-branch-only **manual container-processing test**. It has no `media_publish` call. It is NOT merged.
+- Production `main` carousel remains unchanged; no Reel was scheduled, approved or published. The R45 news Reel remains unapproved and is dated November 20 — never reuse it on another day's schedule.
+
+### Updated remaining release gates
+1. Review and deliberately merge PR #60 (no automatic merge), then manually execute preflight on `main` with the exact Cloudinary staging URL; require `FINISHED` and no publish call.
+2. Editorially approve a freshly generated, current-day seven-story news Reel; approve **all** on-screen claims, caption, audio and source URLs.
+3. Upload the exact approved real Reel MP4 to Cloudinary and validate it in Instagram's Reel container.
+4. Publish one controlled public Reel with an exact approval fingerprint, record the returned media ID and verify posting history/rollback.
+5. Build and separately review daily new-news Reel generation, duplicate guards, monitoring and schedule; never silently re-post stale R45 material.
