@@ -42,7 +42,7 @@ def audit(input_path="r29_review/draft_stories.json", output_path="r30_review/au
         flags = []
         if not any(term in combined for term in category_terms):
             flags.append("weak_category_match")
-        entities = [term for term in EVENT_TOKENS if re.search(r"\\b" + re.escape(term) + r"\\b", title)]
+        entities = [term for term in EVENT_TOKENS if re.search(r"\b" + re.escape(term) + r"\b", title)]
         for entity in entities:
             if entity in seen:
                 flags.append(f"repeated_headline_subject:{entity}:story_{seen[entity]}")
