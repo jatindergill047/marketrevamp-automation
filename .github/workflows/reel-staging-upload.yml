@@ -1,5 +1,8 @@
 name: MarketRevamp Reel Staging Upload (Manual Only)
 on:
+  push:
+    branches: [feature/reels-opt-in]
+    paths: ['.github/r46-staging.trigger']
   workflow_dispatch:
     inputs:
       confirm_staging:
@@ -10,7 +13,10 @@ permissions:
   contents: read
 jobs:
   stage-video:
-    if: github.ref == 'refs/heads/feature/reels-opt-in' && inputs.confirm_staging == 'STAGING_ONLY'
+    if: >-
+      github.ref == 'refs/heads/feature/reels-opt-in' &&
+      ((github.event_name == 'workflow_dispatch' && inputs.confirm_staging == 'STAGING_ONLY') ||
+       github.event_name == 'push')
     runs-on: ubuntu-latest
     environment: reels-staging
     timeout-minutes: 25
@@ -27,6 +33,14 @@ jobs:
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: '3.12'
+      - name: Validate exact R46 push trigger
+        if: github.event_name == 'push'
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          expected = "R46_STAGING_ONLY_NO_INSTAGRAM_2026-11-20"
+          assert Path('.github/r46-staging.trigger').read_text().strip() == expected
+          PY
       - name: Enforce staging-only configuration
         run: |
           test "$CLOUDINARY_UPLOAD_PRESET" = 'marketrevamp_reels_staging'
