@@ -13,6 +13,8 @@ from zoneinfo import ZoneInfo
 
 from PIL import Image, ImageDraw, ImageFont
 from reel_r51_design import style_scene, enlarge_subtitles, CAPTION_FONT_SIZE
+from reel_artwork import (render_artwork, story_theme, write_artwork_concat,
+                         overlay_filter, composite_artwork_preview)
 
 PAPER=(248,247,244)
 INK=(16,25,38)
@@ -152,7 +154,7 @@ def draw_frames(stories,folder):
         for line in lines:
             draw.text((72,y),line,font=face,fill=INK)
             y+=line_height
-        # Centered word captions occupy y=850–1070; source starts below 1605.
+        # Headline above artwork; word captions start at y=1225; sources below 1605.
         draw.line((72,1605,1007,1605),fill=LINE,width=3)
         draw.text((72,1641),"REPORTING SOURCE",font=font(23,True),fill=MUTED)
         draw.text((72,1692),story["source_name"],font=font(34,True),fill=INK)
@@ -163,6 +165,7 @@ def draw_frames(stories,folder):
         # Leave the former key-detail area blank and retain the caption band,
         # headline, reporting source and editorial disclaimer.
         style_scene(dest, story["deck"], dest)
+        render_artwork(story, folder/f"R52_artwork_{i:02d}.png")
         frames.append(dest)
     return frames
 
@@ -302,11 +305,13 @@ def run():
     concat.write_text("\n".join(items)+"\n",encoding="utf-8")
     ass=target/"R52_word_aligned_captions.ass"
     group_count=captions(events,ass,scale)
+    artwork_concat=write_artwork_concat(target, "R52", cuts)
     output=target/"marketrevamp-r52-review.mp4"
     check_call(["ffmpeg","-y","-hide_banner","-loglevel","error",
                 "-safe","0","-f","concat","-i",str(concat),
-                "-i",str(master),"-vf",f"fps=12,ass={ass.resolve().as_posix()},format=yuv420p",
-                "-map","0:v:0","-map","1:a:0","-c:v","libx264","-preset","veryfast",
+                "-safe","0","-f","concat","-i",str(artwork_concat),
+                "-i",str(master),"-filter_complex",overlay_filter(ass),
+                "-map","[v]","-map","2:a:0","-c:v","libx264","-preset","veryfast",
                 "-crf","21","-pix_fmt","yuv420p","-r","12","-c:a","aac",
                 "-b:a","192k","-ar","48000","-movflags","+faststart",
                 "-t",f"{duration:.3f}",str(output)],timeout=900)
@@ -321,7 +326,8 @@ def run():
         raise RuntimeError("Audio/video duration mismatch")
     image=Image.new("RGB",(4*270,2*480),PAPER)
     for idx,img in enumerate(frames):
-        small=Image.open(img).resize((270,480),Image.Resampling.LANCZOS)
+        preview=composite_artwork_preview(img,target/f"R52_artwork_{idx+1:02d}.png")
+        small=preview.resize((270,480),Image.Resampling.LANCZOS)
         image.paste(small,((idx%4)*270,(idx//4)*480))
     image.save(target/"R52_contact_sheet.jpg",quality=88)
     qa={
@@ -329,7 +335,9 @@ def run():
         "design_revision":"R51",
         "key_detail_visible":False,
         "caption_font_size_px":CAPTION_FONT_SIZE,
-        "subtitle_placement":"center",
+        "subtitle_placement":"below_artwork",
+        "artwork_themes":[story_theme(s) for s in stories],
+        "artwork_animation":"subtle_vertical_float_8px",
         "toronto_date":R52_DATE,
         "status":"review_only",
         "editorial_approved":False,
