@@ -136,19 +136,22 @@ def draw_frames(stories,folder):
         chip_width=math.ceil(draw.textbbox((0,0),category,font=font(25,True))[2]+50)
         draw.rounded_rectangle((72,384,72+chip_width,444),radius=18,fill=(229,224,219))
         draw.text((95,397),category,font=font(25,True),fill=RED)
-        face=font(64,True)
+        # Keep headline entirely above the vertically centered subtitle panel.
+        # Adapt typography instead of letting longer headlines collide.
         title=story["headline"]
-        lines=wrap(draw,title,face,920)
-        if len(lines)>5:
-            face=font(58,True)
+        y=468
+        for point_size in (62,58,54,50,46,42):
+            face=font(point_size,True)
             lines=wrap(draw,title,face,920)
-        if len(lines)>6:
-            raise RuntimeError(f"Story {i} headline too long for visual safe area")
-        y=510
+            line_height=round(point_size*1.24)
+            if len(lines)<=5 and y+(len(lines)-1)*line_height+point_size<=834:
+                break
+        else:
+            raise RuntimeError(f"Story {i} headline cannot fit above centered subtitles")
         for line in lines:
             draw.text((72,y),line,font=face,fill=INK)
-            y+=92
-        # Keep 1325-1580 clear for service-synchronized captions.
+            y+=line_height
+        # Centered word captions occupy y=850–1070; source starts below 1605.
         draw.line((72,1605,1007,1605),fill=LINE,width=3)
         draw.text((72,1641),"REPORTING SOURCE",font=font(23,True),fill=MUTED)
         draw.text((72,1692),story["source_name"],font=font(34,True),fill=INK)
@@ -325,6 +328,7 @@ def run():
         "design_revision":"R51",
         "key_detail_visible":False,
         "caption_font_size_px":CAPTION_FONT_SIZE,
+        "subtitle_placement":"center",
         "toronto_date":R50_DATE,
         "status":"review_only",
         "editorial_approved":False,

@@ -14,8 +14,8 @@ CAPTION_DARK=(20,27,38)
 FONT_BOLD="/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
 FONT_REG="/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
 KEY_BOX=(72,1070,1008,1330)
-SUBTITLE_BOX=(65,1355,1015,1585)
-CAPTION_FONT_SIZE=72
+SUBTITLE_BOX=(65,850,1015,1070)
+CAPTION_FONT_SIZE=80
 ORIGINAL_CAPTION_SIZE=53
 
 def _text_lines(draw, text, face, width):
@@ -59,23 +59,23 @@ def enlarge_subtitles(source_ass, output_ass):
             fields=row[len("Style: "):].split(",")
             if len(fields)!=23:
                 raise ValueError("Unexpected 23-field ASS style schema")
-            fields[2]="72"                 # Original 53 px -> 72 px (+35.8%)
+            fields[2]=str(CAPTION_FONT_SIZE)   # 72 px -> 80 px (+11.1%)
             fields[3]="&H001D23E0"        # Active word red
             fields[4]="&H00FFFFFF"        # Inactive words white
             fields[5]="&H000A1020"        # Contrast outline
             fields[15]="1"                # Border style
             fields[16]="2"                # Outline px
             fields[17]="0"                # Shadow
-            fields[18]="2"                # Bottom-centered alignment
+            fields[18]="5"                # Vertical and horizontal center alignment
             fields[19]="110"              # Left margin
             fields[20]="110"              # Right margin
-            fields[21]="390"              # Bottom margin; captions stay in dark band
+            fields[21]="0"                # Center of 1080x1920 canvas
             fields[22]="1"                # Unicode/ASS encoding
             rows[idx]="Style: "+",".join(fields)
             count+=1
     if count!=1:
         raise ValueError("Expected one Words style")
-    # At 72 px, long five-word captions can overlap Key Detail.
+    # At 80 px, split wide caption groups to avoid screen-edge clipping.
     # Split visual caption groups while retaining every word's karaoke
     # centisecond duration and its absolute service-aligned start.
     def parse_time(value):
