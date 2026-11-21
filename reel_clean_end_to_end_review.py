@@ -108,6 +108,7 @@ def main():
         "cloudinary_uploaded": False, "instagram_published": False,
         "key_detail_visible": False, "seven_scenes": len(frames),
         "caption_font_size_px": CAPTION_FONT_SIZE,
+        "subtitle_placement": "center",
         "tts_word_boundaries": len(events),
         "alignment_token_ratio": round(match, 4),
         "caption_groups": groups,
