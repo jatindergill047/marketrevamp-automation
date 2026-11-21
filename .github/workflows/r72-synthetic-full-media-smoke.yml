@@ -1,0 +1,83 @@
+name: R72 Full Media Source-to-Reel Smoke — Synthetic and Never Published
+
+on:
+  push:
+    branches:
+      - feature/r72-synthetic-media-smoke-20261121
+      - feature/reels-opt-in
+    paths:
+      - 'reel_r72_review.py'
+      - 'reel_r72_synthetic_smoke.py'
+      - '.github/workflows/r72-synthetic-full-media-smoke.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  synthetic-full-media:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      REEL_ENABLED: 'false'
+      REEL_UPLOAD_ENABLED: 'false'
+      REEL_FIRST_LIVE_ENABLED: 'false'
+      INSTAGRAM_PUBLISH_ENABLED: 'false'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+      - name: Install isolated media renderer
+        run: |
+          pip install -r requirements.lock
+          pip install -r requirements.reel.txt
+          sudo apt-get update -qq
+          sudo apt-get install -y ffmpeg fonts-dejavu-core
+      - name: Source-to-render unit regressions and syntax
+        run: |
+          python -m py_compile reel_r72_review.py reel_r72_synthetic_smoke.py
+          python -m unittest -v test_r67_weekday_news.py test_r72_news_review.py test_reel_bookends.py test_r68_design_contract.py
+      - name: Render 9 segments with real neural TTS but invented, labeled news
+        timeout-minutes: 15
+        run: |
+          test "$REEL_ENABLED" = false
+          test "$REEL_UPLOAD_ENABLED" = false
+          test "$REEL_FIRST_LIVE_ENABLED" = false
+          test "$INSTAGRAM_PUBLISH_ENABLED" = false
+          python reel_r72_synthetic_smoke.py
+      - name: Verify R72 synthetic media disclaimer and source/caption safety
+        run: |
+          python - <<'PY'
+          import json
+          from PIL import Image
+          from pathlib import Path
+          p=Path("r72_synthetic_review")
+          qa=json.loads((p/"r72_qa.json").read_text())
+          assert qa["synthetic_content"] is True
+          assert qa["real_source_headlines"] is False
+          assert qa["not_independently_fact_checked"] is True
+          assert all(qa[k] is False for k in ("editorial_approved","published","cloudinary_uploaded","instagram_published"))
+          assert qa["seven_scenes"]==7 and qa["presentation_segments"]==9
+          assert qa["dimensions"]=="1080x1920"
+          assert qa["alignment_token_ratio"]>=.90
+          assert 45<=qa["duration_seconds"]<=90
+          with Image.open(p/"R72_intro.png") as image:
+              assert image.size==(1080,1920)
+          assert (p/"r72_subtitles.ass").is_file()
+          assert (p/"r72_contact_sheet.png").is_file()
+          assert (p/"marketrevamp-r72-real-news-review-only.mp4").stat().st_size>100000
+          print("R72 media integration passed: synthetic/test-only, no publishing")
+          PY
+      - name: Save synthetic video for technical review only
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: r72-synthetic-media-never-publish
+          path: |
+            r72_synthetic_review/r72_qa.json
+            r72_synthetic_review/r72_contact_sheet.png
+            r72_synthetic_review/r72_subtitles.ass
+            r72_synthetic_review/marketrevamp-r72-real-news-review-only.mp4
+          retention-days: 5
+          if-no-files-found: warn
