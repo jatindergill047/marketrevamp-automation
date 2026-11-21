@@ -5,6 +5,7 @@ Render transparent per-scene PNGs; FFmpeg floats them gently above lower
 karaoke subtitles. No generative API, news claims, uploading, or publication.
 """
 from pathlib import Path
+import re
 
 from PIL import Image, ImageDraw
 
@@ -20,10 +21,18 @@ CAPTION_CENTER_Y = 1365
 SUBTITLE_ZONE = (65, 1225, 1015, 1505)
 
 
+def _visual_headline(headline):
+    """Map common security synonyms to the existing carousel shield motif."""
+    value = str(headline or "")
+    if re.search(r"\b(?:cybersecurity|ransomware|phishing)\b", value, re.I):
+        return "security " + value
+    return value
+
+
 def story_theme(story):
-    """Use the existing seven-slide headline/category motif selector."""
+    """Reuse the seven-slide headline/category motif selector."""
     return illustration_topic(
-        str(story.get("headline", "")),
+        _visual_headline(story.get("headline", "")),
         str(story.get("category", "")),
     )
 
@@ -37,7 +46,7 @@ def render_artwork(story, output_path):
     if not isinstance(story, dict) or not str(story.get("headline", "")).strip():
         raise ValueError("Artwork requires a story headline")
     category = str(story.get("category", "Technology"))
-    headline = str(story["headline"])
+    headline = _visual_headline(story["headline"])
     canvas = Image.new("RGBA", (1080, 1350), (0, 0, 0, 0))
     if not draw_editorial_illustration(
         canvas, 745, category=category, headline=headline
