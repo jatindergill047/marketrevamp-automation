@@ -1,0 +1,84 @@
+name: MarketRevamp Centered Subtitle MP4 QA (Never Publish)
+
+on:
+  push:
+    branches: [feature/reels-center-subtitles-80px-20261120]
+    paths:
+      - 'reel_r51_design.py'
+      - 'reel_r50_review.py'
+      - 'reel_r52_review.py'
+      - 'reel_clean_end_to_end_review.py'
+      - 'test_reel_r51_design.py'
+      - '.github/workflows/reel-centered-subtitles-qa.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  centered-subtitles-review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      REEL_ENABLED: 'false'
+      REEL_UPLOAD_ENABLED: 'false'
+      REEL_FIRST_LIVE_ENABLED: 'false'
+      INSTAGRAM_PUBLISH_ENABLED: 'false'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Gate experimental QA only
+        run: |
+          test "$GITHUB_REF" = 'refs/heads/feature/reels-center-subtitles-80px-20261120'
+          test "$REEL_ENABLED" = false
+          test "$REEL_UPLOAD_ENABLED" = false
+          test "$INSTAGRAM_PUBLISH_ENABLED" = false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+      - name: Install offline QA dependencies
+        run: |
+          pip install -r requirements.lock
+          pip install -r requirements.reel.txt
+          sudo apt-get update -qq
+          sudo apt-get install -y ffmpeg fonts-dejavu-core
+      - name: Compile and test subtitle and frame safety
+        run: |
+          python -m py_compile reel_r51_design.py reel_r50_review.py reel_r52_review.py reel_clean_end_to_end_review.py
+          python -m unittest -v test_reel_r51_design.py
+          python - <<'PY'
+          from pathlib import Path
+          from reel_r51_design import CAPTION_FONT_SIZE,SUBTITLE_BOX
+          assert CAPTION_FONT_SIZE==80
+          assert sum((SUBTITLE_BOX[1],SUBTITLE_BOX[3]))==1920
+          assert 'subtitle_placement":"center"' in Path('reel_r52_review.py').read_text()
+          print('Centered 80px subtitle design confirmed')
+          PY
+      - name: Build full 7-scene neural voice MP4 with centered karaoke subtitles
+        timeout-minutes: 16
+        run: python reel_clean_end_to_end_review.py
+      - name: Verify technical QA and safe review-only status
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          x=json.loads(Path('reel_clean_review/QA.json').read_text())
+          assert x['caption_font_size_px']==80
+          assert x['subtitle_placement']=='center'
+          assert x['seven_scenes']==7 and x['key_detail_visible'] is False
+          assert x['alignment_token_ratio']>=.90
+          assert x['video_codec']=='h264' and x['audio_codec']=='aac'
+          assert x['dimensions']=='1080x1920'
+          assert all(x[k] is False for k in ('published','editorial_approved','cloudinary_uploaded','instagram_published'))
+          print('Full Reel centered subtitles QA PASS')
+          PY
+      - name: Preserve nonpublishing preview for review
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: marketrevamp-center-subtitles-80px-review
+          path: |
+            reel_clean_review/marketrevamp-clean-reel-review-only.mp4
+            reel_clean_review/contact_sheet.png
+            reel_clean_review/subtitles.ass
+            reel_clean_review/QA.json
+          retention-days: 7
+          if-no-files-found: warn
