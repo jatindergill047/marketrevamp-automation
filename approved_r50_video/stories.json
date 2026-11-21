@@ -1,0 +1,51 @@
+[
+  {
+    "headline": "Anthropic Founders Cash Out in Record IPO",
+    "narration_text": "TechCrunch reports Anthropic's seven founders sold nearly two billion dollars of shares in its record-setting I P O. The listing also highlights enormous future spending needs for the artificial intelligence company.",
+    "source_url": "https://techcrunch.com/2026/11/19/anthropics-7-founders-cashed-out-nearly-2b-in-record-breaking-ipo/",
+    "editorial_approved": true,
+    "fact_check_status": "source_supported"
+  },
+  {
+    "headline": "Can Smaller AI Models Beat the Big Ones?",
+    "narration_text": "Fireworks A I argues companies can run smaller, tuned open models instead of always paying for the largest systems. The company is pursuing cheaper enterprise A I despite recent security incidents.",
+    "source_url": "https://techcrunch.com/2026/11/19/anthropic-rival-says-companies-can-mostly-skip-the-pricey-models/",
+    "editorial_approved": true,
+    "fact_check_status": "source_supported"
+  },
+  {
+    "headline": "SpaceX Plans Rooftop Fix for Cell Dead Zones",
+    "narration_text": "SpaceX says small rooftop cell towers may fill indoor dead zones that satellites cannot reach. Elon Musk suggests production could begin in twenty twenty-seven, but the hardware is not yet commercially available.",
+    "source_url": "https://techcrunch.com/2026/11/19/elon-musk-says-spacex-has-a-plan-to-eliminate-cell-phone-dead-zones/",
+    "editorial_approved": true,
+    "fact_check_status": "source_supported"
+  },
+  {
+    "headline": "Uber Tests Solo Rides for Kids as Young as 10",
+    "narration_text": "Uber is piloting rides for children as young as ten in three American cities. Parents must book trips, and selected drivers receive extra pay alongside added safety controls.",
+    "source_url": "https://techcrunch.com/2026/11/19/uber-tests-rides-for-kids-as-young-as-10-with-extra-pay-for-drivers/",
+    "editorial_approved": true,
+    "fact_check_status": "source_supported"
+  },
+  {
+    "headline": "Ethereum Glamsterdam Upgrade Delayed to 2027",
+    "narration_text": "Ethereum developers have pushed the Glamsterdam network upgrade into twenty twenty-seven. They need more time to fix smart contracts that could fail under proposed changes to network fees.",
+    "source_url": "https://www.coindesk.com/tech/2026/11/20/ethereum-s-next-big-upgrade-is-pushed-into-2027-by-apps-it-would-break",
+    "editorial_approved": true,
+    "fact_check_status": "source_supported"
+  },
+  {
+    "headline": "Coinbase Eyes Its Own Prediction Contracts",
+    "narration_text": "Coinbase reportedly aims to launch its own American prediction contracts in the first half of twenty twenty-seven. The plan could reduce its dependence on prediction market partner Kalshi.",
+    "source_url": "https://www.coindesk.com/business/2026/11/20/coinbase-targets-first-half-2027-for-its-own-prediction-market-contracts",
+    "editorial_approved": true,
+    "fact_check_status": "reviewed_allegation"
+  },
+  {
+    "headline": "Bitcoin Drops Below $59,000 in Broad Selloff",
+    "narration_text": "Bitcoin fell below fifty-nine thousand dollars Friday as crypto and technology shares sold off together. Heavy leveraged liquidations added pressure, according to CoinDesk. Prices remain volatile.",
+    "source_url": "https://www.coindesk.com/markets/2026/11/20/bitcoin-plunges-below-usd59-000-as-rush-to-cash-puts-new-bear-market-lows-back-in-play",
+    "editorial_approved": true,
+    "fact_check_status": "source_supported"
+  }
+]
