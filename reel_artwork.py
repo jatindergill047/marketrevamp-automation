@@ -79,13 +79,17 @@ def render_artwork(story, output_path):
             "animated": True}
 
 
-def write_artwork_concat(folder, prefix, cuts):
+def write_artwork_concat(folder, prefix, cuts, *, include_bookends=False):
     """Produce a time-aligned transparent PNG track for the seven news scenes."""
     directory = Path(folder)
-    if len(cuts) != 8 or any(b <= a for a, b in zip(cuts, cuts[1:])):
-        raise ValueError("Seven positive scene durations required")
+    expected = 10 if include_bookends else 8
+    if len(cuts) != expected or any(b <= a for a, b in zip(cuts, cuts[1:])):
+        raise ValueError("Seven positive story durations required, plus optional hook and CTA")
     files = [directory / f"{prefix}_artwork_{index:02d}.png"
              for index in range(1, 8)]
+    if include_bookends:
+        files = ([directory / f"{prefix}_artwork_intro.png"] + files
+                 + [directory / f"{prefix}_artwork_outro.png"])
     if any(not path.is_file() for path in files):
         raise FileNotFoundError("Missing Reel artwork frame")
     lines = ["ffconcat version 1.0"]
