@@ -1,12 +1,12 @@
-name: MarketRevamp R72 Weekday News Reel Draft (Never Publish)
+name: MarketRevamp R72 Daily News Reel Draft (Never Publish)
 
 on:
   workflow_dispatch:
   schedule:
     # Toronto 18:17 (EDT 22:17 UTC, EST 23:17 UTC). One schedule is
     # discarded by the timezone gate; preview only, never a public post.
-    - cron: '17 22 * * 1-5'
-    - cron: '17 23 * * 1-5'
+    - cron: '17 22 * * *'
+    - cron: '17 23 * * *'
 
 permissions:
   contents: read
@@ -26,7 +26,7 @@ jobs:
       INSTAGRAM_PUBLISH_ENABLED: 'false'
       MARKETREVAMP_QUOTE_FIRST: 'false'
     steps:
-      - name: Enforce Toronto weekday and scheduled local hour
+      - name: Confirm Toronto local hour on every day, including weekends
         id: local_day
         run: |
           python - <<'PY'
@@ -35,8 +35,6 @@ jobs:
           import os
           from pathlib import Path
           now=datetime.now(ZoneInfo("America/Toronto"))
-          if now.weekday() >= 5:
-              raise SystemExit("Weekend: fresh-news Reel review is disabled")
           if os.environ.get("GITHUB_EVENT_NAME") == "schedule" and now.hour != 18:
               with Path(os.environ["GITHUB_OUTPUT"]).open("a") as handle:
                   handle.write("run_review=false\n")
@@ -50,7 +48,7 @@ jobs:
         if: steps.local_day.outputs.run_review == 'true'
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
-          ref: 274a8c0f9df22b1c4ed0a2584f58fc786a88cc26
+          ref: f6e94477811133a3d7467722baf668763d9fdac0
           persist-credentials: false
       - name: Checkout authoritative publishing history — read only
         if: steps.local_day.outputs.run_review == 'true'
@@ -122,7 +120,7 @@ jobs:
           for field in ('editorial_approved','published','cloudinary_uploaded','instagram_published'):
               assert qa[field] is False
           assert Path('r72_review/marketrevamp-r72-real-news-review-only.mp4').stat().st_size>100000
-          print('R72 weekday editorial Reel candidate ONLY; no Instagram publishing')
+          print('R72 daily editorial Reel candidate ONLY; no Instagram publishing')
           PY
       - name: Save draft Reel, citations, source review and QA as GitHub artifacts
         if: always() && steps.local_day.outputs.run_review == 'true'
