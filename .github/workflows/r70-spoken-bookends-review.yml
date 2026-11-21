@@ -64,9 +64,9 @@ jobs:
           q=json.loads(p.read_text())
           assert q['status']=='review_only' and q['synthetic_content'] is True
           assert q['seven_scenes']==7 and q['presentation_segments']==9
-          assert q['spoken_hook'].startswith("You're watching MarketRevamp.")
+          assert q['spoken_hook']=="Here's what's making headlines today."
           assert q['spoken_follow_cta'].startswith('Follow MarketRevamp')
-          assert 2.2 <= q['intro_seconds'] <= 8
+          assert 1.3 <= q['intro_seconds'] <= 5
           assert 2.0 <= q['outro_seconds'] <= 8
           assert 45 <= q['duration_seconds'] <= 90
           assert q['alignment_token_ratio']>=.90
@@ -77,6 +77,10 @@ jobs:
           assert all(q[k] is False for k in ('editorial_approved','published','cloudinary_uploaded','instagram_published'))
           ass=Path('reel_clean_review/subtitles.ass').read_text()
           assert ass.count('Dialogue:')>40
+          import re
+          dialogue=[l for l in ass.splitlines() if l.startswith('Dialogue:')]
+          opening=re.sub(r'\{[^}]*\}', '', dialogue[0].split(',', 9)[-1]).strip().lower()
+          assert opening.startswith("here's"), f'First spoken subtitle mismatch: {opening}'
           assert Path('reel_clean_review/R50_intro.png').exists()
           assert Path('reel_clean_review/R50_outro.png').exists()
           assert Path('reel_clean_review/marketrevamp-clean-reel-review-only.mp4').stat().st_size>100000
