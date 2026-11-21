@@ -1,0 +1,82 @@
+name: MarketRevamp R52 Fresh Dated Reel Review (No Publishing)
+
+on:
+  push:
+    branches: [feature/r52-fresh-news-review-20261120]
+    paths: ['reel_r52_review.py', 'r52_review_sources.json', '.github/workflows/reel-r52-news-review.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  render-reviewed-news-draft:
+    runs-on: ubuntu-latest
+    timeout-minutes: 22
+    env:
+      REEL_ENABLED: 'false'
+      REEL_UPLOAD_ENABLED: 'false'
+      REEL_FIRST_LIVE_ENABLED: 'false'
+      INSTAGRAM_PUBLISH_ENABLED: 'false'
+    steps:
+      - name: Checkout isolated Reel branch
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Enforce preview-only branch and publication controls
+        run: |
+          test "$GITHUB_REF" = 'refs/heads/feature/r52-fresh-news-review-20261120'
+          test "$REEL_ENABLED" = false
+          test "$REEL_UPLOAD_ENABLED" = false
+          test "$REEL_FIRST_LIVE_ENABLED" = false
+          test "$INSTAGRAM_PUBLISH_ENABLED" = false
+      - name: Restore authoritative previously-published article history
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: publishing-history
+          path: publishing-history
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+      - name: Install preview-only speech, image and rendering dependencies
+        run: |
+          pip install -r requirements.lock
+          pip install -r requirements.reel.txt
+          sudo apt-get update -qq && sudo apt-get install -y ffmpeg fonts-dejavu-core
+          ffprobe -version | head -1
+      - name: Validate review package syntax
+        run: |
+          python -m py_compile reel_r52_review.py
+          python - <<'PY'
+          import json
+          p=json.load(open('r52_review_sources.json'))
+          assert len(p['stories']) == 7
+          assert p['editorial_approved'] is False and p['published'] is False
+          assert p['toronto_date'] == '2026-11-20'
+          PY
+      - name: Synthesize fresh Andrew Neural voice and render true-timed Reel
+        run: python reel_r52_review.py
+      - name: Refuse any editorial approval or publishing in review artifact
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path('r52_review/R52_QA.json').read_text())
+          assert d['status']=='review_only'
+          assert d['editorial_approved'] is False
+          assert d['published'] is False
+          assert d['cloudinary_uploaded'] is False
+          assert d['instagram_published'] is False
+          assert d['tts_word_boundaries'] > 160
+          assert d['alignment_token_ratio'] >= 0.90
+          assert d['duration_seconds'] <= 90
+          assert d['key_detail_visible'] is False
+          assert d['toronto_date']=='2026-11-20'
+          assert len(d['source_links']) == 7
+          print('R52 format, captions, freshness and publication gates: PASS')
+          PY
+      - name: Save R52 editorial review MP4, voice, sources, frames and QA
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: marketrevamp-r52-fresh-news-review
+          path: r52_review/
+          retention-days: 7
+          if-no-files-found: error
