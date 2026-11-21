@@ -1,4 +1,4 @@
-name: R67 Weekday Reel News Collection Review Only
+name: R67 Daily Reel News Collection Review Only
 
 on:
   push:
@@ -55,13 +55,12 @@ jobs:
       INSTAGRAM_PUBLISH_ENABLED: 'false'
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-      - name: Check Toronto weekday before any fetch
+      - name: Confirm no publication before any source fetch
         run: |
-          python - <<'PY'
-          from datetime import datetime
-          from zoneinfo import ZoneInfo
-          assert datetime.now(ZoneInfo('America/Toronto')).weekday() < 5, 'Weekend: R67 news selection disabled'
-          PY
+          test "$REEL_ENABLED" = false
+          test "$REEL_UPLOAD_ENABLED" = false
+          test "$REEL_FIRST_LIVE_ENABLED" = false
+          test "$INSTAGRAM_PUBLISH_ENABLED" = false
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           ref: publishing-history
