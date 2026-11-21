@@ -58,65 +58,7 @@ jobs:
           USER_APPROVED_SHA: ${{ inputs.approved_video_sha256 }}
           USER_CONFIRMATION: ${{ inputs.confirmation }}
           CURRENT_REF: ${{ github.ref }}
-        run: |
-          python - <<'PY'
-          import json, os, re
-          from datetime import datetime
-          from pathlib import Path
-          from zoneinfo import ZoneInfo
-          data=json.loads(Path('r83_reel_autopublish_state.json').read_text())
-          enabled=False
-          mode=''
-          source=''
-          sha=''
-          event=os.getenv('EVENT_NAME')
-          if os.getenv('CURRENT_REF')=='refs/heads/main' and data.get('owner_authorized') is True and data.get('policy')=='owner_authorized_source_attribution_v1':
-              if event=='push':
-                  trigger_path=Path('.github/r92-controlled-first-reel.trigger')
-                  if trigger_path.is_file():
-                      trigger=json.loads(trigger_path.read_text())
-                      today=datetime.now(ZoneInfo('America/Toronto')).date().isoformat()
-                      expected={'intent':'one-time-controlled-R72-first-live',
-                                'toronto_date':today,
-                                'source_run_id':trigger.get('source_run_id'),
-                                'approved_video_sha256':trigger.get('approved_video_sha256'),
-                                'publish_to_instagram':True}
-                      mode='first'
-                      source=str(trigger.get('source_run_id',''))
-                      sha=str(trigger.get('approved_video_sha256',''))
-                      enabled=(trigger==expected and
-                               data.get('controlled_first_live') is True and
-                               data.get('daily_enabled') is False and
-                               data.get('first_video_sha256')==sha and
-                               re.fullmatch(r'[a-f0-9]{64}',sha) is not None and
-                               source.isdigit())
-              elif event=='workflow_dispatch':
-                  mode='first'
-                  source=os.getenv('USER_SOURCE_RUN_ID','')
-                  sha=os.getenv('USER_APPROVED_SHA','')
-                  enabled=(data.get('controlled_first_live') is True and
-                           data.get('first_video_sha256')==sha and
-                           re.fullmatch(r'[a-f0-9]{64}', sha) is not None and
-                           source.isdigit() and
-                           os.getenv('USER_CONFIRMATION')=='PUBLISH_VERIFIED_R72')
-              elif event=='workflow_run':
-                  mode='daily'
-                  source=os.getenv('SOURCE_JOB_ID','')
-                  enabled=(data.get('daily_enabled') is True and
-                           bool(str(data.get('verified_first_media_id','')).isdigit()) and
-                           os.getenv('SOURCE_JOB_EVENT') in ('schedule','workflow_dispatch') and
-                           os.getenv('SOURCE_JOB_CONCLUSION')=='success' and
-                           os.getenv('SOURCE_JOB_BRANCH')=='main' and
-                           os.getenv('SOURCE_JOB_REPO')==os.getenv('EXPECTED_REPO') and
-                           source.isdigit())
-          with Path(os.environ['GITHUB_OUTPUT']).open('a') as output:
-              output.write('enabled='+str(enabled).lower()+'\n')
-              output.write('mode='+mode+'\n')
-              output.write('source_run_id='+source+'\n')
-              output.write('approved_sha='+sha+'\n')
-          print('R84 gate status:', 'enabled' if enabled else 'disabled',
-                'mode:',mode if mode else 'none')
-          PY
+        run: python reel_r92_release_gate.py
 
   publish-reel:
     needs: gate
