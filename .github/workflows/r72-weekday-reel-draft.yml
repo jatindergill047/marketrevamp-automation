@@ -2,6 +2,9 @@ name: MarketRevamp R72 Daily News Reel Draft (Never Publish)
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/r78-first-fresh-reel-review.trigger']
   schedule:
     # Toronto 18:17 (EDT 22:17 UTC, EST 23:17 UTC). One schedule is
     # discarded by the timezone gate; preview only, never a public post.
@@ -35,6 +38,16 @@ jobs:
           import os
           from pathlib import Path
           now=datetime.now(ZoneInfo("America/Toronto"))
+          if os.environ.get("GITHUB_EVENT_NAME") == "push":
+              import json
+              payload=json.loads(Path(".github/r78-first-fresh-reel-review.trigger").read_text())
+              if payload != {"intent":"create-one-fresh-review-only-reel",
+                             "toronto_date":"2026-11-21",
+                             "publish_to_instagram":False,
+                             "upload_to_cloudinary":False}:
+                  raise SystemExit("R78 one-time fresh-review trigger mismatch")
+              if now.date().isoformat() != payload["toronto_date"]:
+                  raise SystemExit("R78 trigger expired; no stale news drafts")
           if os.environ.get("GITHUB_EVENT_NAME") == "schedule" and now.hour != 18:
               with Path(os.environ["GITHUB_OUTPUT"]).open("a") as handle:
                   handle.write("run_review=false\n")
