@@ -43,7 +43,9 @@ PUBLISHER_NAMES = {
 
 def publisher_from_url(url):
     host = (urlsplit(_source(url)).hostname or "").lower().removeprefix("www.")
-    return PUBLISHER_NAMES.get(host, host)
+    if host not in PUBLISHER_NAMES:
+        raise ValueError("Source publisher is not on MarketRevamp's reviewed feed list")
+    return PUBLISHER_NAMES[host]
 
 
 def _complete_context(summary):
