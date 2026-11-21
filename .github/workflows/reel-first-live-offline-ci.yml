@@ -34,7 +34,8 @@ jobs:
           text=Path('.github/workflows/reel-r49-first-live.yml').read_text()
           assert 'workflow_dispatch:' in text
           assert 'schedule:' not in text
-          assert "PUBLISH_ONE_REEL" in text
+          assert '532e450baff8d25b3ed50bc1a21882dba3eaf6c626c0af5066ca3cd74fdefb93' in text
+          assert "PUBLISH_APPROVED_R50" in text
           assert "github.ref == 'refs/heads/main'" in text
           print('PASS: first live workflow requires explicit manual confirmation on main')
           PY
