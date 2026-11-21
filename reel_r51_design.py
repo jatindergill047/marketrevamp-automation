@@ -132,7 +132,7 @@ def enlarge_subtitles(source_ass, output_ass):
             parts=items.copy()
             parts[1]=ass_time(split_start)
             parts[2]=ass_time(split_end)
-            parts[9]=r"{\\an5\\pos(540,1365)}"+" ".join(t[0]+t[2] for t in chunk)
+            parts[9]=r"{\an5\pos(540,1365)}"+" ".join(t[0]+t[2] for t in chunk)
             new_rows.append(",".join(parts))
             for markup,centis,word in chunk:
                 revised_word_schedule.append((word,round(start_time+cursor/100,2)))
