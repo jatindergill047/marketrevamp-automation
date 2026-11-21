@@ -2,7 +2,7 @@ name: R68 Animated 2D Artwork Reel Review (Never Publish)
 
 on:
   push:
-    branches: [feature/r68-animated-carousel-artwork-reels-20261121]
+    branches: [feature/reels-opt-in]
     paths:
       - 'reel_artwork.py'
       - 'reel_r51_design.py'
@@ -30,7 +30,7 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - name: Gate preview-only branch and publication controls
         run: |
-          test "$GITHUB_REF" = 'refs/heads/feature/r68-animated-carousel-artwork-reels-20261121'
+          test "$GITHUB_REF" = 'refs/heads/feature/reels-opt-in'
           test "$REEL_ENABLED" = false
           test "$REEL_UPLOAD_ENABLED" = false
           test "$REEL_FIRST_LIVE_ENABLED" = false
