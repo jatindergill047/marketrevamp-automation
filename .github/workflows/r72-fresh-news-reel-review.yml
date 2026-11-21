@@ -1,4 +1,4 @@
-name: R72 Fresh News Reel Review — Editorial Only
+name: R72 Daily Fresh News Reel Review — Editorial Only
 
 on:
   push:
@@ -51,7 +51,7 @@ jobs:
           pip install ruff==0.14.0
           ruff check --select E7,E9,F63,F7,F82 r67_weekday_news.py reel_r72_review.py test_r72_news_review.py
 
-  live-weekday-source-review:
+  live-daily-source-review:
     if: github.event_name == 'workflow_dispatch'
     needs: source-to-reel-offline
     runs-on: ubuntu-latest
@@ -64,13 +64,8 @@ jobs:
       MARKETREVAMP_QUOTE_FIRST: 'false'
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-      - name: Refuse weekends and production publishing paths
+      - name: Confirm production publishing is disabled on all seven days
         run: |
-          python - <<'PY'
-          from datetime import datetime
-          from zoneinfo import ZoneInfo
-          assert datetime.now(ZoneInfo('America/Toronto')).weekday() < 5, 'Weekend: fresh weekday news review only'
-          PY
           test "$REEL_ENABLED" = false
           test "$REEL_UPLOAD_ENABLED" = false
           test "$REEL_FIRST_LIVE_ENABLED" = false
