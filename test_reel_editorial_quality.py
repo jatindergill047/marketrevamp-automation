@@ -1,7 +1,8 @@
 """Regression: no duplicate Anthropic IPO, off-topic champagne copy, or forced gaps."""
 import unittest
 from reel_editorial_quality import (same_reel_event, summary_supports_headline,
-                                    reel_story_guard)
+                                    sentence_supports_headline, reel_story_guard)
+from reel_r72_review import _complete_context
 
 IPO_ONE = "Anthropic’s record IPO collides with tech’s worst week on Wall Street since 2020"
 IPO_TWO = "Why Anthropic's blockbuster IPO couldn't escape the stock market correction"
@@ -23,6 +24,16 @@ class EditorialGuardTests(unittest.TestCase):
         self.assertTrue(same_reel_event(IPO_ONE, IPO_TWO))
         self.assertFalse(same_reel_event("Meta emissions spike as data centers grow",
                                          "Meta releases a new virtual reality headset"))
+
+    def test_voice_context_skips_off_topic_first_sentence(self):
+        unrelated = "Sake, vodka and Krug Champagne will be served at a private party."
+        related = ("Anthropic's IPO entered public trading amid the broader "
+                   "technology sector selloff, according to market reports.")
+        self.assertFalse(sentence_supports_headline(IPO_ONE, unrelated))
+        self.assertTrue(sentence_supports_headline(IPO_ONE, related))
+        self.assertEqual(_complete_context(unrelated+" "+related, IPO_ONE),
+                         related)
+        self.assertEqual(_complete_context(unrelated, IPO_ONE), "")
 
     def test_prediction_markets_cftc_context_is_valid(self):
         headline = "State and federal battle over prediction markets regulation heats up"
