@@ -1,0 +1,51 @@
+name: R107 Reel Narration Offline Safety Checks
+
+on:
+  pull_request:
+    branches: [feature/reels-opt-in]
+    paths:
+      - 'reel_r72_review.py'
+      - 'reel_r107_narration.py'
+      - 'test_r72_news_review.py'
+      - 'test_r107_narration.py'
+      - '.github/workflows/r107-narration-offline-ci.yml'
+  push:
+    branches: [feature/r107-news-reel-narration-polish-20261121]
+    paths:
+      - 'reel_r72_review.py'
+      - 'reel_r107_narration.py'
+      - 'test_r72_news_review.py'
+      - 'test_r107_narration.py'
+      - '.github/workflows/r107-narration-offline-ci.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  offline-narration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      REEL_ENABLED: 'false'
+      REEL_UPLOAD_ENABLED: 'false'
+      REEL_FIRST_LIVE_ENABLED: 'false'
+      INSTAGRAM_PUBLISH_ENABLED: 'false'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+      - run: pip install -r requirements.lock
+      - name: Compile and test reel-only script, phonetic subtitle repair, measured pauses
+        run: |
+          python -m compileall -q reel_r72_review.py reel_r107_narration.py test_r72_news_review.py test_r107_narration.py
+          python -m unittest -v test_r67_weekday_news.py test_r72_news_review.py test_reel_bookends.py test_r107_narration.py
+      - name: Prove no publication permissions
+        run: |
+          test "$REEL_ENABLED" = false
+          test "$REEL_UPLOAD_ENABLED" = false
+          test "$REEL_FIRST_LIVE_ENABLED" = false
+          test "$INSTAGRAM_PUBLISH_ENABLED" = false
+          echo 'Offline narrative tests only; publication intentionally unavailable.'
