@@ -25,7 +25,8 @@ from reel_bookends import (HOOK_LINE, FOLLOW_LINE, build_bookends,
                            validate_bookend_timing)
 from reel_r51_design import CAPTION_FONT_SIZE
 from reel_script import clean_text
-from reel_editorial_quality import same_reel_event, summary_supports_headline
+from reel_editorial_quality import (same_reel_event, summary_supports_headline,
+                                    sentence_supports_headline)
 
 MAX_TOTAL_STORY_WORDS = 180
 MIN_TOTAL_STORY_WORDS = 95
@@ -48,11 +49,12 @@ def publisher_from_url(url):
     return PUBLISHER_NAMES[host]
 
 
-def _complete_context(summary):
+def _complete_context(summary, headline):
     """Optional short verbatim extract; never reword or truncate a claim."""
     sentences = re.split(r"(?<=[.!?])\s+", summary.strip())
     return next((s.strip() for s in sentences
-                 if 8 <= len(s.split()) <= 22 and s.rstrip().endswith((".", "!", "?"))),
+                 if 8 <= len(s.split()) <= 22 and s.rstrip().endswith((".", "!", "?"))
+                 and sentence_supports_headline(headline, s)),
                 "")
 
 
@@ -120,7 +122,7 @@ def prepare_stories(package, published_urls, *, now):
             "editorial_approved": False,
             "story_index": index,
         })
-        context = _complete_context(summary)
+        context = _complete_context(summary, title)
         extra.append(context if context.casefold() not in title.casefold() else "")
 
     if len({s["category"] for s in stories}) < 3:
