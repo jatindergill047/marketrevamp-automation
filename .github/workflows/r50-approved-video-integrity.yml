@@ -1,0 +1,51 @@
+name: R50 Approved Video Integrity (No Publishing)
+
+on:
+  push:
+    branches: [release/r50-approved-video-20261120]
+    paths: ['.github/r50-exact-media-check.trigger']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check-exact-user-approved-video:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      INSTAGRAM_PUBLISH_ENABLED: 'false'
+      REEL_UPLOAD_ENABLED: 'false'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Reconstitute exact user-approved MP4
+        run: |
+          python - <<'PY'
+          import base64, hashlib, json
+          from pathlib import Path
+          import re
+          root=Path('approved_r50_video')
+          parts=sorted(root.glob('chunk_*.txt'))
+          assert len(parts)==14, f'14 transfer chunks required, got {len(parts)}'
+          assert [p.name for p in parts]==[f'chunk_{i:03d}.txt' for i in range(14)]
+          data=''.join(p.read_text(encoding='ascii').strip() for p in parts)
+          output=root/'marketrevamp-r50-approved.mp4'
+          output.write_bytes(base64.b64decode(data,validate=True))
+          actual=hashlib.sha256(output.read_bytes()).hexdigest()
+          expected='532e450baff8d25b3ed50bc1a21882dba3eaf6c626c0af5066ca3cd74fdefb93'
+          assert actual==expected, f'VIDEO HASH MISMATCH: {actual}'
+          m=json.loads((root/'release_metadata.json').read_text())
+          stories=json.loads((root/'stories.json').read_text())
+          assert m['toronto_date']=='2026-11-20' and m['editorial_approved'] is True
+          assert len(stories)==7 and all(s['editorial_approved'] for s in stories)
+          print('EXACT_R50_SHA256_PASS:',actual)
+          print('Approved sources:',len(stories))
+          PY
+      - name: Check H264 9:16 and audio without publishing
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y ffmpeg >/dev/null
+          ffprobe -v error -show_entries stream=codec_type,codec_name,width,height:format=duration -of json approved_r50_video/marketrevamp-r50-approved.mp4
+      - name: Enforce zero external publishing activity
+        run: |
+          test "$INSTAGRAM_PUBLISH_ENABLED" = 'false'
+          test "$REEL_UPLOAD_ENABLED" = 'false'
