@@ -10,7 +10,8 @@ WRONG_DECK = ("Sake, vodka and Krug Champagne will be served. Each attendee will
               "with more food and drinks at a gathering after the event.")
 RELEVANT_DECK = ("Anthropic's IPO had an unexpectedly difficult first week on the "
                  "public stock market after a wider correction. Company shares "
-                 "also faced pressure from investors worried about valuations.")
+                 "also faced pressure from investors worried about valuations. "
+                 "Further market reaction will depend on forthcoming company reports.")
 
 
 class EditorialGuardTests(unittest.TestCase):
@@ -27,7 +28,8 @@ class EditorialGuardTests(unittest.TestCase):
         headline = "State and federal battle over prediction markets regulation heats up"
         context = ("The CFTC moved to pause some Kalshi event contracts while "
                    "federal and state officials considered different restrictions "
-                   "in recent meetings and court proceedings over potential manipulation.")
+                   "in recent meetings and court proceedings over potential manipulation "
+                   "and investor and consumer safeguards.")
         self.assertTrue(summary_supports_headline(headline, context))
 
     def test_guard_refuses_duplicate_and_unrelated_but_allows_backup(self):
@@ -40,7 +42,8 @@ class EditorialGuardTests(unittest.TestCase):
                 "summary": ("Google says Android security updates now include new "
                             "protection features against account takeover and data "
                             "loss for certain phone customers this quarter, "
-                            "according to a company briefing.")}
+                            "according to a company briefing released to journalists "
+                            "earlier in the week.")}
         self.assertTrue(reel_story_guard(backup, chosen))
 
 
