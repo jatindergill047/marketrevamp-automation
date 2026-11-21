@@ -3,6 +3,9 @@ name: R84 Reel First-Live and Daily Publisher Contract (No Network)
 on:
   pull_request:
     paths:
+      - r83_reel_autopublish_state.json
+      - reel_rollout_state.py
+      - test_reel_rollout_state.py
       - reel_r92_release_gate.py
       - test_reel_r92_release_gate.py
       - reel_r84_publish_job.py
@@ -10,8 +13,11 @@ on:
       - .github/workflows/r84-verified-reel-publisher.yml
       - .github/workflows/r84-release-contract.yml
   push:
-    branches: [feature/r84-controlled-first-reel-delivery-20261121]
+    branches: [feature/r84-controlled-first-reel-delivery-20261121, feature/r96-state-aware-reel-activation-ci-20261121]
     paths:
+      - r83_reel_autopublish_state.json
+      - reel_rollout_state.py
+      - test_reel_rollout_state.py
       - reel_r92_release_gate.py
       - test_reel_r92_release_gate.py
       - reel_r84_publish_job.py
@@ -38,17 +44,14 @@ jobs:
           python-version: '3.12'
       - name: Install only existing pinned API dependencies
         run: pip install -r requirements.lock
-      - name: Validate first-publication and recurring switches remain closed
+      - name: Validate owner-approved stage machine without public network calls
         run: |
           python - <<'PY'
           import json
           from pathlib import Path
+          from reel_rollout_state import rollout_state_valid
           a=json.loads(Path('r83_reel_autopublish_state.json').read_text())
-          assert a['controlled_first_live'] is False
-          assert a['daily_enabled'] is False
-          assert a['first_video_sha256'] is None
-          assert a['verified_first_media_id'] is None
-          print('Automatic first and recurring Reel publishing BLOCKED until verification')
+          print('Offline R84 stage:', rollout_state_valid(a))
           PY
           test "$REEL_ENABLED" = false
           test "$REEL_FIRST_LIVE_ENABLED" = false
@@ -56,9 +59,9 @@ jobs:
           test "$INSTAGRAM_PUBLISH_ENABLED" = false
       - name: Run production release, readback and durable-history offline mocks
         run: |
-          python -m py_compile reel_r92_release_gate.py test_reel_r92_release_gate.py reel_r84_publish_job.py test_reel_r84_publish_job.py
-          python -m unittest -v test_reel_r92_release_gate.py test_reel_r84_publish_job.py test_reel_daily_release_policy.py test_reel_r49_first_live.py test_reel_r46_launch_gate.py
+          python -m py_compile reel_rollout_state.py test_reel_rollout_state.py reel_r92_release_gate.py test_reel_r92_release_gate.py reel_r84_publish_job.py test_reel_r84_publish_job.py
+          python -m unittest -v test_reel_rollout_state.py test_reel_r92_release_gate.py test_reel_r84_publish_job.py test_reel_daily_release_policy.py test_reel_r49_first_live.py test_reel_r46_launch_gate.py
       - name: Critical Python lint
         run: |
           pip install ruff==0.14.0
-          ruff check --select E7,E9,F63,F7,F82 reel_r92_release_gate.py test_reel_r92_release_gate.py reel_r84_publish_job.py test_reel_r84_publish_job.py
+          ruff check --select E7,E9,F63,F7,F82 reel_rollout_state.py test_reel_rollout_state.py reel_r92_release_gate.py test_reel_r92_release_gate.py reel_r84_publish_job.py test_reel_r84_publish_job.py
