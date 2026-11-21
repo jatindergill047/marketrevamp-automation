@@ -1,0 +1,103 @@
+name: R70 Spoken Reel Hook and Follow CTA Review (Never Publish)
+
+on:
+  push:
+    branches:
+      - feature/r70-spoken-hook-follow-cta-20261121
+      - feature/reels-opt-in
+    paths:
+      - 'reel_bookends.py'
+      - 'reel_artwork.py'
+      - 'reel_r50_review.py'
+      - 'reel_r52_review.py'
+      - 'reel_clean_end_to_end_review.py'
+      - 'test_reel_bookends.py'
+      - '.github/workflows/r70-spoken-bookends-review.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  speech-bookends:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      REEL_ENABLED: 'false'
+      REEL_UPLOAD_ENABLED: 'false'
+      REEL_FIRST_LIVE_ENABLED: 'false'
+      INSTAGRAM_PUBLISH_ENABLED: 'false'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Enforce experimental branch and nonpublishing safety
+        run: |
+          case "$GITHUB_REF" in
+            refs/heads/feature/r70-spoken-hook-follow-cta-20261121|refs/heads/feature/reels-opt-in) ;;
+            *) exit 1 ;;
+          esac
+          test "$REEL_ENABLED" = false
+          test "$REEL_UPLOAD_ENABLED" = false
+          test "$REEL_FIRST_LIVE_ENABLED" = false
+          test "$INSTAGRAM_PUBLISH_ENABLED" = false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+      - name: Install review-only voice, Pillow and FFmpeg
+        run: |
+          pip install -r requirements.lock
+          pip install -r requirements.reel.txt
+          sudo apt-get update -qq
+          sudo apt-get install -y ffmpeg fonts-dejavu-core
+      - name: Check syntax and nine-segment audio/visual gates
+        run: |
+          python -m py_compile reel_bookends.py reel_r50_review.py reel_r52_review.py reel_clean_end_to_end_review.py
+          python -m unittest -v test_reel_bookends.py test_reel_artwork.py test_reel_r51_design.py test_r68_design_contract.py
+      - name: Build spoken bookends and seven animated stories
+        timeout-minutes: 16
+        run: python reel_clean_end_to_end_review.py
+      - name: Verify full Reel voice cues, chapters and no publication
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('reel_clean_review/QA.json')
+          q=json.loads(p.read_text())
+          assert q['status']=='review_only' and q['synthetic_content'] is True
+          assert q['seven_scenes']==7 and q['presentation_segments']==9
+          assert q['spoken_hook'].startswith("You're watching MarketRevamp.")
+          assert q['spoken_follow_cta'].startswith('Follow MarketRevamp')
+          assert 2.2 <= q['intro_seconds'] <= 8
+          assert 2.0 <= q['outro_seconds'] <= 8
+          assert 45 <= q['duration_seconds'] <= 90
+          assert q['alignment_token_ratio']>=.90
+          assert q['caption_font_size_px']==80
+          assert q['subtitle_placement']=='below_artwork'
+          assert q['video_codec']=='h264' and q['audio_codec']=='aac'
+          assert q['dimensions']=='1080x1920'
+          assert all(q[k] is False for k in ('editorial_approved','published','cloudinary_uploaded','instagram_published'))
+          ass=Path('reel_clean_review/subtitles.ass').read_text()
+          assert ass.count('Dialogue:')>40
+          assert Path('reel_clean_review/R50_intro.png').exists()
+          assert Path('reel_clean_review/R50_outro.png').exists()
+          assert Path('reel_clean_review/marketrevamp-clean-reel-review-only.mp4').stat().st_size>100000
+          print('Nine-part R70 narrated hook and CTA QA PASS')
+          PY
+          ffmpeg -y -loglevel error -ss 1 -i reel_clean_review/marketrevamp-clean-reel-review-only.mp4 -frames:v 1 reel_clean_review/hook_frame.png
+          END_SEEK=$(python -c "import json; q=json.load(open('reel_clean_review/QA.json')); print(q['duration_seconds']-1.5)")
+          ffmpeg -y -loglevel error -ss "$END_SEEK" -i reel_clean_review/marketrevamp-clean-reel-review-only.mp4 -frames:v 1 reel_clean_review/follow_frame.png
+      - name: Save review-only MP4 and speech evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: marketrevamp-r70-spoken-hook-follow-review
+          path: |
+            reel_clean_review/marketrevamp-clean-reel-review-only.mp4
+            reel_clean_review/QA.json
+            reel_clean_review/subtitles.ass
+            reel_clean_review/contact_sheet.png
+            reel_clean_review/hook_frame.png
+            reel_clean_review/follow_frame.png
+            reel_clean_review/R50_intro.png
+            reel_clean_review/R50_outro.png
+          retention-days: 7
+          if-no-files-found: warn
