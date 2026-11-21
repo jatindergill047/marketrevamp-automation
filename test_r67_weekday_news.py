@@ -135,11 +135,15 @@ class R67Tests(unittest.TestCase):
                 Path("history.json").write_text("{}")
                 with patch("news_collector.collect_news") as collect, \
                      patch("r67_weekday_news.review_package",
-                           return_value={"status": "review_only"}):
+                           return_value={"status": "review_only",
+                                         "toronto_date": "2026-11-21",
+                                         "story_count": 7}):
                     main(["--history", "history.json", "--output", "output.json"])
                     collect.assert_called_once_with(history_path=Path("history.json"))
                     self.assertEqual(json.loads(Path("output.json").read_text()),
-                                     {"status": "review_only"})
+                                     {"status": "review_only",
+                                      "toronto_date": "2026-11-21",
+                                      "story_count": 7})
             finally:
                 os.chdir(before)
 
