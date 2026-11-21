@@ -13,7 +13,8 @@ from urllib.parse import urlsplit
 from zoneinfo import ZoneInfo
 
 from news_collector import normalize_article_url
-from news_quality import same_event
+from reel_editorial_quality import (same_reel_event, summary_supports_headline,
+                                     reel_story_guard)
 
 TOPICS = frozenset(("AI", "Technology", "Crypto", "Markets"))
 REQUIRED_STORIES = 7
@@ -96,6 +97,8 @@ def review_package(results, published_urls, *, now):
             check.get("reason") != "source_matched_not_fact_checked"
         ):
             raise ValueError("Summary not supported by publisher extraction")
+        if not summary_supports_headline(title, summary):
+            raise ValueError("Publisher paragraph is unrelated to the story headline")
         if story.get("screening_passed") is not True or story.get("fact_checked") is not False:
             raise ValueError("Source provenance screen failed")
         published = datetime.fromisoformat(story.get("published", ""))
@@ -104,7 +107,7 @@ def review_package(results, published_urls, *, now):
         age = (now - published).total_seconds()/3600
         if not 0 <= age <= MAX_AGE_HOURS:
             raise ValueError("Outside current 48-hour source window")
-        if any(same_event(title, other["headline"]) for other in chosen):
+        if any(same_reel_event(title, other["headline"]) for other in chosen):
             raise ValueError("Overlapping news event detected")
         seen.add(url)
         chosen.append({
@@ -150,7 +153,8 @@ def main(argv=None):
     if args.collector_result == "news_results.json":
         from reel_news_fetch import limited_article_extractor
         collect_news(history_path=Path(args.history),
-                     extractor=limited_article_extractor())
+                     extractor=limited_article_extractor(),
+                     story_guard=reel_story_guard)
     results = json.loads(Path(args.collector_result).read_text(encoding="utf-8"))
     package = review_package(results, published, now=now)
     target = Path(args.output)
