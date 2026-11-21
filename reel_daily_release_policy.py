@@ -15,6 +15,7 @@ from publish_instagram import normalize_article_url
 from reel_r46_launch_gate import (ReleaseBlocked, validate_and_fingerprint,
                                    authorize_publication)
 from reel_r49_first_live import _check_article_reuse
+from reel_editorial_quality import same_reel_event, summary_supports_headline
 
 TORONTO = ZoneInfo("America/Toronto")
 SOURCES = {
@@ -115,6 +116,13 @@ def validate_draft(qa, review, sources, video, history, *, now=None):
                 and 30 <= len(origin["summary"].split()) <= 90
                 and r.get("deck") == origin["summary"],
                 f"Story {i} visible context differs from screened publisher summary")
+        require(summary_supports_headline(r.get("headline", ""),
+                                          origin["summary"]),
+                f"Story {i} publisher paragraph is unrelated to its headline")
+        require(not any(same_reel_event(r.get("headline", ""),
+                                        previous.get("headline", ""))
+                        for previous in eligible),
+                f"Story {i} duplicates an existing named news event")
         require(r.get("category") not in BLOCKED_CATEGORIES,
                 f"Story {i} is not in permitted topic coverage")
         publisher = source_name(url)
