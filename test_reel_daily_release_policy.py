@@ -205,6 +205,27 @@ class AutomatedReleasePolicyTests(unittest.TestCase):
         with self.assertRaisesRegex(ReleaseBlocked, "duplicates"):
             self.prepare()
 
+    def test_ipo_and_share_hedging_cannot_repeat_anthropic(self):
+        headlines = (
+            "Why Anthropic IPO could not escape a broad stock market correction",
+            "As Anthropic shares tank, investors scramble to hedge",
+        )
+        for index, headline in ((2, headlines[0]), (5, headlines[1])):
+            self.pending["stories"][index]["headline"] = headline
+            self.sources["stories"][index]["headline"] = headline
+            summary = (f"According to the reporting publisher, {headline}. "
+                       "This report describes changes in investor positioning, "
+                       "company shares and market conditions during the trading "
+                       "session, with additional commentary from financial analysts "
+                       "about near-term price volatility.")
+            self.pending["stories"][index]["deck"] = summary
+            self.sources["stories"][index]["summary"] = summary
+            self.pending["stories"][index]["narration_text"] = (
+                "According to " +
+                self.pending["stories"][index]["source_name"] + ", " + headline)
+        with self.assertRaisesRegex(ReleaseBlocked, "duplicates"):
+            self.prepare()
+
     def test_fails_on_speech_drift_or_missing_publisher_attribution(self):
         self.qa["alignment_token_ratio"] = .95
         with self.assertRaisesRegex(ReleaseBlocked, "quality"):
