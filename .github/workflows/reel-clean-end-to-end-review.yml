@@ -58,7 +58,7 @@ jobs:
           assert d['status']=='review_only' and d['synthetic_content'] is True
           assert d['key_detail_visible'] is False
           assert d['seven_scenes']==7
-          assert d['caption_font_size_px']==72
+          assert d['caption_font_size_px']==80
           assert d['tts_word_boundaries'] >= 160
           assert d['alignment_token_ratio'] >= .90
           assert d['video_codec']=='h264' and d['audio_codec']=='aac'
