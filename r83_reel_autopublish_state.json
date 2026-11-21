@@ -3,10 +3,10 @@
   "policy": "owner_authorized_source_attribution_v1",
   "owner_authorized": true,
   "owner_authorized_on": "2026-11-21",
-  "controlled_first_live": true,
+  "controlled_first_live": false,
   "first_video_sha256": "19244405566cd8cc3382c991b2257a26425fb788f177c95b20919b895710de8b",
-  "daily_enabled": false,
-  "verified_first_media_id": null,
+  "daily_enabled": true,
+  "verified_first_media_id": "18445124020179151",
   "required_first_template_version": "R72",
-  "notes": "Nov 21 2026: first controlled R72 source-screened Reel approved by owner rollout request, exactly source-run 44950454444 and SHA256, pending Instagram readback. Daily autopublish stays disabled until verified media ID recorded."
+  "notes": "Controlled R72 first Instagram Reel published and verified Nov 21 2026: media ID 18445124020179151; permalink https://www.instagram.com/reel/DgBL0ngDBFa/; authoritative publishing-history shows status published, template_version R72, instagram_readback_verified true. Automatic 7-day Reel publishing allowed only from successful same-day scheduled/dispatch R72 review runs, through all R83/R84 safety gates. Historical first MP4 SHA kept for audit."
 }
