@@ -42,7 +42,8 @@ def fixtures():
             "deck": ("According to the original reporting publisher, "
                      "the relevant technology project has been described in "
                      "more detail following an initial public announcement, "
-                     "with further research and community review expected."),
+                     "with further research and community review expected "
+                     "through the next several weeks and months."),
             "source_url": url, "source_name": name,
             "narration_text": f"According to {name}, {headline.lower()}.",
             "fact_check_status": "source_supported_pending_editorial_approval",
