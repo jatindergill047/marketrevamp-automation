@@ -13,6 +13,7 @@ from pathlib import Path
 from urllib.parse import urlsplit
 
 from PIL import Image, ImageDraw, ImageFont
+from edge_tts.exceptions import NoAudioReceived
 
 from r67_weekday_news import (TORONTO, REQUIRED_STORIES, MAX_AGE_HOURS,
                               _source, load_published_history)
@@ -150,6 +151,25 @@ def prepare_stories(package, published_urls, *, now):
     return stories
 
 
+async def synthesize_with_retry(script, audio_path, boundaries_path,
+                                *, attempts=3, sleep=asyncio.sleep):
+    """Retry transient neural voice failures without accepting partial audio."""
+    if not 1 <= attempts <= 3:
+        raise ValueError("Neural TTS retry count must remain bounded")
+    for number in range(attempts):
+        try:
+            return await synthesize(script, audio_path, boundaries_path,
+                                    min_events=80)
+        except (NoAudioReceived, OSError, TimeoutError, ConnectionError):
+            for file in (audio_path, boundaries_path):
+                candidate=Path(file)
+                if candidate.exists():
+                    candidate.unlink()
+            if number==attempts-1:
+                raise
+            await sleep(4*(number+1))
+
+
 def render_review(stories, *, output_dir, toronto_date, synthetic=False):
     """Render with R71 visual/audio pipeline. No Cloudinary or Instagram code."""
     if len(stories) != REQUIRED_STORIES:
@@ -177,8 +197,8 @@ def render_review(stories, *, output_dir, toronto_date, synthetic=False):
     script = joined_narration(segments)
     source_audio = target / "r72_voice_source.mp3"
     speech_boundaries = target / "r72_word_boundaries.json"
-    events = asyncio.run(synthesize(script, source_audio, speech_boundaries,
-                                    min_events=80))
+    events = asyncio.run(synthesize_with_retry(
+        script, source_audio, speech_boundaries))
     starts, match, expected_count, actual_count = map_chapters(segments, events)
     if match < 0.90:
         raise RuntimeError("Voice timing drifted from the approved script")
