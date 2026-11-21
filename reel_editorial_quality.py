@@ -34,7 +34,8 @@ def same_reel_event(first, second):
     b = str(second or "").casefold()
     shared_entities = {e for e in ENTITIES if re.search(r"\b"+e+r"\b", a)
                        and re.search(r"\b"+e+r"\b", b)}
-    return bool(shared_entities and event_groups(a) & event_groups(b))
+    # Do not repeat the same named company or asset across a seven-story Reel.
+    return bool(shared_entities)
 
 
 def summary_supports_headline(headline, summary):
