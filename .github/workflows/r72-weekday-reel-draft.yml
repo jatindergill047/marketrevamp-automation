@@ -49,7 +49,7 @@ jobs:
               payload=json.loads(Path(".github/r78-first-fresh-reel-review.trigger").read_text())
               if payload != {"intent":"create-one-fresh-review-only-reel",
                              "toronto_date":"2026-11-21",
-                             "review_attempt":6,
+                             "review_attempt":7,
                              "publish_to_instagram":False,
                              "upload_to_cloudinary":False}:
                   raise SystemExit("R78 one-time fresh-review trigger mismatch")
@@ -68,7 +68,7 @@ jobs:
         if: steps.local_day.outputs.run_review == 'true'
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
-          ref: 16124e48677421d7242e0e1d9acda185f75905dd
+          ref: 022f5f956bb057722ff191a8ca89f3898fe0a30b
           persist-credentials: false
       - name: Checkout authoritative publishing history — read only
         if: steps.local_day.outputs.run_review == 'true'
