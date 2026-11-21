@@ -14,7 +14,7 @@ CAPTION_DARK=(20,27,38)
 FONT_BOLD="/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
 FONT_REG="/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
 KEY_BOX=(72,1070,1008,1330)
-SUBTITLE_BOX=(65,850,1015,1070)
+SUBTITLE_BOX=(65,1225,1015,1505)
 CAPTION_FONT_SIZE=80
 ORIGINAL_CAPTION_SIZE=53
 
@@ -66,16 +66,16 @@ def enlarge_subtitles(source_ass, output_ass):
             fields[15]="1"                # Border style
             fields[16]="2"                # Outline px
             fields[17]="0"                # Shadow
-            fields[18]="5"                # Vertical and horizontal center alignment
+            fields[18]="5"                # Center inside below-artwork caption band
             fields[19]="110"              # Left margin
             fields[20]="110"              # Right margin
-            fields[21]="0"                # Center of 1080x1920 canvas
+            fields[21]="0"                # Explicit \\pos below artwork is applied per event
             fields[22]="1"                # Unicode/ASS encoding
             rows[idx]="Style: "+",".join(fields)
             count+=1
     if count!=1:
         raise ValueError("Expected one Words style")
-    # At 80 px, split wide caption groups to avoid screen-edge clipping.
+    # Keep 80 px karaoke text under artwork; split groups to avoid clipping.
     # Split visual caption groups while retaining every word's karaoke
     # centisecond duration and its absolute service-aligned start.
     def parse_time(value):
@@ -132,7 +132,7 @@ def enlarge_subtitles(source_ass, output_ass):
             parts=items.copy()
             parts[1]=ass_time(split_start)
             parts[2]=ass_time(split_end)
-            parts[9]=" ".join(t[0]+t[2] for t in chunk)
+            parts[9]=r"{\an5\pos(540,1365)}"+" ".join(t[0]+t[2] for t in chunk)
             new_rows.append(",".join(parts))
             for markup,centis,word in chunk:
                 revised_word_schedule.append((word,round(start_time+cursor/100,2)))

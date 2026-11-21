@@ -1,10 +1,14 @@
-name: MarketRevamp R51 Editorial Reel Design (Offline Review)
+name: MarketRevamp Reel Editorial Artwork and Caption Regression (Offline)
 
 on:
   push:
     branches: [feature/reels-opt-in]
     paths:
       - 'reel_r51_design.py'
+      - 'reel_artwork.py'
+      - 'test_reel_artwork.py'
+      - 'newspaper_design.py'
+      - 'reel_r52_review.py'
       - 'test_reel_r51_design.py'
       - 'reel_r50_review.py'
       - '.github/workflows/reel-r51-design.yml'
@@ -30,9 +34,9 @@ jobs:
       - name: Install only isolated design dependencies
         run: pip install pillow
       - name: Compile design and editorial builder
-        run: python -m py_compile reel_r51_design.py reel_r50_review.py test_reel_r51_design.py
+        run: python -m py_compile reel_r51_design.py reel_artwork.py reel_r50_review.py reel_r52_review.py test_reel_r51_design.py test_reel_artwork.py
       - name: Validate unchanged speech timings, enlarged captions and safe zones
-        run: python -m unittest -v test_reel_r51_design.py
+        run: python -m unittest -v test_reel_r51_design.py test_reel_artwork.py
       - name: Check editorial builder actually uses approved R51 design
         run: |
           python - <<'PY'
@@ -41,5 +45,10 @@ jobs:
           assert 'from reel_r51_design import style_scene, enlarge_subtitles' in s
           assert 'style_scene(dest, story["deck"], dest)' in s
           assert 'enlarge_subtitles(ass_path, ass_path)' in s
+          assert 'render_artwork(story,' in s
+          assert 'write_artwork_concat(target,' in s
+          assert 'overlay_filter(ass)' in s
+          from reel_r51_design import SUBTITLE_BOX
+          assert SUBTITLE_BOX == (65, 1225, 1015, 1505)
           print('R51 layout integrated with R50-style editorial renderer')
           PY

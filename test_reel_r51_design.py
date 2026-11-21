@@ -39,11 +39,11 @@ class R51DesignTests(unittest.TestCase):
             self.assertEqual(out.size,(1080,1920))
             self.assertEqual(out.getpixel((100,100)),(12,55,155))
             self.assertEqual(out.getpixel((75,1110)),PAPER)
-            self.assertEqual(out.getpixel((75,1250)),PAPER)
-            self.assertEqual(out.getpixel((75,960)),CAPTION_DARK)
-            self.assertEqual(out.getpixel((75,1400)),PAPER)
+            self.assertEqual(out.getpixel((75,1250)),CAPTION_DARK)
+            self.assertEqual(out.getpixel((75,960)),PAPER)
+            self.assertEqual(out.getpixel((75,1400)),CAPTION_DARK)
             self.assertEqual(out.getpixel((75,1650)),PAPER)
-        self.assertEqual((SUBTITLE_BOX[1]+SUBTITLE_BOX[3])//2,960)
+        self.assertEqual((SUBTITLE_BOX[1]+SUBTITLE_BOX[3])//2,1365)
         self.assertLess(SUBTITLE_BOX[3],1605)
 
     def test_caption_increase_preserves_exact_karaoke_words_and_starts(self):
@@ -61,6 +61,7 @@ class R51DesignTests(unittest.TestCase):
         self.assertIn(r"{\kf60}reporting",output)
         style=next(x for x in output.splitlines() if x.startswith("Style: Words,")).split(":",1)[1].strip().split(",")
         self.assertEqual(style[2],str(CAPTION_FONT_SIZE))
+        self.assertIn(r"{\an5\pos(540,1365)}", output)
         self.assertEqual(style[18],"5")
         self.assertEqual(style[19:22],["110","110","0"])
 
