@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - feature/r88-reel-relevance-duplicate-guard-20261121
+      - feature/r90-reel-voice-context-relevance-20261121
       - feature/reels-opt-in
     paths:
       - news_quality.py
