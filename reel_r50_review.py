@@ -95,7 +95,8 @@ def wrap(draw,text,face,width):
             current=word
         else:
             current=test
-    if current:output.append(current)
+    if current:
+        output.append(current)
     return output
 
 def make_logo():
@@ -147,11 +148,6 @@ def draw_frames(stories,folder):
         for line in lines:
             draw.text((72,y),line,font=face,fill=INK)
             y+=92
-        draw.line((72,1045,1008,1045),fill=LINE,width=3)
-        draw.text((72,1080),"THE KEY DETAIL",font=font(26,True),fill=RED)
-        details=wrap(draw,story["deck"],font(35),925)
-        for offset,line in enumerate(details[:3]):
-            draw.text((72,1140+offset*56),line,font=font(35),fill=INK)
         # Keep 1325-1580 clear for service-synchronized captions.
         draw.line((72,1605,1007,1605),fill=LINE,width=3)
         draw.text((72,1641),"REPORTING SOURCE",font=font(23,True),fill=MUTED)
@@ -160,8 +156,8 @@ def draw_frames(stories,folder):
         draw.line((72,1852,1008,1852),fill=RED,width=5)
         dest=folder/f"R50_scene_{i:02d}.png"
         picture.save(dest,optimize=True)
-        # R51 visual update: preserve and emphasize Key Detail with a separate
-        # high-contrast caption band, without moving headline or source credits.
+        # Leave the former key-detail area blank and retain the caption band,
+        # headline, reporting source and editorial disclaimer.
         style_scene(dest, story["deck"], dest)
         frames.append(dest)
     return frames
@@ -202,7 +198,8 @@ def map_chapters(stories,events):
             target=matchmap[ix]
         else:
             neighbors=sorted(matching,key=lambda pair:abs(pair[0]-ix))
-            if not neighbors:raise RuntimeError("No word matching data")
+            if not neighbors:
+                raise RuntimeError("No word matching data")
             target=neighbors[0][1]+(ix-neighbors[0][0])
         target=max(0,min(len(indices)-1,target))
         starts.append(indices[target])
