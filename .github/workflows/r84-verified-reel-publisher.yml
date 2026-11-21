@@ -15,6 +15,9 @@ on:
         description: 'Enter PUBLISH_VERIFIED_R72 for a gated first-live release'
         required: true
         type: string
+  push:
+    branches: [main]
+    paths: ['.github/r92-controlled-first-reel.trigger']
   workflow_run:
     workflows: ['MarketRevamp R72 Daily News Reel Draft (Never Publish)']
     types: [completed]
@@ -58,7 +61,9 @@ jobs:
         run: |
           python - <<'PY'
           import json, os, re
+          from datetime import datetime
           from pathlib import Path
+          from zoneinfo import ZoneInfo
           data=json.loads(Path('r83_reel_autopublish_state.json').read_text())
           enabled=False
           mode=''
@@ -66,7 +71,26 @@ jobs:
           sha=''
           event=os.getenv('EVENT_NAME')
           if os.getenv('CURRENT_REF')=='refs/heads/main' and data.get('owner_authorized') is True and data.get('policy')=='owner_authorized_source_attribution_v1':
-              if event=='workflow_dispatch':
+              if event=='push':
+                  trigger_path=Path('.github/r92-controlled-first-reel.trigger')
+                  if trigger_path.is_file():
+                      trigger=json.loads(trigger_path.read_text())
+                      today=datetime.now(ZoneInfo('America/Toronto')).date().isoformat()
+                      expected={'intent':'one-time-controlled-R72-first-live',
+                                'toronto_date':today,
+                                'source_run_id':trigger.get('source_run_id'),
+                                'approved_video_sha256':trigger.get('approved_video_sha256'),
+                                'publish_to_instagram':True}
+                      mode='first'
+                      source=str(trigger.get('source_run_id',''))
+                      sha=str(trigger.get('approved_video_sha256',''))
+                      enabled=(trigger==expected and
+                               data.get('controlled_first_live') is True and
+                               data.get('daily_enabled') is False and
+                               data.get('first_video_sha256')==sha and
+                               re.fullmatch(r'[a-f0-9]{64}',sha) is not None and
+                               source.isdigit())
+              elif event=='workflow_dispatch':
                   mode='first'
                   source=os.getenv('USER_SOURCE_RUN_ID','')
                   sha=os.getenv('USER_APPROVED_SHA','')
