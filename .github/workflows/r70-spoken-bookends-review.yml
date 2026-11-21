@@ -5,6 +5,7 @@ on:
     branches:
       - feature/r70-spoken-hook-follow-cta-20261121
       - feature/reels-opt-in
+      - feature/r71-shorter-opening-hook-20261121
     paths:
       - 'reel_bookends.py'
       - 'reel_artwork.py'
@@ -32,7 +33,7 @@ jobs:
       - name: Enforce experimental branch and nonpublishing safety
         run: |
           case "$GITHUB_REF" in
-            refs/heads/feature/r70-spoken-hook-follow-cta-20261121|refs/heads/feature/reels-opt-in) ;;
+            refs/heads/feature/r70-spoken-hook-follow-cta-20261121|refs/heads/feature/reels-opt-in|refs/heads/feature/r71-shorter-opening-hook-20261121) ;;
             *) exit 1 ;;
           esac
           test "$REEL_ENABLED" = false
