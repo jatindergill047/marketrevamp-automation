@@ -198,7 +198,8 @@ def map_chapters(stories,events):
             target=matchmap[ix]
         else:
             neighbors=sorted(matching,key=lambda pair:abs(pair[0]-ix))
-            if not neighbors:raise RuntimeError("No word matching data")
+            if not neighbors:
+                raise RuntimeError("No word matching data")
             target=neighbors[0][1]+(ix-neighbors[0][0])
         target=max(0,min(len(indices)-1,target))
         starts.append(indices[target])
