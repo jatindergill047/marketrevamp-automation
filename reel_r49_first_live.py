@@ -20,6 +20,7 @@ def _require(test, reason):
 def _check_article_reuse(stories, history):
     """Reject recycled news articles from published Reels *or* carousels."""
     current = {normalize_article_url(s["source_url"]) for s in stories}
+    _require(len(current) == 7, "Reel sources must be unique after canonicalization")
     for record in history.values():
         _require(isinstance(record, dict), "Malformed publishing history")
         if record.get("status") != "published":
@@ -57,7 +58,7 @@ def publish_once(metadata, stories, video_path, history, *, approved_fingerprint
     from urllib.parse import urlsplit
     parts = urlsplit(video_url)
     _require(parts.scheme == "https" and parts.hostname == "res.cloudinary.com"
-             and "/video/upload/" in parts.path
+             and parts.path.startswith("/" + cloud + "/video/upload/")
              and parts.path.lower().endswith(".mp4")
              and not parts.query and not parts.fragment,
              "Cloudinary URL is not a valid public MP4")
