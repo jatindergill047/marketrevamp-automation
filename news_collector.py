@@ -375,7 +375,7 @@ def published_article_urls(history_path=Path("instagram_publish_history.json")):
     return published
 
 
-def collect_news(history_path=Path("instagram_publish_history.json")):
+def collect_news(history_path=Path("instagram_publish_history.json"), extractor=None):
     articles = []
     cutoff = datetime.now(timezone.utc) - timedelta(hours=36)
     feed_status = {}
@@ -453,7 +453,7 @@ def collect_news(history_path=Path("instagram_publish_history.json")):
     selected = select_usable(
         eligible,
         infer_category,
-        fetch_article_text,
+        extractor if extractor is not None else fetch_article_text,
         generate_summary,
         SUMMARY_MIN_WORDS,
         SUMMARY_MAX_WORDS,
