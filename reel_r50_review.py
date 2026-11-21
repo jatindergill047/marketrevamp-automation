@@ -323,7 +323,7 @@ def run():
     qa={
         "version":"R50",
         "design_revision":"R51",
-        "key_detail_visible":True,
+        "key_detail_visible":False,
         "caption_font_size_px":CAPTION_FONT_SIZE,
         "toronto_date":R50_DATE,
         "status":"review_only",
