@@ -375,7 +375,7 @@ def published_article_urls(history_path=Path("instagram_publish_history.json")):
     return published
 
 
-def collect_news():
+def collect_news(history_path=Path("instagram_publish_history.json")):
     articles = []
     cutoff = datetime.now(timezone.utc) - timedelta(hours=36)
     feed_status = {}
@@ -438,7 +438,7 @@ def collect_news():
             unique.append(article)
 
 
-    published_urls = published_article_urls()
+    published_urls = published_article_urls(history_path)
     eligible = [
         article for article in unique
         if article["score"] > 0
