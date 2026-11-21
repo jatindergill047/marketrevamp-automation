@@ -1,0 +1,54 @@
+name: R106 No-Artifact Daily Reel Gate (Offline)
+
+on:
+  push:
+    branches: [feature/r106-ignore-skipped-dst-draft-artifacts-20261121]
+    paths:
+      - reel_r92_release_gate.py
+      - test_reel_r92_release_gate.py
+      - .github/workflows/r84-verified-reel-publisher.yml
+      - .github/workflows/r106-no-artifact-release-gate.yml
+  pull_request:
+    paths:
+      - reel_r92_release_gate.py
+      - test_reel_r92_release_gate.py
+      - .github/workflows/r84-verified-reel-publisher.yml
+      - .github/workflows/r106-no-artifact-release-gate.yml
+
+permissions:
+  contents: read
+
+jobs:
+  refuse-empty-news-source:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      INSTAGRAM_PUBLISH_ENABLED: 'false'
+      REEL_UPLOAD_ENABLED: 'false'
+      REEL_FIRST_LIVE_ENABLED: 'false'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+      - name: Install pinned offline source dependencies
+        run: pip install -r requirements.lock
+      - name: Test no-artifact DST/empty-source skip and successful actual-artifact gate
+        run: |
+          python -m unittest -v test_reel_r92_release_gate.py test_reel_r84_publish_job.py
+          python - <<'PY'
+          from pathlib import Path
+          y=Path('.github/workflows/r84-verified-reel-publisher.yml').read_text()
+          assert 'SOURCE_ARTIFACT_VERIFIED: ${{ steps.source_artifact.outputs.available }}' in y
+          assert "if [ \"$count\" -eq 1 ]" in y
+          assert 'expired == false' in y
+          assert 'INSTAGRAM_PUBLISH_ENABLED' in y
+          print('Empty DST draft can never start the Instagram release job')
+          PY
+          test "$INSTAGRAM_PUBLISH_ENABLED" = false
+          test "$REEL_UPLOAD_ENABLED" = false
+          test "$REEL_FIRST_LIVE_ENABLED" = false
+      - name: Critical Python security lint
+        run: |
+          pip install ruff==0.14.0
+          ruff check --select E7,E9,F63,F7,F82 reel_r92_release_gate.py test_reel_r92_release_gate.py
