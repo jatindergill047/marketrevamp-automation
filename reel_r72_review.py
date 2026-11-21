@@ -13,7 +13,6 @@ from pathlib import Path
 from urllib.parse import urlsplit
 
 from PIL import Image, ImageDraw, ImageFont
-from edge_tts.exceptions import NoAudioReceived
 
 from r67_weekday_news import (TORONTO, REQUIRED_STORIES, MAX_AGE_HOURS,
                               _source, load_published_history)
@@ -154,6 +153,9 @@ def prepare_stories(package, published_urls, *, now):
 async def synthesize_with_retry(script, audio_path, boundaries_path,
                                 *, attempts=3, sleep=asyncio.sleep):
     """Retry transient neural voice failures without accepting partial audio."""
+    # Edge TTS is installed by the renderer, not by source-only test jobs.
+    from edge_tts.exceptions import NoAudioReceived
+
     if not 1 <= attempts <= 3:
         raise ValueError("Neural TTS retry count must remain bounded")
     for number in range(attempts):
