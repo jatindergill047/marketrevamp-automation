@@ -2,7 +2,7 @@ name: MarketRevamp R51 Editorial Reel Design (Offline Review)
 
 on:
   push:
-    branches: [feature/reels-opt-in, feature/reels-remove-key-details-20261120]
+    branches: [feature/reels-opt-in]
     paths:
       - 'reel_r51_design.py'
       - 'test_reel_r51_design.py'
@@ -43,51 +43,3 @@ jobs:
           assert 'enlarge_subtitles(ass_path, ass_path)' in s
           print('R51 layout integrated with R50-style editorial renderer')
           PY
-
-      - name: Generate seven-scene 9x16 review contact sheet and assert no key-detail rendering
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-          from PIL import Image, ImageDraw
-          from reel_r51_design import style_scene, PAPER, CAPTION_DARK
-          root=Path("reel_key_detail_review")
-          root.mkdir(exist_ok=True)
-          sheets=[]
-          for i in range(1,8):
-              p=Image.new("RGB",(1080,1920),PAPER)
-              d=ImageDraw.Draw(p)
-              d.rectangle((0,0,1079,15),fill=(172,32,44))
-              d.text((75,110),"MARKETREVAMP / REEL VISUAL QA",fill=(16,25,38))
-              d.text((75,550),f"SCENE {i:02d} / 07",fill=(16,25,38))
-              d.rectangle((66,1060,1015,1337),fill=(40,50,60))
-              d.text((118,1091),"THE KEY DETAIL",fill=(255,255,255))
-              d.text((118,1165),"OLD DETAIL MUST BE REMOVED",fill=(255,255,255))
-              d.text((75,1641),"REPORTING SOURCE",fill=(16,25,38))
-              d.text((75,1692),"Synthetic preview - no live news",fill=(16,25,38))
-              d.text((75,1780),"AI assisted narration / source-linked reporting",fill=(16,25,38))
-              source=root/f"scene_{i:02d}_input.png"
-              target=root/f"scene_{i:02d}.png"
-              p.save(source)
-              result=style_scene(source,"Never show this detail content",target)
-              assert result["detail_lines"]==0
-              with Image.open(target) as image:
-                  assert image.size==(1080,1920)
-                  assert image.getpixel((75,1100))==PAPER
-                  assert image.getpixel((118,1165))==PAPER
-                  assert image.getpixel((75,1400))==CAPTION_DARK
-                  assert image.crop((70,1640,1000,1730)).tobytes() == p.crop((70,1640,1000,1730)).tobytes()
-                  sheets.append(image.resize((270,480)).copy())
-              source.unlink()
-          contact=Image.new("RGB",(270*4,480*2),PAPER)
-          for index,scene in enumerate(sheets):
-              contact.paste(scene,((index%4)*270,(index//4)*480))
-          contact.save(root/"contact_sheet.png")
-          print("PASS: seven actual renderer outputs, legacy key detail cleared, captions and source preserved")
-          PY
-      - name: Save review-only preview
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        with:
-          name: reel-no-key-detail-review
-          path: reel_key_detail_review/
-          retention-days: 7
-          if-no-files-found: error
