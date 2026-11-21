@@ -31,7 +31,7 @@ class SpokenBookendTests(unittest.TestCase):
                          ["intro"] + ["story"] * 7 + ["outro"])
         self.assertEqual(segments[0]["narration_text"], HOOK_LINE)
         self.assertEqual(segments[-1]["narration_text"], FOLLOW_LINE)
-        self.assertTrue(HOOK_LINE.startswith("You're watching MarketRevamp."))
+        self.assertEqual(HOOK_LINE, "Here's what's making headlines today.")
         self.assertIn("Follow MarketRevamp", FOLLOW_LINE)
         self.assertEqual([s["narration_text"] for s in segments[1:-1]],
                          [s["narration_text"] for s in self.stories])
@@ -69,6 +69,8 @@ class SpokenBookendTests(unittest.TestCase):
         self.assertEqual(qa["presentation_segments"], 9)
         self.assertEqual(qa["story_count"], 7)
         self.assertEqual(qa["intro_seconds"], 4)
+        self.assertEqual(narration_segments(self.stories)[0]["narration_text"],
+                         "Here's what's making headlines today.")
         self.assertEqual(qa["outro_seconds"], 4)
         build_bookends(Image.new("RGB", (400, 70), "white"), self.folder, "R50")
         for i in range(1, 8):
@@ -92,6 +94,8 @@ class SpokenBookendTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 validate_bookend_timing(invalid)
         self.assertEqual(MAX_DURATION_SECONDS, 90.0)
+        self.assertEqual(validate_bookend_timing([0, 1.8, 11.8, 21.8, 31.8,
+                         41.8, 51.8, 61.8, 71.8, 75.8])["intro_seconds"], 1.8)
 
 
 if __name__ == "__main__":
