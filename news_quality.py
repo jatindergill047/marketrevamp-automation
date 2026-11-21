@@ -217,7 +217,8 @@ def screen_summary(summary, article_text, headline=""):
 
 
 def select_usable(candidates, infer_category, extract, summarize,
-                  min_words=30, max_words=90, require_quote=False):
+                  min_words=30, max_words=90, require_quote=False,
+                  story_guard=None):
     """Return seven source-screened stories; optionally require a direct quote.
 
     Under the one-time quote-first opt-in, scan up to twelve additional
@@ -279,6 +280,8 @@ def select_usable(candidates, infer_category, extract, summarize,
         # Recording source provenance is not a cross-source verification claim.
         story["source_domain"] = source_domain(story["url"])
         story.update(screening)
+        if story_guard is not None and not story_guard(story, selected):
+            continue
         has_quote = bool(best_quote(text, story["title"])) if require_quote else False
         if searching_backup:
             if not has_quote:
