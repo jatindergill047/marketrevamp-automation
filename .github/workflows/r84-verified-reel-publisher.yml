@@ -15,6 +15,9 @@ on:
         description: 'Enter PUBLISH_VERIFIED_R72 for a gated first-live release'
         required: true
         type: string
+  push:
+    branches: [main]
+    paths: ['.github/r92-controlled-first-reel.trigger']
   workflow_run:
     workflows: ['MarketRevamp R72 Daily News Reel Draft (Never Publish)']
     types: [completed]
@@ -55,44 +58,7 @@ jobs:
           USER_APPROVED_SHA: ${{ inputs.approved_video_sha256 }}
           USER_CONFIRMATION: ${{ inputs.confirmation }}
           CURRENT_REF: ${{ github.ref }}
-        run: |
-          python - <<'PY'
-          import json, os, re
-          from pathlib import Path
-          data=json.loads(Path('r83_reel_autopublish_state.json').read_text())
-          enabled=False
-          mode=''
-          source=''
-          sha=''
-          event=os.getenv('EVENT_NAME')
-          if os.getenv('CURRENT_REF')=='refs/heads/main' and data.get('owner_authorized') is True and data.get('policy')=='owner_authorized_source_attribution_v1':
-              if event=='workflow_dispatch':
-                  mode='first'
-                  source=os.getenv('USER_SOURCE_RUN_ID','')
-                  sha=os.getenv('USER_APPROVED_SHA','')
-                  enabled=(data.get('controlled_first_live') is True and
-                           data.get('first_video_sha256')==sha and
-                           re.fullmatch(r'[a-f0-9]{64}', sha) is not None and
-                           source.isdigit() and
-                           os.getenv('USER_CONFIRMATION')=='PUBLISH_VERIFIED_R72')
-              elif event=='workflow_run':
-                  mode='daily'
-                  source=os.getenv('SOURCE_JOB_ID','')
-                  enabled=(data.get('daily_enabled') is True and
-                           bool(str(data.get('verified_first_media_id','')).isdigit()) and
-                           os.getenv('SOURCE_JOB_EVENT') in ('schedule','workflow_dispatch') and
-                           os.getenv('SOURCE_JOB_CONCLUSION')=='success' and
-                           os.getenv('SOURCE_JOB_BRANCH')=='main' and
-                           os.getenv('SOURCE_JOB_REPO')==os.getenv('EXPECTED_REPO') and
-                           source.isdigit())
-          with Path(os.environ['GITHUB_OUTPUT']).open('a') as output:
-              output.write('enabled='+str(enabled).lower()+'\n')
-              output.write('mode='+mode+'\n')
-              output.write('source_run_id='+source+'\n')
-              output.write('approved_sha='+sha+'\n')
-          print('R84 gate status:', 'enabled' if enabled else 'disabled',
-                'mode:',mode if mode else 'none')
-          PY
+        run: python reel_r92_release_gate.py
 
   publish-reel:
     needs: gate
