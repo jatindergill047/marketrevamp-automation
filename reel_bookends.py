@@ -9,7 +9,7 @@ from PIL import Image, ImageDraw, ImageFont
 
 from reel_r51_design import CAPTION_DARK, PAPER, SUBTITLE_BOX
 
-HOOK_LINE = "You're watching MarketRevamp. Here are today's top stories in AI, tech, crypto, and markets."
+HOOK_LINE = "Here's what's making headlines today."
 FOLLOW_LINE = "Follow MarketRevamp for quick, clear updates. Stay informed."
 MAX_DURATION_SECONDS = 90.0
 TOTAL_SEGMENTS = 9
@@ -97,7 +97,7 @@ def validate_bookend_timing(cuts):
     if len(cuts) != TOTAL_SEGMENTS + 1:
         raise ValueError("Hooked Reel requires nine segment starts and one end")
     durations = [b-a for a, b in zip(cuts, cuts[1:])]
-    if not 2.2 <= durations[0] <= 8:
+    if not 1.3 <= durations[0] <= 5:
         raise ValueError("Intro hook timing outside expected bounds")
     if not 2.0 <= durations[-1] <= 8:
         raise ValueError("Follow outro timing outside expected bounds")
