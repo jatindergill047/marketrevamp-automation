@@ -25,7 +25,7 @@ from reel_bookends import (HOOK_LINE, FOLLOW_LINE, build_bookends,
                            validate_bookend_timing)
 from reel_r51_design import CAPTION_FONT_SIZE
 from reel_script import clean_text
-from news_quality import same_event
+from reel_editorial_quality import same_reel_event, summary_supports_headline
 
 MAX_TOTAL_STORY_WORDS = 180
 MIN_TOTAL_STORY_WORDS = 95
@@ -93,12 +93,14 @@ def prepare_stories(package, published_urls, *, now):
             raise ValueError("Category/summary not supported")
         if not 30 <= len(summary.split()) <= 90:
             raise ValueError("Summary outside source-screened word range")
+        if not summary_supports_headline(title, summary):
+            raise ValueError("Unrelated source paragraph cannot appear in Reel")
         stamp = datetime.fromisoformat(item.get("published_at", ""))
         if stamp.tzinfo is None or not 0 <= (now-stamp).total_seconds()/3600 <= MAX_AGE_HOURS:
             raise ValueError("Stale or future source article")
         if url in seen or url in published_urls:
             raise ValueError("Previously published or repeated URL in Reel")
-        if any(same_event(title, previous["headline"]) for previous in stories):
+        if any(same_reel_event(title, previous["headline"]) for previous in stories):
             raise ValueError("Near-duplicate news event in Reel")
         seen.add(url)
         publisher = publisher_from_url(url)

@@ -27,11 +27,12 @@ SUMMARY = (SENTENCE + " " + SENTENCE)
 
 
 def story(i):
+    relevant_summary = f"According to the reporting publisher, {HEADLINES[i]}. " + SENTENCE
     return {
         "title": HEADLINES[i], "url": f"https://example.org/news/{i}?utm_source=test",
         "selected_category": TOPICS[i % 4],
         "published": (NOW - timedelta(hours=i+1)).isoformat(),
-        "summary": SUMMARY, "article_text": SUMMARY,
+        "summary": relevant_summary, "article_text": relevant_summary,
         "summary_screening": {"passed": True, "reason": "source_matched_not_fact_checked"},
         "screening_passed": True, "fact_checked": False,
         "feed_name": "Offline test publisher",
@@ -97,6 +98,8 @@ class R67Tests(unittest.TestCase):
     def test_duplicate_story_event_rejected(self):
         data=copy.deepcopy(self.package)
         data["selected_stories"][1]["title"] = data["selected_stories"][0]["title"]
+        data["selected_stories"][1]["summary"] = data["selected_stories"][0]["summary"]
+        data["selected_stories"][1]["article_text"] = data["selected_stories"][0]["article_text"]
         with self.assertRaisesRegex(ValueError, "Overlapping"):
             self.review(data)
 
@@ -143,6 +146,7 @@ class R67Tests(unittest.TestCase):
                     self.assertEqual(collect.call_args.kwargs["history_path"],
                                      Path("history.json"))
                     self.assertTrue(callable(collect.call_args.kwargs["extractor"]))
+                    self.assertTrue(callable(collect.call_args.kwargs["story_guard"]))
                     self.assertEqual(json.loads(Path("output.json").read_text()),
                                      {"status": "review_only",
                                       "toronto_date": "2026-11-21",

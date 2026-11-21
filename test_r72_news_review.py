@@ -78,6 +78,7 @@ class R72NewsReviewTests(unittest.TestCase):
             prepare_stories(data, set(), now=NOW)
         data = copy.deepcopy(original)
         data["stories"][1]["headline"] = data["stories"][0]["headline"]
+        data["stories"][1]["summary"] = data["stories"][0]["summary"]
         with self.assertRaisesRegex(ValueError, "Near-duplicate"):
             prepare_stories(data, set(), now=NOW)
 
