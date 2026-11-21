@@ -1,0 +1,45 @@
+name: R99 One Named Event per Daily Reel (Review Only)
+
+on:
+  push:
+    branches:
+      - feature/r99-one-entity-per-reel-20261121
+      - feature/reels-opt-in
+    paths:
+      - reel_editorial_quality.py
+      - test_reel_editorial_quality.py
+      - r67_weekday_news.py
+      - reel_r72_review.py
+      - .github/workflows/r99-one-entity-news.yml
+
+permissions:
+  contents: read
+
+jobs:
+  editorial-dedup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      REEL_ENABLED: 'false'
+      REEL_UPLOAD_ENABLED: 'false'
+      REEL_FIRST_LIVE_ENABLED: 'false'
+      INSTAGRAM_PUBLISH_ENABLED: 'false'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+      - name: Install pinned source and Reel dependencies
+        run: |
+          pip install -r requirements.lock
+          pip install -r requirements.reel.txt
+          sudo apt-get update -qq
+          sudo apt-get install -y fonts-dejavu-core
+      - name: Reject repeat brand and preserve seven-source integrity
+        run: |
+          python -m unittest -v test_reel_editorial_quality.py test_r67_weekday_news.py test_r72_news_review.py
+          test "$INSTAGRAM_PUBLISH_ENABLED" = false
+      - name: Critical Python lint
+        run: |
+          pip install ruff==0.14.0
+          ruff check --select E7,E9,F63,F7,F82 reel_editorial_quality.py test_reel_editorial_quality.py
