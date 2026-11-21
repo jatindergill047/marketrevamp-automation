@@ -7,14 +7,18 @@ on:
       - reel_daily_release_policy.py
       - test_reel_daily_release_policy.py
       - r83_reel_autopublish_state.json
+      - reel_rollout_state.py
+      - test_reel_rollout_state.py
       - .github/workflows/r83-reel-auto-release-safety.yml
   push:
-    branches: [feature/r83-staged-daily-reel-release-gates-20261121]
+    branches: [feature/r83-staged-daily-reel-release-gates-20261121, feature/r96-state-aware-reel-activation-ci-20261121]
     paths:
       - reel_editorial_quality.py
       - reel_daily_release_policy.py
       - test_reel_daily_release_policy.py
       - r83_reel_autopublish_state.json
+      - reel_rollout_state.py
+      - test_reel_rollout_state.py
       - .github/workflows/r83-reel-auto-release-safety.yml
 
 permissions:
@@ -36,7 +40,13 @@ jobs:
           python-version: '3.12'
       - name: Install release gate dependencies
         run: pip install -r requirements.lock
-      - name: Confirm all public publishing flags and activation state are disabled
+      - name: Read durable publishing history for possible verified-daily state
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: publishing-history
+          path: publishing-history
+          persist-credentials: false
+      - name: Validate immutable release stage and disabled CI publishing flags
         run: |
           test "$REEL_ENABLED" = false
           test "$REEL_UPLOAD_ENABLED" = false
@@ -44,19 +54,35 @@ jobs:
           test "$INSTAGRAM_PUBLISH_ENABLED" = false
           python - <<'PY'
           import json
-          p=json.load(open('r83_reel_autopublish_state.json'))
-          assert p['policy']=='owner_authorized_source_attribution_v1'
-          assert p['controlled_first_live'] is False
-          assert p['daily_enabled'] is False
-          assert p['verified_first_media_id'] is None
-          assert p['first_video_sha256'] is None
-          print('Public first-live and recurring Reel auto-post remain BLOCKED')
+          from datetime import datetime
+          from pathlib import Path
+          from zoneinfo import ZoneInfo
+          from reel_rollout_state import rollout_state_valid
+          p=json.loads(Path('r83_reel_autopublish_state.json').read_text())
+          mode=rollout_state_valid(p)
+          if mode=='first':
+              t=json.loads(Path('.github/r92-controlled-first-reel.trigger').read_text())
+              assert t=={
+                  'intent':'one-time-controlled-R72-first-live',
+                  'toronto_date':datetime.now(ZoneInfo('America/Toronto')).date().isoformat(),
+                  'source_run_id':t.get('source_run_id'),
+                  'approved_video_sha256':p['first_video_sha256'],
+                  'publish_to_instagram':True}
+              assert str(t['source_run_id']).isdigit()
+          if mode=='daily':
+              h=json.loads(Path('publishing-history/instagram_publish_history.json').read_text())
+              assert any(isinstance(v,dict) and v.get('media_kind')=='reel'
+                  and v.get('status')=='published'
+                  and str(v.get('instagram_media_id'))==p['verified_first_media_id']
+                  and v.get('instagram_readback_verified') is True
+                  and v.get('template_version')=='R72' for v in h.values())
+          print('R83 offline release state:',mode)
           PY
       - name: Test exact video release, hard-source gating and first-live readback lock
         run: |
-          python -m py_compile reel_editorial_quality.py reel_daily_release_policy.py test_reel_daily_release_policy.py
-          python -m unittest -v test_reel_daily_release_policy.py test_reel_r46_launch_gate.py test_reel_r49_first_live.py
+          python -m py_compile reel_rollout_state.py test_reel_rollout_state.py reel_editorial_quality.py reel_daily_release_policy.py test_reel_daily_release_policy.py
+          python -m unittest -v test_reel_rollout_state.py test_reel_daily_release_policy.py test_reel_r46_launch_gate.py test_reel_r49_first_live.py
       - name: Check security-critical Python syntax and undefined references
         run: |
           pip install ruff==0.14.0
-          ruff check --select E7,E9,F63,F7,F82 reel_editorial_quality.py reel_daily_release_policy.py test_reel_daily_release_policy.py
+          ruff check --select E7,E9,F63,F7,F82 reel_rollout_state.py test_reel_rollout_state.py reel_editorial_quality.py reel_daily_release_policy.py test_reel_daily_release_policy.py
