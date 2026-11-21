@@ -44,8 +44,8 @@ def sentence_supports_headline(headline, sentence):
     anchor = story_terms(headline) - {"your", "here", "are", "can", "out", "top"}
     if anchor & story_terms(sentence):
         return True
-    if re.search(r"\\bprediction markets?\\b", headline, re.I) and re.search(
-            r"\\b(?:kalshi|cftc|event contracts?)\\b", sentence, re.I):
+    if re.search(r"\bprediction markets?\b", headline, re.I) and re.search(
+            r"\b(?:kalshi|cftc|event contracts?)\b", sentence, re.I):
         return True
     return False
 
