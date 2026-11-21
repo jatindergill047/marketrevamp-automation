@@ -98,6 +98,8 @@ class R67Tests(unittest.TestCase):
     def test_duplicate_story_event_rejected(self):
         data=copy.deepcopy(self.package)
         data["selected_stories"][1]["title"] = data["selected_stories"][0]["title"]
+        data["selected_stories"][1]["summary"] = data["selected_stories"][0]["summary"]
+        data["selected_stories"][1]["article_text"] = data["selected_stories"][0]["article_text"]
         with self.assertRaisesRegex(ValueError, "Overlapping"):
             self.review(data)
 
