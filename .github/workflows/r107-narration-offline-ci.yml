@@ -49,3 +49,78 @@ jobs:
           test "$REEL_FIRST_LIVE_ENABLED" = false
           test "$INSTAGRAM_PUBLISH_ENABLED" = false
           echo 'Offline narrative tests only; publication intentionally unavailable.'
+
+  current-news-audio-proof:
+    needs: offline-narration
+    runs-on: ubuntu-latest
+    timeout-minutes: 26
+    permissions:
+      contents: read
+      actions: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REEL_ENABLED: 'false'
+      REEL_UPLOAD_ENABLED: 'false'
+      INSTAGRAM_PUBLISH_ENABLED: 'false'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+      - name: Install pinned video and narration dependencies
+        run: |
+          pip install -r requirements.lock
+          pip install -r requirements.reel.txt
+          sudo apt-get update -qq
+          sudo apt-get install -y ffmpeg fonts-dejavu-core
+      - name: Download the already-published November 21 source fixture (READ ONLY)
+        run: |
+          gh run download 44950454444 --repo "$GITHUB_REPOSITORY" \
+            --name marketrevamp-r72-fresh-news-draft-not-published --dir .
+          test -s r67_review/review_sources.json
+      - name: Re-render narration only in an isolated nonproduction workflow
+        timeout-minutes: 17
+        run: |
+          python - <<'PY'
+          import json
+          from datetime import datetime
+          from pathlib import Path
+          from reel_r72_review import prepare_stories, render_review
+          data=json.loads(Path("r67_review/review_sources.json").read_text())
+          when=datetime.fromisoformat(data["collected_at"])
+          assert data["status"] == "review_only" and data["toronto_date"] == "2026-11-21"
+          # Historical source is an immutable, already-public review fixture.
+          # No new story selection, no live history writes, no Instagram call.
+          stories=prepare_stories(data,set(),now=when)
+          assert len(stories)==7
+          assert all(not s["narration_text"].startswith("According to ") for s in stories)
+          assert any(len(s["narration_text"].split())>len(s["headline"].split()) for s in stories)
+          folder=Path("r107_review")
+          folder.mkdir(exist_ok=True)
+          (folder/"REVIEW_ONLY_DO_NOT_PUBLISH.txt").write_text(
+              "R107 comparison on historical Nov 21 2026 sources. Never approved for public release.\n")
+          qa=render_review(stories,output_dir=folder,toronto_date=data["toronto_date"])
+          assert qa["scene_pause_seconds"]==0.16
+          assert qa["subtitle_spelling_restored"] is True
+          assert qa["spoken_source_prefixes"]==0
+          assert qa["status"]=="review_only" and qa["published"] is False
+          assert 45 <= qa["duration_seconds"] <= 90
+          subtitles=(folder/"r72_subtitles.ass").read_text()
+          assert "an-THROP-ik" not in subtitles
+          print("R107 SOURCE-RENDERED AUDIO QA (UNPUBLISHED):",qa["duration_seconds"],qa["alignment_token_ratio"])
+          PY
+      - name: Upload review-only audio, video, subtitles and QA
+        if: success()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: r107-staging-reel-never-publish
+          path: |
+            r107_review/REVIEW_ONLY_DO_NOT_PUBLISH.txt
+            r107_review/r72_qa.json
+            r107_review/r72_subtitles.ass
+            r107_review/r72_master_audio.wav
+            r107_review/marketrevamp-r72-real-news-review-only.mp4
+          retention-days: 7
+          if-no-files-found: error
