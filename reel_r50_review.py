@@ -155,7 +155,7 @@ def draw_frames(stories,folder):
         draw.line((72,1605,1007,1605),fill=LINE,width=3)
         draw.text((72,1641),"REPORTING SOURCE",font=font(23,True),fill=MUTED)
         draw.text((72,1692),story["source_name"],font=font(34,True),fill=INK)
-        draw.text((72,1780),"AI narration • Editorial review pending",font=font(23),fill=MUTED)
+        draw.text((72,1780), "Market news • Not financial advice" if i == 7 else "AI-assisted narration  •  Source-linked reporting", font=font(23), fill=MUTED)
         draw.line((72,1852,1008,1852),fill=RED,width=5)
         dest=folder/f"R50_scene_{i:02d}.png"
         picture.save(dest,optimize=True)
@@ -240,7 +240,12 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
             nextstart=batch[k+1]["start_seconds"] if k+1<len(batch) else end/scale
             cs=max(2,round((nextstart-event["start_seconds"])*scale*100))
             words.append(r"{\kf"+str(cs)+"}"+escape_ass(event["text"]))
-        lines.append(f"Dialogue: 0,{stamp(start)},{stamp(end)},Words,,0,0,0,,{' '.join(words)}\n")
+        displayed=' '.join(words)
+        displayed=re.sub(r'\\{\\\\kf(\\d+)\\}I \\{\\\\kf(\\d+)\\}P \\{\\\\kf(\\d+)\\}O\\b',
+                         lambda m:r'{\\kf'+str(sum(map(int,m.groups())))+'}IPO', displayed)
+        displayed=re.sub(r'\\{\\\\kf(\\d+)\\}A \\{\\\\kf(\\d+)\\}I\\b',
+                         lambda m:r'{\\kf'+str(sum(map(int,m.groups())))+'}AI', displayed)
+        lines.append(f"Dialogue: 0,{stamp(start)},{stamp(end)},Words,,0,0,0,,{displayed}\\n")
         i=j
     ass_path.write_text(header+"".join(lines),encoding="utf-8")
     return len(lines)
@@ -337,6 +342,16 @@ def run():
                      "Approved R50 generation workflow and exact release fingerprint",
                      "Controlled first live posting after approval"]
     }
+    caption_lines=["MARKETREVAMP | NOV 20, 2026","","Seven AI, tech and crypto stories in under 90 seconds:",""]
+    for idx, story in enumerate(stories,1):
+        caption_lines += [f"{idx}. {story['headline']}",f"Source: {story['source_url']}",""]
+    caption_lines += ["AI-generated voiceover. Headlines summarize the linked reporting.",
+                     "Market news is informational only, not financial advice.","",
+                     "#MarketRevamp #AI #TechNews #Blockchain #Bitcoin #CryptoNews"]
+    caption="\\n".join(caption_lines)
+    if len(caption)>2200:
+        raise RuntimeError("Instagram caption exceeds 2200 characters")
+    (target/"R50_instagram_caption.txt").write_text(caption+"\\n",encoding="utf-8")
     (target/"R50_QA.json").write_text(json.dumps(qa,indent=2)+"\n",encoding="utf-8")
     (target/"R50_script_and_sources.json").write_text(json.dumps(data,indent=2)+"\n",encoding="utf-8")
     print("R50_REVIEW_READY",json.dumps({
