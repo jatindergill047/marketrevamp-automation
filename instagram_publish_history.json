@@ -749,6 +749,11 @@
     "instagram_container_id": "18135282538801321",
     "instagram_media_id": "18445124020179151",
     "publish_attempted_at": 1795296139,
-    "published_at": 1795296148
+    "published_at": 1795296148,
+    "template_version": "R72",
+    "release_mode": "first",
+    "instagram_readback_verified": true,
+    "instagram_permalink": "https://www.instagram.com/reel/DgBL0ngDBFa/",
+    "instagram_verified_at": 1795296149
   }
 }
