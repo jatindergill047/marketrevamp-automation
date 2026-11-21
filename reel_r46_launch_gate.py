@@ -100,6 +100,7 @@ def authorize_publication(release, approved_fingerprint, history, now=None):
         if key == fp:
             raise ReleaseBlocked("This exact Reel was already attempted")
         if record.get("media_kind") == "reel" and record.get("toronto_date") == today and \
-                (record.get("status") in ("pending", "published", "unknown") or\n                 bool(record.get("publish_attempted_at"))):
+                (record.get("status") in ("pending", "published", "unknown") or
+                 bool(record.get("publish_attempted_at"))):
             raise ReleaseBlocked("Reel publication already pending or completed for today")
     return True
