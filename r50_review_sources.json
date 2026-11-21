@@ -1,0 +1,87 @@
+{
+  "version": "R50",
+  "toronto_date": "2026-11-20",
+  "status": "review_only",
+  "editorial_approved": false,
+  "published": false,
+  "narration_voice": "en-US-AndrewNeural",
+  "stories": [
+    {
+      "id": "anthropic-founders-ipo",
+      "category": "AI",
+      "headline": "Anthropic Founders Cash Out in Record IPO",
+      "deck": "Seven founders sold nearly $2B in shares as the AI lab listed publicly.",
+      "narration_text": "TechCrunch reports Anthropic's seven founders sold nearly two billion dollars of shares in its record-setting I P O. The listing also highlights enormous future spending needs for the artificial intelligence company.",
+      "source_url": "https://techcrunch.com/2026/11/19/anthropics-7-founders-cashed-out-nearly-2b-in-record-breaking-ipo/",
+      "published_date": "2026-11-19",
+      "source_name": "TechCrunch",
+      "fact_check_status": "source_supported_pending_editorial_approval"
+    },
+    {
+      "id": "fireworks-ai-open-models",
+      "category": "AI",
+      "headline": "Can Smaller AI Models Beat the Big Ones?",
+      "deck": "Fireworks AI says tuned open models can cut business AI costs.",
+      "narration_text": "Fireworks A I argues companies can run smaller, tuned open models instead of always paying for the largest systems. The company is pursuing cheaper enterprise A I despite recent security incidents.",
+      "source_url": "https://techcrunch.com/2026/11/19/anthropic-rival-says-companies-can-mostly-skip-the-pricey-models/",
+      "published_date": "2026-11-19",
+      "source_name": "TechCrunch",
+      "fact_check_status": "source_supported_pending_editorial_approval"
+    },
+    {
+      "id": "spacex-cellular",
+      "category": "TECH",
+      "headline": "SpaceX Plans Rooftop Fix for Cell Dead Zones",
+      "deck": "Proposed micro towers would supplement direct-to-phone satellite signals.",
+      "narration_text": "SpaceX says small rooftop cell towers may fill indoor dead zones that satellites cannot reach. Elon Musk suggests production could begin in twenty twenty-seven, but the hardware is not yet commercially available.",
+      "source_url": "https://techcrunch.com/2026/11/19/elon-musk-says-spacex-has-a-plan-to-eliminate-cell-phone-dead-zones/",
+      "published_date": "2026-11-19",
+      "source_name": "TechCrunch",
+      "fact_check_status": "source_supported_pending_editorial_approval"
+    },
+    {
+      "id": "uber-kids-pilot",
+      "category": "TECH",
+      "headline": "Uber Tests Solo Rides for Kids as Young as 10",
+      "deck": "A limited pilot adds parent booking and more driver safeguards.",
+      "narration_text": "Uber is piloting rides for children as young as ten in three American cities. Parents must book trips, and selected drivers receive extra pay alongside added safety controls.",
+      "source_url": "https://techcrunch.com/2026/11/19/uber-tests-rides-for-kids-as-young-as-10-with-extra-pay-for-drivers/",
+      "published_date": "2026-11-19",
+      "source_name": "TechCrunch",
+      "fact_check_status": "source_supported_pending_editorial_approval"
+    },
+    {
+      "id": "ethereum-glamsterdam",
+      "category": "BLOCKCHAIN",
+      "headline": "Ethereum Glamsterdam Upgrade Delayed to 2027",
+      "deck": "Developers need more time to protect apps from breaking changes.",
+      "narration_text": "Ethereum developers have pushed the Glamsterdam network upgrade into twenty twenty-seven. They need more time to fix smart contracts that could fail under proposed changes to network fees.",
+      "source_url": "https://www.coindesk.com/tech/2026/11/20/ethereum-s-next-big-upgrade-is-pushed-into-2027-by-apps-it-would-break",
+      "published_date": "2026-11-20",
+      "source_name": "CoinDesk",
+      "fact_check_status": "source_supported_pending_editorial_approval"
+    },
+    {
+      "id": "coinbase-prediction-contracts",
+      "category": "CRYPTO",
+      "headline": "Coinbase Eyes Its Own Prediction Contracts",
+      "deck": "A reported 2027 target could lessen reliance on Kalshi.",
+      "narration_text": "Coinbase reportedly aims to launch its own American prediction contracts in the first half of twenty twenty-seven. The plan could reduce its dependence on prediction market partner Kalshi.",
+      "source_url": "https://www.coindesk.com/business/2026/11/20/coinbase-targets-first-half-2027-for-its-own-prediction-market-contracts",
+      "published_date": "2026-11-20",
+      "source_name": "CoinDesk",
+      "fact_check_status": "reported_plan_pending_editorial_approval"
+    },
+    {
+      "id": "bitcoin-selloff",
+      "category": "MARKETS",
+      "headline": "Bitcoin Drops Below $59,000 in Broad Selloff",
+      "deck": "Crypto liquidations added pressure amid selling in tech shares.",
+      "narration_text": "Bitcoin fell below fifty-nine thousand dollars Friday as crypto and technology shares sold off together. Heavy leveraged liquidations added pressure, according to CoinDesk. Prices remain volatile.",
+      "source_url": "https://www.coindesk.com/markets/2026/11/20/bitcoin-plunges-below-usd59-000-as-rush-to-cash-puts-new-bear-market-lows-back-in-play",
+      "published_date": "2026-11-20",
+      "source_name": "CoinDesk",
+      "fact_check_status": "source_supported_pending_editorial_approval"
+    }
+  ]
+}
