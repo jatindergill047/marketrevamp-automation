@@ -75,7 +75,7 @@ jobs:
                   assert image.getpixel((75,1100))==PAPER
                   assert image.getpixel((118,1165))==PAPER
                   assert image.getpixel((75,1400))==CAPTION_DARK
-                  assert image.getpixel((75,1692)) != PAPER
+                  assert image.crop((70,1640,1000,1730)).tobytes() == p.crop((70,1640,1000,1730)).tobytes()
                   sheets.append(image.resize((270,480)).copy())
               source.unlink()
           contact=Image.new("RGB",(270*4,480*2),PAPER)
