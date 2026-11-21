@@ -12,6 +12,7 @@ from urllib.parse import urlsplit
 from zoneinfo import ZoneInfo
 
 from PIL import Image, ImageDraw, ImageFont
+from reel_r51_design import style_scene, enlarge_subtitles, CAPTION_FONT_SIZE
 
 PAPER=(248,247,244)
 INK=(16,25,38)
@@ -159,6 +160,9 @@ def draw_frames(stories,folder):
         draw.line((72,1852,1008,1852),fill=RED,width=5)
         dest=folder/f"R50_scene_{i:02d}.png"
         picture.save(dest,optimize=True)
+        # R51 visual update: preserve and emphasize Key Detail with a separate
+        # high-contrast caption band, without moving headline or source credits.
+        style_scene(dest, story["deck"], dest)
         frames.append(dest)
     return frames
 
@@ -248,6 +252,9 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
         lines.append(f"Dialogue: 0,{stamp(start)},{stamp(end)},Words,,0,0,0,,{displayed}\n")
         i=j
     ass_path.write_text(header+"".join(lines),encoding="utf-8")
+    # R51: enlarge from 53px to 72px without altering provider word timings.
+    enlarged = enlarge_subtitles(ass_path, ass_path)
+    assert enlarged["caption_font_size"] == CAPTION_FONT_SIZE
     return len(lines)
 
 def run():
@@ -318,6 +325,9 @@ def run():
     image.save(target/"R50_contact_sheet.jpg",quality=88)
     qa={
         "version":"R50",
+        "design_revision":"R51",
+        "key_detail_visible":True,
+        "caption_font_size_px":CAPTION_FONT_SIZE,
         "toronto_date":R50_DATE,
         "status":"review_only",
         "editorial_approved":False,
