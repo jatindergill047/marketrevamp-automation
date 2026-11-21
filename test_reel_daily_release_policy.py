@@ -20,6 +20,15 @@ NAMES = ("TechCrunch", "Ars Technica", "CoinDesk", "CNBC",
          "BBC News", "CoinDesk", "CNBC")
 CATEGORIES = ("AI", "Technology", "Crypto", "Markets",
               "Technology", "AI", "Markets")
+HEADLINES = (
+    "OpenAI publishes agent orchestration guidance for software developers",
+    "Meta launches additional cybersecurity controls for enterprises",
+    "Bitcoin validators discuss wallet upgrade roadmap",
+    "Federal Reserve reviews inflation forecasting methodology",
+    "Apple publishes updated iPhone operating system security rules",
+    "Google expands multimodal AI research partnerships in education",
+    "Nvidia reports stronger revenue growth in chip sales",
+)
 
 
 def fixtures():
@@ -36,14 +45,14 @@ def fixtures():
                "instagram_published": False, "render_authorized": False,
                "story_count": 7, "stories": []}
     for i, (url, name, category) in enumerate(zip(urls, NAMES, CATEGORIES), 1):
-        headline = f"Research project number {i} reports a new public technology update"
+        headline = HEADLINES[i-1]
         pending["stories"].append({
             "headline": headline, "category": category,
-            "deck": ("According to the original reporting publisher, "
-                     "the relevant technology project has been described in "
-                     "more detail following an initial public announcement, "
-                     "with further research and community review expected "
-                     "through the next several weeks and months."),
+            "deck": (f"According to the original reporting publisher, {headline}. "
+                     "This development was outlined in public source materials "
+                     "and reports discussing the technology sector and market "
+                     "conditions, with further commentary anticipated in the "
+                     "following several weeks of public reporting."),
             "source_url": url, "source_name": name,
             "narration_text": f"According to {name}, {headline.lower()}.",
             "fact_check_status": "source_supported_pending_editorial_approval",
@@ -165,6 +174,35 @@ class AutomatedReleasePolicyTests(unittest.TestCase):
     def test_on_screen_deck_must_match_screened_publisher_text(self):
         self.pending["stories"][0]["deck"] = "A newly invented claim not in the source."
         with self.assertRaisesRegex(ReleaseBlocked, "visible context differs"):
+            self.prepare()
+
+    def test_publication_rejects_irrelevant_though_source_matched_context(self):
+        unrelated = ("Sake, vodka and Krug Champagne will be served. "
+                     "Guests received caviar at the investor gala, while "
+                     "several people took photographs at the party after "
+                     "the ceremony. More food was provided throughout "
+                     "the evening and attendees discussed travel.")
+        self.sources["stories"][0]["summary"] = unrelated
+        self.pending["stories"][0]["deck"] = unrelated
+        with self.assertRaisesRegex(ReleaseBlocked, "unrelated"):
+            self.prepare()
+
+    def test_publication_rejects_two_stories_about_same_named_event(self):
+        first = "Anthropic's record IPO meets volatile technology markets"
+        second = "Why Anthropic blockbuster IPO fell during stock correction"
+        for i, headline in ((0, first), (1, second)):
+            self.pending["stories"][i]["headline"] = headline
+            self.sources["stories"][i]["headline"] = headline
+            context = (f"According to the publisher, {headline}. "
+                       "These public offering developments followed investor "
+                       "reaction to financial market movements this week, "
+                       "and observers are reviewing trading results and "
+                       "company disclosures for additional context.")
+            self.pending["stories"][i]["deck"] = context
+            self.sources["stories"][i]["summary"] = context
+            self.pending["stories"][i]["narration_text"] = (
+                f"According to {self.pending['stories'][i]['source_name']}, {headline}.")
+        with self.assertRaisesRegex(ReleaseBlocked, "duplicates"):
             self.prepare()
 
     def test_fails_on_speech_drift_or_missing_publisher_attribution(self):
