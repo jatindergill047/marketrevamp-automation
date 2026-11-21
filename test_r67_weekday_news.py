@@ -139,7 +139,10 @@ class R67Tests(unittest.TestCase):
                                          "toronto_date": "2026-11-21",
                                          "story_count": 7}):
                     main(["--history", "history.json", "--output", "output.json"])
-                    collect.assert_called_once_with(history_path=Path("history.json"))
+                    collect.assert_called_once()
+                    self.assertEqual(collect.call_args.kwargs["history_path"],
+                                     Path("history.json"))
+                    self.assertTrue(callable(collect.call_args.kwargs["extractor"]))
                     self.assertEqual(json.loads(Path("output.json").read_text()),
                                      {"status": "review_only",
                                       "toronto_date": "2026-11-21",
