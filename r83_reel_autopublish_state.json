@@ -3,10 +3,10 @@
   "policy": "owner_authorized_source_attribution_v1",
   "owner_authorized": true,
   "owner_authorized_on": "2026-11-21",
-  "controlled_first_live": false,
-  "first_video_sha256": null,
+  "controlled_first_live": true,
+  "first_video_sha256": "19244405566cd8cc3382c991b2257a26425fb788f177c95b20919b895710de8b",
   "daily_enabled": false,
   "verified_first_media_id": null,
   "required_first_template_version": "R72",
-  "notes": "Owner requested rollout but no current-day first R72 Reel has passed exact-hash release and Instagram readback. Neither public publishing nor recurring deployment may be enabled until both gates pass."
+  "notes": "Nov 21 2026: first controlled R72 source-screened Reel approved by owner rollout request, exactly source-run 44950454444 and SHA256, pending Instagram readback. Daily autopublish stays disabled until verified media ID recorded."
 }
