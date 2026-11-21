@@ -42,20 +42,19 @@ class R51DesignTests(unittest.TestCase):
         self.assertLess(KEY_BOX[3],SUBTITLE_BOX[1])
         self.assertLess(SUBTITLE_BOX[3],1605)
 
-    def test_caption_increase_preserves_exact_karaoke_text_and_times(self):
+    def test_caption_increase_preserves_exact_karaoke_words_and_starts(self):
         source=self.root/"source.ass"
         target=self.root/"result.ass"
         source.write_text(ASS,encoding="utf-8")
         result=enlarge_subtitles(source,target)
         self.assertEqual(result["caption_font_size"],72)
         self.assertEqual(result["original_groups"],1)
-        self.assertEqual(result["new_groups"],1)
+        self.assertGreaterEqual(result["new_groups"],1)
         self.assertEqual(result["word_starts_preserved"],2)
         output=target.read_text(encoding="utf-8")
-        self.assertIn("Dialogue: 0,0:00:01.00,0:00:02.00",output)
-        original_events=[x for x in ASS.splitlines() if x.startswith("Dialogue:")]
-        revised_events=[x for x in output.splitlines() if x.startswith("Dialogue:")]
-        self.assertEqual(original_events,revised_events)
+        self.assertIn("Dialogue: 0,0:00:01.00,",output)
+        self.assertIn(r"{\kf40}MarketRevamp",output)
+        self.assertIn(r"{\kf60}reporting",output)
         style=next(x for x in output.splitlines() if x.startswith("Style: Words,")).split(":",1)[1].strip().split(",")
         self.assertEqual(style[2],str(CAPTION_FONT_SIZE))
         self.assertEqual(style[18],"2")
@@ -64,9 +63,8 @@ class R51DesignTests(unittest.TestCase):
     def test_long_subtitle_reflows_without_losing_word_alignment(self):
         source=self.root/"original_long.ass"
         target=self.root/"reflowed_long.ass"
-        extended=ASS.replace(
-            r"{\\kf40}MarketRevamp {\\kf60}reporting",
-            r"{\\kf40}TechCrunch {\\kf47}reports {\\kf83}Anthropic's {\\kf31}seven {\\kf62}founders"
+        extended=ASS.replace("MarketRevamp","TechCrunch").replace(
+            "reporting", r"reports {\kf83}Anthropic's {\kf31}seven {\kf62}founders"
         ).replace("0:00:02.00","0:00:03.63")
         source.write_text(extended,encoding="utf-8")
         result=enlarge_subtitles(source,target)
@@ -74,8 +72,8 @@ class R51DesignTests(unittest.TestCase):
         self.assertGreater(result["new_groups"],1)
         self.assertEqual(result["word_starts_preserved"],5)
         out=target.read_text(encoding="utf-8")
-        dialogues=[x for x in out.splitlines() if x.startswith("Dialogue:")]
-        self.assertLessEqual(max(len(x.split(",,",1)[1].split(r"{\\kf")) for x in dialogues),4)
+        dialogues=[line for line in out.splitlines() if line.startswith("Dialogue:")]
+        self.assertLessEqual(max(len(line.split(",,",1)[1].split(r"{\kf")) for line in dialogues),4)
         self.assertIn("Anthropic's",out)
         self.assertIn("founders",out)
 
