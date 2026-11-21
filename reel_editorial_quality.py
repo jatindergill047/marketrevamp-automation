@@ -37,23 +37,25 @@ def same_reel_event(first, second):
     return bool(shared_entities and event_groups(a) & event_groups(b))
 
 
-def summary_supports_headline(headline, summary):
-    """Reject on-screen articles lacking meaningful headline connection.
-
-    The synonym bridge for prediction markets is explicit: publisher coverage
-    can describe CFTC/Kalshi without repeating 'prediction markets'.
-    """
-    if not isinstance(summary, str) or not isinstance(headline, str):
-        return False
-    if not headline.strip() or len(summary.split()) < 30:
+def sentence_supports_headline(headline, sentence):
+    """Narrated context must directly concern the same named news event."""
+    if not isinstance(sentence, str) or not isinstance(headline, str):
         return False
     anchor = story_terms(headline) - {"your", "here", "are", "can", "out", "top"}
-    supported = story_terms(summary)
-    if anchor & supported:
+    if anchor & story_terms(sentence):
         return True
-    if re.search(r"\bprediction markets?\b", headline, re.I) and        re.search(r"\b(?:kalshi|cftc|event contracts?)\b", summary, re.I):
+    if re.search(r"\\bprediction markets?\\b", headline, re.I) and re.search(
+            r"\\b(?:kalshi|cftc|event contracts?)\\b", sentence, re.I):
         return True
     return False
+
+
+def summary_supports_headline(headline, summary):
+    """Source-extracted context must include meaningful headline support."""
+    if not isinstance(summary, str) or not isinstance(headline, str):
+        return False
+    return (bool(headline.strip()) and len(summary.split()) >= 30
+            and sentence_supports_headline(headline, summary))
 
 
 def reel_story_guard(article, already_selected):
