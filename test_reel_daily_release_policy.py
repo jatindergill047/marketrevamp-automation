@@ -39,6 +39,10 @@ def fixtures():
         headline = f"Research project number {i} reports a new public technology update"
         pending["stories"].append({
             "headline": headline, "category": category,
+            "deck": ("According to the original reporting publisher, "
+                     "the relevant technology project has been described in "
+                     "more detail following an initial public announcement, "
+                     "with further research and community review expected."),
             "source_url": url, "source_name": name,
             "narration_text": f"According to {name}, {headline.lower()}.",
             "fact_check_status": "source_supported_pending_editorial_approval",
@@ -46,6 +50,7 @@ def fixtures():
         })
         sources["stories"].append({
             "headline": headline, "category": category,
+            "summary": pending["stories"][-1]["deck"],
             "source_url": url, "editorial_approved": False,
             "fact_check_status": "source_matched_not_independently_fact_checked",
             "published_at": (NOW - timedelta(hours=i)).isoformat(),
@@ -155,6 +160,11 @@ class AutomatedReleasePolicyTests(unittest.TestCase):
             self.prepare(history={"pending": {
                 "media_kind": "reel", "toronto_date": NOW.date().isoformat(),
                 "status": "unknown"}})
+
+    def test_on_screen_deck_must_match_screened_publisher_text(self):
+        self.pending["stories"][0]["deck"] = "A newly invented claim not in the source."
+        with self.assertRaisesRegex(ReleaseBlocked, "visible context differs"):
+            self.prepare()
 
     def test_fails_on_speech_drift_or_missing_publisher_attribution(self):
         self.qa["alignment_token_ratio"] = .95
