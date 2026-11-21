@@ -66,3 +66,20 @@ def reel_story_guard(article, already_selected):
         return False
     return not any(same_reel_event(headline, old.get("title", ""))
                    for old in already_selected)
+
+
+def infer_reel_category(article, fallback):
+    """Kalshi/CFTC event-contract news is Markets, not automatically Crypto.
+
+    Only a headline explicitly about crypto/blockchain should inherit Crypto.
+    This optional Reel-only override never affects the production carousel.
+    """
+    headline=str(article.get("title", "")).casefold()
+    prediction=bool(re.search(r"\b(?:prediction markets?|kalshi|event contracts?)\b",
+                              headline))
+    blockchain=bool(re.search(
+        r"\b(?:bitcoin|ethereum|ether|crypto(?:currency)?|blockchain|"
+        r"stablecoin|solana|defi|coinbase)\b", headline))
+    if prediction and not blockchain:
+        return "Markets"
+    return fallback(article)
