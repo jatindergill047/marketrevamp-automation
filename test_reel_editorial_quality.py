@@ -1,7 +1,8 @@
 """Regression: no duplicate Anthropic IPO, off-topic champagne copy, or forced gaps."""
 import unittest
 from reel_editorial_quality import (same_reel_event, summary_supports_headline,
-                                    sentence_supports_headline, reel_story_guard)
+                                    sentence_supports_headline, reel_story_guard,
+                                    infer_reel_category)
 from reel_r72_review import _complete_context
 
 IPO_ONE = "Anthropic’s record IPO collides with tech’s worst week on Wall Street since 2020"
@@ -19,6 +20,22 @@ class EditorialGuardTests(unittest.TestCase):
     def test_rejects_unrelated_extracted_article_paragraph(self):
         self.assertFalse(summary_supports_headline(IPO_ONE, WRONG_DECK))
         self.assertTrue(summary_supports_headline(IPO_ONE, RELEVANT_DECK))
+
+    def test_prediction_markets_without_blockchain_are_not_crypto(self):
+        def fallback(article):
+            return "Crypto"
+        for title in (
+            "State and federal battle over prediction markets regulation",
+            "Kalshi stocks outlook dims in the market sell-off",
+        ):
+            self.assertEqual(infer_reel_category({"title": title}, fallback),
+                             "Markets")
+        self.assertEqual(infer_reel_category(
+            {"title": "Bitcoin prediction markets launch on Ethereum"},
+            fallback), "Crypto")
+        self.assertEqual(infer_reel_category(
+            {"title": "Bitcoin ETF inflows surge"},
+            fallback), "Crypto")
 
     def test_same_named_ipo_identified_despite_different_wording(self):
         self.assertTrue(same_reel_event(IPO_ONE, IPO_TWO))

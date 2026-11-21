@@ -14,7 +14,7 @@ from zoneinfo import ZoneInfo
 
 from news_collector import normalize_article_url
 from reel_editorial_quality import (same_reel_event, summary_supports_headline,
-                                     reel_story_guard)
+                                     reel_story_guard, infer_reel_category)
 
 TOPICS = frozenset(("AI", "Technology", "Crypto", "Markets"))
 REQUIRED_STORIES = 7
@@ -152,9 +152,12 @@ def main(argv=None):
     from news_collector import collect_news
     if args.collector_result == "news_results.json":
         from reel_news_fetch import limited_article_extractor
+        from news_collector import infer_category
         collect_news(history_path=Path(args.history),
                      extractor=limited_article_extractor(),
-                     story_guard=reel_story_guard)
+                     story_guard=reel_story_guard,
+                     category_inferer=lambda article: infer_reel_category(
+                         article, infer_category))
     results = json.loads(Path(args.collector_result).read_text(encoding="utf-8"))
     package = review_package(results, published, now=now)
     target = Path(args.output)

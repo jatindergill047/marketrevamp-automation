@@ -147,6 +147,7 @@ class R67Tests(unittest.TestCase):
                                      Path("history.json"))
                     self.assertTrue(callable(collect.call_args.kwargs["extractor"]))
                     self.assertTrue(callable(collect.call_args.kwargs["story_guard"]))
+                    self.assertTrue(callable(collect.call_args.kwargs["category_inferer"]))
                     self.assertEqual(json.loads(Path("output.json").read_text()),
                                      {"status": "review_only",
                                       "toronto_date": "2026-11-21",
