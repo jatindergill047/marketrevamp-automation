@@ -3,6 +3,7 @@ name: R83 Reel Publication Policy — Offline Safety Gate (Never Publishes)
 on:
   pull_request:
     paths:
+      - reel_editorial_quality.py
       - reel_daily_release_policy.py
       - test_reel_daily_release_policy.py
       - r83_reel_autopublish_state.json
@@ -10,6 +11,7 @@ on:
   push:
     branches: [feature/r83-staged-daily-reel-release-gates-20261121]
     paths:
+      - reel_editorial_quality.py
       - reel_daily_release_policy.py
       - test_reel_daily_release_policy.py
       - r83_reel_autopublish_state.json
@@ -52,9 +54,9 @@ jobs:
           PY
       - name: Test exact video release, hard-source gating and first-live readback lock
         run: |
-          python -m py_compile reel_daily_release_policy.py test_reel_daily_release_policy.py
+          python -m py_compile reel_editorial_quality.py reel_daily_release_policy.py test_reel_daily_release_policy.py
           python -m unittest -v test_reel_daily_release_policy.py test_reel_r46_launch_gate.py test_reel_r49_first_live.py
       - name: Check security-critical Python syntax and undefined references
         run: |
           pip install ruff==0.14.0
-          ruff check --select E7,E9,F63,F7,F82 reel_daily_release_policy.py test_reel_daily_release_policy.py
+          ruff check --select E7,E9,F63,F7,F82 reel_editorial_quality.py reel_daily_release_policy.py test_reel_daily_release_policy.py
