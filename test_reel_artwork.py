@@ -33,6 +33,8 @@ class ArtworkTests(unittest.TestCase):
                              illustration_topic(headline, category))
         self.assertEqual(story_theme({"category": "Technology",
                                       "headline": "Smartphone security alert"}), "security")
+        self.assertEqual(story_theme({"category": "Technology",
+                                      "headline": "Cybersecurity testing"}), "security")
 
     def test_rendered_artwork_is_original_transparent_image(self):
         themes = [
