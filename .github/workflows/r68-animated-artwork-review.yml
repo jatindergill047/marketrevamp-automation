@@ -5,6 +5,8 @@ on:
     branches: [feature/reels-opt-in]
     paths:
       - 'reel_artwork.py'
+      - 'reel_bookends.py'
+      - 'test_reel_bookends.py'
       - 'reel_r51_design.py'
       - 'reel_r50_review.py'
       - 'reel_r52_review.py'
@@ -46,8 +48,8 @@ jobs:
           sudo apt-get install -y ffmpeg fonts-dejavu-core
       - name: Compile and test the 2D artwork and subtitle integration
         run: |
-          python -m py_compile reel_artwork.py reel_r51_design.py reel_r50_review.py reel_r52_review.py reel_clean_end_to_end_review.py
-          python -m unittest -v test_reel_artwork.py test_reel_r51_design.py
+          python -m py_compile reel_artwork.py reel_bookends.py reel_r51_design.py reel_r50_review.py reel_r52_review.py reel_clean_end_to_end_review.py
+          python -m unittest -v test_reel_artwork.py test_reel_r51_design.py test_reel_bookends.py
       - name: Build narrated seven-scene artwork Reel, without publishing
         timeout-minutes: 16
         run: python reel_clean_end_to_end_review.py
@@ -59,6 +61,10 @@ jobs:
           d=json.loads(Path('reel_clean_review/QA.json').read_text())
           assert d['status']=='review_only' and d['synthetic_content'] is True
           assert d['seven_scenes']==len(d['artwork_themes'])==7
+          assert d['presentation_segments']==9
+          assert d['spoken_hook'].startswith("You're watching MarketRevamp")
+          assert d['spoken_follow_cta'].startswith('Follow MarketRevamp')
+          assert d['duration_seconds'] <= 90
           assert len(set(d['artwork_themes'])) >= 4
           assert d['artwork_animation']=='subtle_vertical_float_8px'
           assert d['caption_font_size_px']==80
@@ -70,8 +76,10 @@ jobs:
           assert all(d[k] is False for k in ('editorial_approved','published','cloudinary_uploaded','instagram_published'))
           print('R68 review-only 2D animated artwork QA PASS')
           PY
-          ffmpeg -y -loglevel error -ss 0.5 -i reel_clean_review/marketrevamp-clean-reel-review-only.mp4 -frames:v 1 reel_clean_review/artwork_early.png
-          ffmpeg -y -loglevel error -ss 2.2 -i reel_clean_review/marketrevamp-clean-reel-review-only.mp4 -frames:v 1 reel_clean_review/artwork_later.png
+          EARLY=$(python -c "import json; q=json.load(open('reel_clean_review/QA.json')); print(q['intro_seconds']+0.5)")
+          LATER=$(python -c "import json; q=json.load(open('reel_clean_review/QA.json')); print(q['intro_seconds']+2.0)")
+          ffmpeg -y -loglevel error -ss "$EARLY" -i reel_clean_review/marketrevamp-clean-reel-review-only.mp4 -frames:v 1 reel_clean_review/artwork_early.png
+          ffmpeg -y -loglevel error -ss "$LATER" -i reel_clean_review/marketrevamp-clean-reel-review-only.mp4 -frames:v 1 reel_clean_review/artwork_later.png
           python - <<'PY'
           from PIL import Image, ImageChops
           from reel_artwork import ARTWORK_ZONE, SUBTITLE_ZONE

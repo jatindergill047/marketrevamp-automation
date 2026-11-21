@@ -13,6 +13,9 @@ from zoneinfo import ZoneInfo
 
 from PIL import Image, ImageDraw, ImageFont
 from reel_r51_design import style_scene, enlarge_subtitles, CAPTION_FONT_SIZE
+from reel_bookends import (HOOK_LINE, FOLLOW_LINE, build_bookends,
+                           narration_segments, joined_narration,
+                           validate_bookend_timing)
 from reel_artwork import (render_artwork, story_theme, write_artwork_concat,
                          overlay_filter, composite_artwork_preview)
 
@@ -197,7 +200,8 @@ def map_chapters(stories,events):
     matchmap=dict(matching)
     # Build token-to-boundary-event map in case the service splits hyphenated tokens.
     indices=[idx for idx,e in enumerate(events) for _ in words_normalized(e["text"])]
-    positions=[next(j for j,(story,_) in enumerate(expected) if story==i) for i in range(7)]
+    positions=[next(j for j,(story,_) in enumerate(expected) if story==i)
+               for i in range(len(stories))]
     starts=[]
     for ix in positions:
         if ix in matchmap:
@@ -270,12 +274,15 @@ def run():
         raise RuntimeError("Authoritative publishing history checkout missing")
     history=json.loads(history_path.read_text(encoding="utf-8"))
     stories=validate_input(data,history)
-    frames=draw_frames(stories,target)
-    script=" ".join(s["narration_text"] for s in stories)
+    story_frames=draw_frames(stories,target)
+    intro_frame,outro_frame=build_bookends(make_logo(),target,"R50")
+    frames=[intro_frame]+story_frames+[outro_frame]
+    segments=narration_segments(stories)
+    script=joined_narration(segments)
     source_audio=target/"R50_andrew_neural_source.mp3"
     boundary_file=target/"R50_word_boundaries.json"
     events=asyncio.run(synthesize(script,source_audio,boundary_file))
-    starts,confidence,ntokens,actual_tokens=map_chapters(stories,events)
+    starts,confidence,ntokens,actual_tokens=map_chapters(segments,events)
     length=float(probe(source_audio)["format"]["duration"])
     if not 45<=length<=110:
         raise RuntimeError(f"Unexpected neural audio duration: {length}")
@@ -294,8 +301,7 @@ def run():
                 "-c:a","pcm_s16le",str(master)],timeout=180)
     duration=float(probe(master)["format"]["duration"])
     cuts=[0]+[events[ix]["start_seconds"]*scale for ix in starts[1:]]+[duration]
-    if any(b-a<5.0 for a,b in zip(cuts,cuts[1:])):
-        raise RuntimeError(f"Story scenes too short or misaligned: {cuts}")
+    bookends_qa=validate_bookend_timing(cuts)
     concat=target/"R50_scenes.ffconcat"
     items=["ffconcat version 1.0"]
     for i,img in enumerate(frames):
@@ -304,7 +310,8 @@ def run():
     concat.write_text("\n".join(items)+"\n",encoding="utf-8")
     ass=target/"R50_word_aligned_captions.ass"
     group_count=captions(events,ass,scale)
-    artwork_concat=write_artwork_concat(target, "R50", cuts)
+    artwork_concat=write_artwork_concat(target, "R50", cuts,
+                                       include_bookends=True)
     output=target/"marketrevamp-r50-review.mp4"
     check_call(["ffmpeg","-y","-hide_banner","-loglevel","error",
                 "-safe","0","-f","concat","-i",str(concat),
@@ -324,7 +331,7 @@ def run():
     if abs(video-duration)>.4:
         raise RuntimeError("Audio/video duration mismatch")
     image=Image.new("RGB",(4*270,2*480),PAPER)
-    for idx,img in enumerate(frames):
+    for idx,img in enumerate(story_frames):
         preview=composite_artwork_preview(img,target/f"R50_artwork_{idx+1:02d}.png")
         small=preview.resize((270,480),Image.Resampling.LANCZOS)
         image.paste(small,((idx%4)*270,(idx//4)*480))
@@ -337,6 +344,9 @@ def run():
         "subtitle_placement":"below_artwork",
         "artwork_themes":[story_theme(s) for s in stories],
         "artwork_animation":"subtle_vertical_float_8px",
+        "spoken_hook":HOOK_LINE,
+        "spoken_follow_cta":FOLLOW_LINE,
+        **bookends_qa,
         "toronto_date":R50_DATE,
         "status":"review_only",
         "editorial_approved":False,
