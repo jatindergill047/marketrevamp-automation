@@ -45,8 +45,10 @@ def publish_once(metadata, stories, video_path, history, *, approved_fingerprint
     _require(callable(saver), "Durable publishing history writer is required")
     _require(account_id and str(account_id).isdigit() and bool(token),
              "Instagram credentials unavailable")
-    _require(bool(cloud) and bool(preset) and bool(api_key) and bool(api_secret),
-             "Signed Cloudinary upload credentials required")
+    _require(bool(cloud) and bool(preset),
+             "Cloudinary upload cloud and existing preset are required")
+    _require(bool(api_key) == bool(api_secret),
+             "Cloudinary API key and secret must both be supplied for signed uploads, or both omitted for the existing unsigned preset")
     authorize_publication(release, approved_fingerprint, history, now=now)
     _check_article_reuse(stories, history)
 
