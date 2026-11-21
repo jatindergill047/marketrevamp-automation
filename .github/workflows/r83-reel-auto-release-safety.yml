@@ -1,0 +1,60 @@
+name: R83 Reel Publication Policy — Offline Safety Gate (Never Publishes)
+
+on:
+  pull_request:
+    paths:
+      - reel_daily_release_policy.py
+      - test_reel_daily_release_policy.py
+      - r83_reel_autopublish_state.json
+      - .github/workflows/r83-reel-auto-release-safety.yml
+  push:
+    branches: [feature/r83-staged-daily-reel-release-gates-20261121]
+    paths:
+      - reel_daily_release_policy.py
+      - test_reel_daily_release_policy.py
+      - r83_reel_autopublish_state.json
+      - .github/workflows/r83-reel-auto-release-safety.yml
+
+permissions:
+  contents: read
+
+jobs:
+  release-policy-safety:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      REEL_ENABLED: 'false'
+      REEL_UPLOAD_ENABLED: 'false'
+      REEL_FIRST_LIVE_ENABLED: 'false'
+      INSTAGRAM_PUBLISH_ENABLED: 'false'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+      - name: Install release gate dependencies
+        run: pip install -r requirements.lock
+      - name: Confirm all public publishing flags and activation state are disabled
+        run: |
+          test "$REEL_ENABLED" = false
+          test "$REEL_UPLOAD_ENABLED" = false
+          test "$REEL_FIRST_LIVE_ENABLED" = false
+          test "$INSTAGRAM_PUBLISH_ENABLED" = false
+          python - <<'PY'
+          import json
+          p=json.load(open('r83_reel_autopublish_state.json'))
+          assert p['policy']=='owner_authorized_source_attribution_v1'
+          assert p['controlled_first_live'] is False
+          assert p['daily_enabled'] is False
+          assert p['verified_first_media_id'] is None
+          assert p['first_video_sha256'] is None
+          print('Public first-live and recurring Reel auto-post remain BLOCKED')
+          PY
+      - name: Test exact video release, hard-source gating and first-live readback lock
+        run: |
+          python -m py_compile reel_daily_release_policy.py test_reel_daily_release_policy.py
+          python -m unittest -v test_reel_daily_release_policy.py test_reel_r46_launch_gate.py test_reel_r49_first_live.py
+      - name: Check security-critical Python syntax and undefined references
+        run: |
+          pip install ruff==0.14.0
+          ruff check --select E7,E9,F63,F7,F82 reel_daily_release_policy.py test_reel_daily_release_policy.py
