@@ -1,4 +1,4 @@
-"""MarketRevamp R51 9:16 editorial Reel design: key detail + readable karaoke captions.
+"""MarketRevamp 9:16 Reel design with clean frames and readable karaoke captions.
 
 Presentation only: no media uploads, Instagram calls, text or audio changes.
 """
@@ -31,31 +31,22 @@ def _text_lines(draw, text, face, width):
     return lines
 
 def style_scene(input_image, detail_text, output_image):
-    """Restyle only the original key-detail area and reserved caption band."""
+    """Remove the legacy key-detail visual and keep the caption band.
+
+    The second argument remains for compatibility with existing call sites;
+    it is deliberately never rendered into the video.
+    """
     picture=Image.open(input_image).convert("RGB")
     if picture.size!=(1080,1920):
         raise ValueError("Expected 1080x1920 editorial Reel frame")
     draw=ImageDraw.Draw(picture)
+    # Clear any previously rendered legacy key-detail heading, copy or panel.
     draw.rectangle((66,1060,1015,1337),fill=PAPER)
-    draw.rounded_rectangle(KEY_BOX,radius=20,fill=PANEL)
-    draw.rounded_rectangle((72,1070,83,1330),radius=5,fill=RED)
-    title_font=ImageFont.truetype(FONT_BOLD,33)
-    body_font=ImageFont.truetype(FONT_REG,41)
-    draw.text((118,1091),"THE KEY DETAIL",fill=RED,font=title_font)
-    lines=_text_lines(draw,detail_text,body_font,850)
-    if len(lines)>3:
-        body_font=ImageFont.truetype(FONT_REG,37)
-        lines=_text_lines(draw,detail_text,body_font,850)
-    if len(lines)>3:
-        raise ValueError("Key detail would overflow its readable region")
-    for index,line in enumerate(lines):
-        draw.text((118,1165+54*index),line,fill=INK,font=body_font)
-    # Caption overlay is 25 px below detail panel and 20 px above reporting source.
     draw.rounded_rectangle(SUBTITLE_BOX,radius=26,fill=CAPTION_DARK)
     destination=Path(output_image)
     destination.parent.mkdir(parents=True,exist_ok=True)
     picture.save(destination,optimize=True)
-    return {"detail_lines":len(lines),"detail_font_size":body_font.size,"image_path":str(destination)}
+    return {"detail_lines":0,"image_path":str(destination)}
 
 def enlarge_subtitles(source_ass, output_ass):
     """Keep the exact timecoded/karaoke dialogue and update presentation style only."""
