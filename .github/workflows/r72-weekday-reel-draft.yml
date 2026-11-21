@@ -64,11 +64,11 @@ jobs:
                   handle.write("run_review=true\n")
               print("Authorized review-only Toronto time:", now.isoformat())
           PY
-      - name: Checkout pinned R72 experimental Reel code — read only
+      - name: Checkout tested R107-polished Reel code — read only
         if: steps.local_day.outputs.run_review == 'true'
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
-          ref: 0f7a1b07f726114225bd1b5d103e1c06949454a9
+          ref: 05e768c3fca21704324fcb70450c15136b87e363
           persist-credentials: false
       - name: Checkout authoritative publishing history — read only
         if: steps.local_day.outputs.run_review == 'true'
@@ -95,7 +95,7 @@ jobs:
           test "$REEL_UPLOAD_ENABLED" = false
           test "$REEL_FIRST_LIVE_ENABLED" = false
           test "$INSTAGRAM_PUBLISH_ENABLED" = false
-          python -m unittest -v test_r67_weekday_news.py test_r72_news_review.py test_reel_bookends.py
+          python -m unittest -v test_r67_weekday_news.py test_r72_news_review.py test_reel_bookends.py test_r107_narration.py
       - name: Collect and screen seven current headlines against posting history
         if: steps.local_day.outputs.run_review == 'true'
         timeout-minutes: 10
@@ -133,6 +133,10 @@ jobs:
           assert qa['not_independently_fact_checked'] is True
           assert qa['history_checked'] is True
           assert qa['caption_font_size_px']==80 and qa['alignment_token_ratio']>=.90
+          assert qa['narration_style']=='source_headline_and_verbatim_context'
+          assert qa['spoken_source_prefixes']==0
+          assert qa['scene_pause_seconds']==0.16
+          assert qa['subtitle_spelling_restored'] is True
           assert qa['dimensions']=='1080x1920'
           assert qa['video_codec']=='h264' and qa['audio_codec']=='aac'
           assert 45 <= qa['duration_seconds'] <= 90

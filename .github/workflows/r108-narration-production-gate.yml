@@ -1,0 +1,58 @@
+name: R108 Pinned Narration Production Gate (Offline)
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/r72-weekday-reel-draft.yml'
+      - '.github/workflows/r108-narration-production-gate.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  verify-immutable-narration-revision:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      REEL_ENABLED: 'false'
+      REEL_UPLOAD_ENABLED: 'false'
+      REEL_FIRST_LIVE_ENABLED: 'false'
+      INSTAGRAM_PUBLISH_ENABLED: 'false'
+    steps:
+      - name: Checkout candidate production workflow, no credentials
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Require exact reviewed code pin, unchanged source event and fail-closed publication settings
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          workflow=Path(".github/workflows/r72-weekday-reel-draft.yml").read_text()
+          assert "ref: 05e768c3fca21704324fcb70450c15136b87e363" in workflow
+          assert "test_r107_narration.py" in workflow
+          assert "qa['scene_pause_seconds']==0.16" in workflow
+          assert "qa['spoken_source_prefixes']==0" in workflow
+          assert "qa['subtitle_spelling_restored'] is True" in workflow
+          assert "name: MarketRevamp R72 Daily News Reel Draft (Never Publish)" in workflow
+          assert "INSTAGRAM_PUBLISH_ENABLED: 'false'" in workflow
+          assert "REEL_UPLOAD_ENABLED: 'false'" in workflow
+          assert "marketrevamp-r72-fresh-news-draft-not-published" in workflow
+          PY
+      - name: Checkout exact tested Reel-only code commit (no production secrets)
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: 05e768c3fca21704324fcb70450c15136b87e363
+          path: reviewed
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+      - name: Run new source, narration, visuals and timing tests with publication disabled
+        run: |
+          cd reviewed
+          pip install -r requirements.lock
+          python -m compileall -q reel_r72_review.py reel_r107_narration.py
+          python -m unittest -v test_r67_weekday_news.py test_r72_news_review.py test_reel_bookends.py test_r107_narration.py
+          test "$REEL_ENABLED" = false
+          test "$REEL_UPLOAD_ENABLED" = false
+          test "$INSTAGRAM_PUBLISH_ENABLED" = false
