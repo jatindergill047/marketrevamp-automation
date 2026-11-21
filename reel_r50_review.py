@@ -95,7 +95,8 @@ def wrap(draw,text,face,width):
             current=word
         else:
             current=test
-    if current:output.append(current)
+    if current:
+        output.append(current)
     return output
 
 def make_logo():
