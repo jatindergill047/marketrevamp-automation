@@ -40,9 +40,10 @@ class R51DesignTests(unittest.TestCase):
             self.assertEqual(out.getpixel((100,100)),(12,55,155))
             self.assertEqual(out.getpixel((75,1110)),PAPER)
             self.assertEqual(out.getpixel((75,1250)),PAPER)
-            self.assertEqual(out.getpixel((75,1400)),CAPTION_DARK)
+            self.assertEqual(out.getpixel((75,960)),CAPTION_DARK)
+            self.assertEqual(out.getpixel((75,1400)),PAPER)
             self.assertEqual(out.getpixel((75,1650)),PAPER)
-        self.assertLess(1337,SUBTITLE_BOX[1])
+        self.assertEqual((SUBTITLE_BOX[1]+SUBTITLE_BOX[3])//2,960)
         self.assertLess(SUBTITLE_BOX[3],1605)
 
     def test_caption_increase_preserves_exact_karaoke_words_and_starts(self):
@@ -50,7 +51,7 @@ class R51DesignTests(unittest.TestCase):
         target=self.root/"result.ass"
         source.write_text(ASS,encoding="utf-8")
         result=enlarge_subtitles(source,target)
-        self.assertEqual(result["caption_font_size"],72)
+        self.assertEqual(result["caption_font_size"],80)
         self.assertEqual(result["original_groups"],1)
         self.assertGreaterEqual(result["new_groups"],1)
         self.assertEqual(result["word_starts_preserved"],2)
@@ -60,8 +61,8 @@ class R51DesignTests(unittest.TestCase):
         self.assertIn(r"{\kf60}reporting",output)
         style=next(x for x in output.splitlines() if x.startswith("Style: Words,")).split(":",1)[1].strip().split(",")
         self.assertEqual(style[2],str(CAPTION_FONT_SIZE))
-        self.assertEqual(style[18],"2")
-        self.assertEqual(style[19:22],["110","110","390"])
+        self.assertEqual(style[18],"5")
+        self.assertEqual(style[19:22],["110","110","0"])
 
     def test_long_subtitle_reflows_without_losing_word_alignment(self):
         source=self.root/"original_long.ass"
