@@ -126,7 +126,7 @@ def make_logo():
     canvas.alpha_composite(original)
     return canvas.convert("RGB")
 
-def draw_frames(stories,folder):
+def draw_frames(stories,folder, *, display_date="NOV 20, 2026", prefix="R50"):
     logo=make_logo()
     frames=[]
     for i,story in enumerate(stories,1):
@@ -135,7 +135,7 @@ def draw_frames(stories,folder):
         draw.rectangle((0,0,1080,16),fill=RED)
         picture.paste(logo,(70,74))
         draw.text((73,229),"MARKETREVAMP  /  THE DAILY BRIEF",font=font(24,True),fill=MUTED)
-        draw.text((73,268),f"NOV 20, 2026     •     {i:02d} / 07",font=font(25),fill=MUTED)
+        draw.text((73,268),f"{display_date}     •     {i:02d} / 07",font=font(25),fill=MUTED)
         draw.line((72,336,1007,336),fill=RED,width=3)
         category=story.get("category","NEWS").upper()
         chip_width=math.ceil(draw.textbbox((0,0),category,font=font(25,True))[2]+50)
@@ -162,16 +162,16 @@ def draw_frames(stories,folder):
         draw.text((72,1692),story["source_name"],font=font(34,True),fill=INK)
         draw.text((72,1780), "Market news • Not financial advice" if i == 7 else "AI-assisted narration  •  Source-linked reporting", font=font(23), fill=MUTED)
         draw.line((72,1852,1008,1852),fill=RED,width=5)
-        dest=folder/f"R50_scene_{i:02d}.png"
+        dest=folder/f"{prefix}_scene_{i:02d}.png"
         picture.save(dest,optimize=True)
         # Leave the former key-detail area blank and retain the caption band,
         # headline, reporting source and editorial disclaimer.
         style_scene(dest, story["deck"], dest)
-        render_artwork(story, folder/f"R50_artwork_{i:02d}.png")
+        render_artwork(story, folder/f"{prefix}_artwork_{i:02d}.png")
         frames.append(dest)
     return frames
 
-async def synthesize(script, destination, offsets):
+async def synthesize(script, destination, offsets, *, min_events=160):
     import edge_tts
     events=[]
     communicator=edge_tts.Communicate(script,"en-US-AndrewNeural",
@@ -184,7 +184,7 @@ async def synthesize(script, destination, offsets):
                 events.append({"text":block["text"],
                     "start_seconds":block["offset"]/10000000,
                     "duration_seconds":block["duration"]/10000000})
-    if len(events)<160 or not destination.is_file() or destination.stat().st_size<10000:
+    if len(events)<min_events or not destination.is_file() or destination.stat().st_size<10000:
         raise RuntimeError(f"Neural speech failed: {len(events)} word cues")
     offsets.write_text(json.dumps(events,indent=2)+"\n",encoding="utf-8")
     return events
