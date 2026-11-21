@@ -148,7 +148,9 @@ def main(argv=None):
     # Import lazily: do not run network collection for offline review package tests.
     from news_collector import collect_news
     if args.collector_result == "news_results.json":
-        collect_news(history_path=Path(args.history))
+        from reel_news_fetch import limited_article_extractor
+        collect_news(history_path=Path(args.history),
+                     extractor=limited_article_extractor())
     results = json.loads(Path(args.collector_result).read_text(encoding="utf-8"))
     package = review_package(results, published, now=now)
     target = Path(args.output)
