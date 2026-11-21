@@ -32,7 +32,11 @@ class R72NewsReviewTests(unittest.TestCase):
     def test_seven_stories_produce_short_attributed_scripts(self):
         prepared = prepare_stories(package(), set(), now=NOW)
         self.assertEqual(len(prepared), 7)
-        self.assertTrue(all("According to " in s["narration_text"]
+        self.assertTrue(all(not s["narration_text"].startswith("According to ")
+                            for s in prepared))
+        self.assertTrue(all(s["source_name"] and s["source_url"].startswith("https://")
+                            for s in prepared))
+        self.assertTrue(all(s["narration_text"].endswith((".", "!", "?"))
                             for s in prepared))
         total = sum(len(s["narration_text"].split()) for s in prepared)
         self.assertGreaterEqual(total, MIN_TOTAL_STORY_WORDS)
