@@ -1,0 +1,73 @@
+name: MarketRevamp R50 Published Reel Readback (No Writes)
+
+on:
+  push:
+    branches: [main]
+    paths: ['.github/r50-instagram-readback.trigger']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-published-r50:
+    runs-on: ubuntu-latest
+    environment: instagram-production
+    timeout-minutes: 10
+    env:
+      INSTAGRAM_PUBLISH_ENABLED: 'false'
+      REEL_UPLOAD_ENABLED: 'false'
+      REEL_FIRST_LIVE_ENABLED: 'false'
+      INSTAGRAM_ACCESS_TOKEN: ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
+      INSTAGRAM_USER_ID: ${{ vars.INSTAGRAM_USER_ID }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Checkout immutable publish history
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: publishing-history
+          path: publishing-history
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+      - name: Install existing Instagram API dependencies
+        run: pip install -r requirements.lock
+      - name: Read back R50 publication from Instagram Graph API without modifying it
+        run: |
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          from urllib.parse import urlsplit
+          from publish_instagram import api_request
+          media_id='17878336866585252'
+          assert os.environ.get('INSTAGRAM_PUBLISH_ENABLED')=='false'
+          assert os.environ.get('REEL_UPLOAD_ENABLED')=='false'
+          assert os.environ.get('REEL_FIRST_LIVE_ENABLED')=='false'
+          history=json.loads(Path('publishing-history/instagram_publish_history.json').read_text())
+          matching=[v for v in history.values() if v.get('instagram_media_id')==media_id]
+          if len(matching)!=1 or matching[0].get('status')!='published' or matching[0].get('media_kind')!='reel':
+              raise RuntimeError('R50 published Reel record missing or ambiguous')
+          response=api_request('GET',media_id,os.environ['INSTAGRAM_ACCESS_TOKEN'],
+                 {'fields':'id,permalink,media_type,media_product_type,timestamp'})
+          if str(response.get('id'))!=media_id:
+              raise RuntimeError('Instagram returned the wrong media ID')
+          permalink=response.get('permalink','')
+          parsed=urlsplit(permalink)
+          if parsed.scheme!='https' or parsed.hostname not in ('www.instagram.com','instagram.com'):
+              raise RuntimeError('Instagram did not return a valid permalink')
+          result={'instagram_media_id':media_id,'permalink':permalink,
+                  'media_type':response.get('media_type'),
+                  'media_product_type':response.get('media_product_type'),
+                  'timestamp':response.get('timestamp'),
+                  'history_status':'published','read_only':True}
+          Path('r50-instagram-readback.json').write_text(json.dumps(result,indent=2)+'\n')
+          print('R50 INSTAGRAM VERIFIED PERMALINK:',permalink)
+          print('READ_ONLY_VERIFICATION_SUCCESS')
+          PY
+      - name: Save verified public permalink
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: marketrevamp-r50-instagram-permalink
+          path: r50-instagram-readback.json
+          retention-days: 14
+          if-no-files-found: error
