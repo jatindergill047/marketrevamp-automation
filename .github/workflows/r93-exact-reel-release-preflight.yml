@@ -1,0 +1,111 @@
+name: R93 Verify Exact Nov 21 Reel Release Package (No Publishing)
+
+on:
+  push:
+    branches:
+      - feature/r93-exact-reel-release-dryrun-20261121
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  exact-reel-dryrun:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    env:
+      INSTAGRAM_PUBLISH_ENABLED: 'false'
+      REEL_ENABLED: 'false'
+      REEL_UPLOAD_ENABLED: 'false'
+      REEL_FIRST_LIVE_ENABLED: 'false'
+      SOURCE_RUN_ID: '44948095529'
+      EXACT_MP4_SHA: '9f82a5b991c1428da92a4514df24cb4ef712c7abe2d40e99e50a902f0219ebcd'
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+      - name: Verify completed real R72 draft generated from main today
+        run: |
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$SOURCE_RUN_ID" > r93_source_run.json
+          python - <<'PY'
+          import json, os
+          from datetime import datetime
+          from zoneinfo import ZoneInfo
+          run=json.load(open('r93_source_run.json'))
+          toronto=datetime.fromisoformat(run['created_at'].replace('Z','+00:00')).astimezone(ZoneInfo('America/Toronto'))
+          assert run['name']=='MarketRevamp R72 Daily News Reel Draft (Never Publish)'
+          assert run['head_branch']=='main'
+          assert run['conclusion']=='success'
+          assert toronto.date().isoformat()=='2026-11-21'
+          print('Exact reviewed current-day source run verified')
+          PY
+      - name: Fetch exact official GitHub review artifact
+        run: |
+          gh run download "$SOURCE_RUN_ID" --repo "$GITHUB_REPOSITORY" \
+            --name marketrevamp-r72-fresh-news-draft-not-published --dir .
+          test -s r72_review/marketrevamp-r72-real-news-review-only.mp4
+          test -s r72_review/r72_qa.json
+          test -s r72_review/editorial_pending_stories.json
+          test -s r67_review/review_sources.json
+          echo "$EXACT_MP4_SHA  r72_review/marketrevamp-r72-real-news-review-only.mp4" | sha256sum --check -
+      - name: Read authoritative published Reel and carousel history without write permission
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: publishing-history
+          path: publishing-history
+          persist-credentials: false
+      - name: Install production source checks and exact video probe
+        run: |
+          cp publishing-history/instagram_publish_history.json instagram_publish_history.json
+          pip install -r requirements.lock
+          sudo apt-get update -qq
+          sudo apt-get install -y ffmpeg
+      - name: Temporarily authorize only offline exact-video release check (never commit)
+        run: |
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          config=Path('r83_reel_autopublish_state.json')
+          p=json.loads(config.read_text())
+          assert p['owner_authorized'] is True
+          assert p['controlled_first_live'] is False and p['daily_enabled'] is False
+          assert p['first_video_sha256'] is None and p['verified_first_media_id'] is None
+          p['controlled_first_live']=True
+          p['first_video_sha256']=os.environ['EXACT_MP4_SHA']
+          config.write_text(json.dumps(p))
+          PY
+      - name: Run exact production release policy without Cloudinary or Meta credentials
+        run: |
+          test "$INSTAGRAM_PUBLISH_ENABLED" = false
+          test "$REEL_UPLOAD_ENABLED" = false
+          test "$REEL_FIRST_LIVE_ENABLED" = false
+          python -m unittest -v test_reel_daily_release_policy.py test_reel_r84_publish_job.py
+          python reel_r84_publish_job.py --mode first --action prepare --approved-sha256 "$EXACT_MP4_SHA"
+      - name: Verify the approved fingerprint and no-publication evidence
+        run: |
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          qa=json.loads(Path('r72_review/r72_qa.json').read_text())
+          gate=json.loads(Path('r84_release/release_gate.json').read_text())
+          assert qa['seven_scenes']==7 and qa['presentation_segments']==9
+          assert qa['alignment_token_ratio']>=.99
+          assert gate['video_sha256']==os.environ['EXACT_MP4_SHA']
+          assert gate['first_live'] is True
+          assert gate['owner_authorized'] is True
+          assert len(gate['fingerprint'])==64
+          assert not Path('r84_release/publication_result.json').exists()
+          print('R93 PRODUCTION RELEASE PREFLIGHT PASS; NO PUBLISH OR CLOUDINARY UPLOAD')
+          PY
+      - name: Save exact release SHA and fingerprint for editorial release audit only
+        if: success()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: r93-exact-current-news-reel-release-preflight-no-publish
+          path: r84_release/release_gate.json
+          retention-days: 5
+          if-no-files-found: error
