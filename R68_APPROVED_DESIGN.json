@@ -1,0 +1,64 @@
+{
+  "version": "R68",
+  "design_status": "approved_for_reel_visuals",
+  "approved_on": "2026-11-21",
+  "reference_merge_commit": "4dcd52a63375dca2a7236a8ddf72ee2053a7ee46",
+  "scope": "experimental feature/reels-opt-in visual template only",
+  "reference_style": "MarketRevamp seven-slide carousel original 2D Pillow editorial illustration",
+  "logo_asset": "marketrevamp_logo_horizontal.png",
+  "frame_size": [
+    1080,
+    1920
+  ],
+  "story_count": 7,
+  "artwork": {
+    "placement": "center",
+    "zone": [
+      110,
+      814,
+      970,
+      1200
+    ],
+    "pixel_size": [
+      860,
+      370
+    ],
+    "source_selector": "newspaper_design.illustration_topic",
+    "animation": "subtle_vertical_float",
+    "amplitude_pixels": 8,
+    "period_seconds": 3.6
+  },
+  "subtitles": {
+    "position": "below_artwork",
+    "box": [
+      65,
+      1225,
+      1015,
+      1505
+    ],
+    "center_y": 1365,
+    "font_size_px": 80,
+    "word_alignment": "preserve_original_TTS_WordBoundary_timestamps",
+    "active_word_highlight": true
+  },
+  "headline": {
+    "position": "above_artwork",
+    "adaptive_sizing": true
+  },
+  "footer": {
+    "source_and_disclaimer_below_y": 1605
+  },
+  "key_details_section": false,
+  "approved_reel_content": false,
+  "editorial_approved": false,
+  "instagram_published": false,
+  "cloudinary_uploaded": false,
+  "production_reel_publishing_enabled": false,
+  "changes_to_main_allowed": false,
+  "evidence": {
+    "pr": "https://github.com/jatindergill047/marketrevamp-automation/pull/68",
+    "full_mp4_review": "https://github.com/jatindergill047/marketrevamp-automation/actions/runs/44934338793",
+    "layout_regression": "https://github.com/jatindergill047/marketrevamp-automation/actions/runs/44934338899",
+    "reel_opt_in_validation": "https://github.com/jatindergill047/marketrevamp-automation/actions/runs/44934338859"
+  }
+}

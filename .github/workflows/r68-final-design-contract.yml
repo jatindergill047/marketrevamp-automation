@@ -1,0 +1,51 @@
+name: R68 Approved Reel Design Contract (Offline)
+
+on:
+  push:
+    branches:
+      - feature/r68-final-design-approval-20261121
+      - feature/reels-opt-in
+    paths:
+      - R68_APPROVED_DESIGN.json
+      - R68_FINAL_DESIGN.md
+      - test_r68_design_contract.py
+      - reel_r51_design.py
+      - reel_artwork.py
+      - reel_r50_review.py
+      - reel_r52_review.py
+      - .github/workflows/r68-final-design-contract.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  visual-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      REEL_ENABLED: 'false'
+      REEL_UPLOAD_ENABLED: 'false'
+      REEL_FIRST_LIVE_ENABLED: 'false'
+      INSTAGRAM_PUBLISH_ENABLED: 'false'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+      - name: Install isolated image validation dependency
+        run: pip install pillow
+      - name: Compile approved R68 design and contract tests
+        run: |
+          python -m py_compile reel_artwork.py reel_r51_design.py reel_r50_review.py reel_r52_review.py test_r68_design_contract.py
+      - name: Verify approved design, media-safe zones, karaoke timing and publication isolation
+        run: |
+          python -m unittest -v test_r68_design_contract.py test_reel_artwork.py test_reel_r51_design.py
+          test "$REEL_ENABLED" = false
+          test "$REEL_UPLOAD_ENABLED" = false
+          test "$REEL_FIRST_LIVE_ENABLED" = false
+          test "$INSTAGRAM_PUBLISH_ENABLED" = false
+      - name: Check critical syntax and security lint
+        run: |
+          python -m pip install ruff==0.14.0
+          ruff check --select E7,E9,F63,F7,F82 test_r68_design_contract.py
