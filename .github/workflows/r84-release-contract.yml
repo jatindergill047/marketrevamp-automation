@@ -3,6 +3,8 @@ name: R84 Reel First-Live and Daily Publisher Contract (No Network)
 on:
   pull_request:
     paths:
+      - reel_r92_release_gate.py
+      - test_reel_r92_release_gate.py
       - reel_r84_publish_job.py
       - test_reel_r84_publish_job.py
       - .github/workflows/r84-verified-reel-publisher.yml
@@ -10,6 +12,8 @@ on:
   push:
     branches: [feature/r84-controlled-first-reel-delivery-20261121]
     paths:
+      - reel_r92_release_gate.py
+      - test_reel_r92_release_gate.py
       - reel_r84_publish_job.py
       - test_reel_r84_publish_job.py
       - .github/workflows/r84-verified-reel-publisher.yml
@@ -52,9 +56,9 @@ jobs:
           test "$INSTAGRAM_PUBLISH_ENABLED" = false
       - name: Run production release, readback and durable-history offline mocks
         run: |
-          python -m py_compile reel_r84_publish_job.py test_reel_r84_publish_job.py
-          python -m unittest -v test_reel_r84_publish_job.py test_reel_daily_release_policy.py test_reel_r49_first_live.py test_reel_r46_launch_gate.py
+          python -m py_compile reel_r92_release_gate.py test_reel_r92_release_gate.py reel_r84_publish_job.py test_reel_r84_publish_job.py
+          python -m unittest -v test_reel_r92_release_gate.py test_reel_r84_publish_job.py test_reel_daily_release_policy.py test_reel_r49_first_live.py test_reel_r46_launch_gate.py
       - name: Critical Python lint
         run: |
           pip install ruff==0.14.0
-          ruff check --select E7,E9,F63,F7,F82 reel_r84_publish_job.py test_reel_r84_publish_job.py
+          ruff check --select E7,E9,F63,F7,F82 reel_r92_release_gate.py test_reel_r92_release_gate.py reel_r84_publish_job.py test_reel_r84_publish_job.py
