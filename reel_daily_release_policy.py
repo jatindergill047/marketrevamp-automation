@@ -111,6 +111,10 @@ def validate_draft(qa, review, sources, video, history, *, now=None):
         require(r.get("headline") == origin.get("headline")
                 and r.get("category") == origin.get("category"),
                 f"Story {i} headline/category changed after screening")
+        require(isinstance(origin.get("summary"), str)
+                and 30 <= len(origin["summary"].split()) <= 90
+                and r.get("deck") == origin["summary"],
+                f"Story {i} visible context differs from screened publisher summary")
         require(r.get("category") not in BLOCKED_CATEGORIES,
                 f"Story {i} is not in permitted topic coverage")
         publisher = source_name(url)
