@@ -1,0 +1,60 @@
+name: R84 Reel First-Live and Daily Publisher Contract (No Network)
+
+on:
+  pull_request:
+    paths:
+      - reel_r84_publish_job.py
+      - test_reel_r84_publish_job.py
+      - .github/workflows/r84-verified-reel-publisher.yml
+      - .github/workflows/r84-release-contract.yml
+  push:
+    branches: [feature/r84-controlled-first-reel-delivery-20261121]
+    paths:
+      - reel_r84_publish_job.py
+      - test_reel_r84_publish_job.py
+      - .github/workflows/r84-verified-reel-publisher.yml
+      - .github/workflows/r84-release-contract.yml
+
+permissions:
+  contents: read
+
+jobs:
+  offline-delivery-safety:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      REEL_ENABLED: 'false'
+      REEL_FIRST_LIVE_ENABLED: 'false'
+      REEL_UPLOAD_ENABLED: 'false'
+      INSTAGRAM_PUBLISH_ENABLED: 'false'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+      - name: Install only existing pinned API dependencies
+        run: pip install -r requirements.lock
+      - name: Validate first-publication and recurring switches remain closed
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          a=json.loads(Path('r83_reel_autopublish_state.json').read_text())
+          assert a['controlled_first_live'] is False
+          assert a['daily_enabled'] is False
+          assert a['first_video_sha256'] is None
+          assert a['verified_first_media_id'] is None
+          print('Automatic first and recurring Reel publishing BLOCKED until verification')
+          PY
+          test "$REEL_ENABLED" = false
+          test "$REEL_FIRST_LIVE_ENABLED" = false
+          test "$REEL_UPLOAD_ENABLED" = false
+          test "$INSTAGRAM_PUBLISH_ENABLED" = false
+      - name: Run production release, readback and durable-history offline mocks
+        run: |
+          python -m py_compile reel_r84_publish_job.py test_reel_r84_publish_job.py
+          python -m unittest -v test_reel_r84_publish_job.py test_reel_daily_release_policy.py test_reel_r49_first_live.py test_reel_r46_launch_gate.py
+      - name: Critical Python lint
+        run: |
+          pip install ruff==0.14.0
+          ruff check --select E7,E9,F63,F7,F82 reel_r84_publish_job.py test_reel_r84_publish_job.py
