@@ -62,7 +62,7 @@ jobs:
           assert d['status']=='review_only' and d['synthetic_content'] is True
           assert d['seven_scenes']==len(d['artwork_themes'])==7
           assert d['presentation_segments']==9
-          assert d['spoken_hook'].startswith("You're watching MarketRevamp")
+          assert d['spoken_hook']=="Here's what's making headlines today."
           assert d['spoken_follow_cta'].startswith('Follow MarketRevamp')
           assert d['duration_seconds'] <= 90
           assert len(set(d['artwork_themes'])) >= 4
