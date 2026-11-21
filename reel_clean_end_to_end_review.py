@@ -9,10 +9,14 @@ from pathlib import Path
 
 from PIL import Image
 
+from reel_bookends import (HOOK_LINE, FOLLOW_LINE, build_bookends,
+                           narration_segments, joined_narration,
+                           validate_bookend_timing)
 from reel_artwork import (write_artwork_concat, overlay_filter,
                          composite_artwork_preview, story_theme)
 from reel_r50_review import (
     CAPTION_FONT_SIZE, PAPER, captions, check_call, draw_frames, map_chapters,
+    make_logo,
     probe, synthesize,
 )
 
@@ -46,17 +50,20 @@ def main():
          "source_url": f"https://example.org/synthetic-review/{i}"}
         for i, (title, deck, voice) in enumerate(SCENES, 1)
     ]
-    frames = draw_frames(stories, ROOT)
-    for frame in frames:
+    story_frames = draw_frames(stories, ROOT)
+    intro, outro = build_bookends(make_logo(), ROOT, "R50")
+    frames = [intro] + story_frames + [outro]
+    for frame in story_frames:
         with Image.open(frame) as image:
             assert image.size == (1080, 1920)
             assert image.getpixel((75, 1100)) == PAPER
             assert image.getpixel((75, 1250)) != PAPER
-    text = " ".join(s["narration_text"] for s in stories)
+    segments = narration_segments(stories)
+    text = joined_narration(segments)
     source_audio = ROOT / "neural_voice_source.mp3"
     events_file = ROOT / "neural_word_boundaries.json"
     events = asyncio.run(synthesize(text, source_audio, events_file))
-    starts, match, _, _ = map_chapters(stories, events)
+    starts, match, _, _ = map_chapters(segments, events)
     if match < .90:
         raise RuntimeError("Voice alignment too low")
     mastered = ROOT / "master_audio.wav"
@@ -70,8 +77,7 @@ def main():
     ], timeout=180)
     duration = float(probe(mastered)["format"]["duration"])
     cuts = [0] + [events[ix]["start_seconds"] for ix in starts[1:]] + [duration]
-    if any(b-a <= 4.0 for a, b in zip(cuts, cuts[1:])):
-        raise RuntimeError("Chapter cuts too close together")
+    bookends_qa = validate_bookend_timing(cuts)
     concat = ROOT / "chapters.ffconcat"
     lines = ["ffconcat version 1.0"]
     for i, frame in enumerate(frames):
@@ -80,7 +86,8 @@ def main():
     concat.write_text("\n".join(lines)+"\n", encoding="utf-8")
     ass = ROOT / "subtitles.ass"
     groups = captions(events, ass, 1.0)
-    art_concat = write_artwork_concat(ROOT, "R50", cuts)
+    art_concat = write_artwork_concat(ROOT, "R50", cuts,
+                                     include_bookends=True)
     output = ROOT / "marketrevamp-clean-reel-review-only.mp4"
     check_call([
         "ffmpeg", "-y", "-hide_banner", "-loglevel", "error",
@@ -102,8 +109,9 @@ def main():
     assert any(s.get("codec_name") == "aac" for s in streams)
     assert abs(rendered_length-duration) < .4
     assert groups > 10 and len(events) >= 160
+    assert rendered_length <= 90
     contact = Image.new("RGB", (1080, 960), PAPER)
-    for index, frame in enumerate(frames):
+    for index, frame in enumerate(story_frames):
         with Image.open(frame) as image:
             art = ROOT / f"R50_artwork_{index+1:02d}.png"
             preview = composite_artwork_preview(frame, art)
@@ -114,7 +122,9 @@ def main():
         "status": "review_only", "synthetic_content": True,
         "editorial_approved": False, "published": False,
         "cloudinary_uploaded": False, "instagram_published": False,
-        "key_detail_visible": False, "seven_scenes": len(frames),
+        "key_detail_visible": False, "seven_scenes": len(story_frames),
+        "spoken_hook": HOOK_LINE, "spoken_follow_cta": FOLLOW_LINE,
+        **bookends_qa,
         "caption_font_size_px": CAPTION_FONT_SIZE,
         "subtitle_placement": "below_artwork",
         "artwork_themes": [story_theme(story) for story in stories],
