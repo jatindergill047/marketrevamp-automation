@@ -48,7 +48,9 @@ class R51DesignTests(unittest.TestCase):
         source.write_text(ASS,encoding="utf-8")
         result=enlarge_subtitles(source,target)
         self.assertEqual(result["caption_font_size"],72)
-        self.assertEqual(result["karaoke_events_unchanged"],1)
+        self.assertEqual(result["original_groups"],1)
+        self.assertEqual(result["new_groups"],1)
+        self.assertEqual(result["word_starts_preserved"],2)
         output=target.read_text(encoding="utf-8")
         self.assertIn("Dialogue: 0,0:00:01.00,0:00:02.00",output)
         original_events=[x for x in ASS.splitlines() if x.startswith("Dialogue:")]
@@ -58,6 +60,24 @@ class R51DesignTests(unittest.TestCase):
         self.assertEqual(style[2],str(CAPTION_FONT_SIZE))
         self.assertEqual(style[18],"2")
         self.assertEqual(style[19:22],["110","110","390"])
+
+    def test_long_subtitle_reflows_without_losing_word_alignment(self):
+        source=self.root/"original_long.ass"
+        target=self.root/"reflowed_long.ass"
+        extended=ASS.replace(
+            r"{\\kf40}MarketRevamp {\\kf60}reporting",
+            r"{\\kf40}TechCrunch {\\kf47}reports {\\kf83}Anthropic's {\\kf31}seven {\\kf62}founders"
+        ).replace("0:00:02.00","0:00:03.63")
+        source.write_text(extended,encoding="utf-8")
+        result=enlarge_subtitles(source,target)
+        self.assertEqual(result["original_groups"],1)
+        self.assertGreater(result["new_groups"],1)
+        self.assertEqual(result["word_starts_preserved"],5)
+        out=target.read_text(encoding="utf-8")
+        dialogues=[x for x in out.splitlines() if x.startswith("Dialogue:")]
+        self.assertLessEqual(max(len(x.split(",,",1)[1].split(r"{\\kf")) for x in dialogues),4)
+        self.assertIn("Anthropic's",out)
+        self.assertIn("founders",out)
 
     def test_rejects_unreadable_key_detail(self):
         image=self.root/"frame.png"
