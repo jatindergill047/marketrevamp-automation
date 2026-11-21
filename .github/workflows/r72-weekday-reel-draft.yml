@@ -29,6 +29,12 @@ jobs:
       INSTAGRAM_PUBLISH_ENABLED: 'false'
       MARKETREVAMP_QUOTE_FIRST: 'false'
     steps:
+      - name: Read exact date-bound one-time trigger from main
+        if: github.event_name == 'push'
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: main
+          persist-credentials: false
       - name: Confirm Toronto local hour on every day, including weekends
         id: local_day
         run: |
@@ -43,6 +49,7 @@ jobs:
               payload=json.loads(Path(".github/r78-first-fresh-reel-review.trigger").read_text())
               if payload != {"intent":"create-one-fresh-review-only-reel",
                              "toronto_date":"2026-11-21",
+                             "review_attempt":2,
                              "publish_to_instagram":False,
                              "upload_to_cloudinary":False}:
                   raise SystemExit("R78 one-time fresh-review trigger mismatch")
