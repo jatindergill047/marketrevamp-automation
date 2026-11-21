@@ -1,11 +1,11 @@
-"""No-network regression tests for R51 larger captions and retained Key Detail."""
+"""No-network regression tests for clean Reel frames and larger captions."""
 import tempfile
 import unittest
 from pathlib import Path
 
 from PIL import Image
 from reel_r51_design import (
-    CAPTION_DARK, CAPTION_FONT_SIZE, KEY_BOX, RED,
+    CAPTION_DARK, CAPTION_FONT_SIZE, PAPER,
     SUBTITLE_BOX, enlarge_subtitles, style_scene,
 )
 
@@ -25,21 +25,24 @@ class R51DesignTests(unittest.TestCase):
         self.addCleanup(folder.cleanup)
         self.root=Path(folder.name)
 
-    def test_retains_key_detail_and_caption_safe_region(self):
+    def test_removes_key_detail_and_preserves_caption_safe_region(self):
         src=self.root/"original.png"
         dest=self.root/"styled.png"
-        original=Image.new("RGB",(1080,1920),(248,247,244))
+        original=Image.new("RGB",(1080,1920),PAPER)
         original.putpixel((100,100),(12,55,155))
+        # Simulate the old key-detail region: text and dark panel.
+        original.paste((10,20,30),(66,1060,1016,1338))
         original.save(src)
-        result=style_scene(src,"A limited pilot adds parent booking and more driver safeguards.",dest)
-        self.assertEqual(result["detail_lines"],2)
+        result=style_scene(src,"This should never be shown in video frames.",dest)
+        self.assertEqual(result["detail_lines"],0)
         with Image.open(dest) as out:
             self.assertEqual(out.size,(1080,1920))
             self.assertEqual(out.getpixel((100,100)),(12,55,155))
-            self.assertEqual(out.getpixel((75,1110)),RED)
+            self.assertEqual(out.getpixel((75,1110)),PAPER)
+            self.assertEqual(out.getpixel((75,1250)),PAPER)
             self.assertEqual(out.getpixel((75,1400)),CAPTION_DARK)
-            self.assertEqual(out.getpixel((75,1650)),(248,247,244))
-        self.assertLess(KEY_BOX[3],SUBTITLE_BOX[1])
+            self.assertEqual(out.getpixel((75,1650)),PAPER)
+        self.assertLess(1337,SUBTITLE_BOX[1])
         self.assertLess(SUBTITLE_BOX[3],1605)
 
     def test_caption_increase_preserves_exact_karaoke_words_and_starts(self):
@@ -77,11 +80,11 @@ class R51DesignTests(unittest.TestCase):
         self.assertIn("Anthropic's",out)
         self.assertIn("founders",out)
 
-    def test_rejects_unreadable_key_detail(self):
+    def test_long_detail_is_ignored_not_drawn(self):
         image=self.root/"frame.png"
-        Image.new("RGB",(1080,1920),(248,247,244)).save(image)
-        with self.assertRaisesRegex(ValueError,"overflow"):
-            style_scene(image,"This is a long complex detail "*65,self.root/"bad.png")
+        Image.new("RGB",(1080,1920),PAPER).save(image)
+        result=style_scene(image,"This is a long complex detail "*65,self.root/"clean.png")
+        self.assertEqual(result["detail_lines"],0)
 
     def test_rejects_wrong_video_frame_size(self):
         image=self.root/"frame.png"
