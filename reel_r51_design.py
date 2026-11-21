@@ -27,7 +27,8 @@ def _text_lines(draw, text, face, width):
             current=word
         else:
             current=trial
-    if current:lines.append(current)
+    if current:
+        lines.append(current)
     return lines
 
 def style_scene(input_image, detail_text, output_image):
