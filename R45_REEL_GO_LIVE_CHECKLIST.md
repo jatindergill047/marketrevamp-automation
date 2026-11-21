@@ -46,3 +46,19 @@ Date: 2026-11-20 (America/Toronto). This file is an operational record, **not** 
 3. Upload the exact approved real Reel MP4 to Cloudinary and validate it in Instagram's Reel container.
 4. Publish one controlled public Reel with an exact approval fingerprint, record the returned media ID and verify posting history/rollback.
 5. Build and separately review daily new-news Reel generation, duplicate guards, monitoring and schedule; never silently re-post stale R45 material.
+
+## R49 controlled first-live progress (2026-11-20 Toronto)
+
+- **PASS:** [Protected-main Instagram container preflight run 44840882263](https://github.com/jatindergill047/marketrevamp-automation/actions/runs/44840882263): GitHub artifact reports `processing_status=FINISHED`, `instagram_published=false`. This validates media-container processing, **not public Reel publication**.
+- **PASS:** Local R45 vs publishing-history comparison found an exact previously published Meta Muse article in the November 19 carousel. **Never publish R45 unchanged**; it also lacks editorial signoff.
+- **PASS:** [R49 isolated publishing safeguards and CI](https://github.com/jatindergill047/marketrevamp-automation/actions/runs/44841732625) on the clean manual first-live branch.
+- **DRAFT PR:** [#61 — manual approved first public Reel workflow](https://github.com/jatindergill047/marketrevamp-automation/pull/61). This is not merged or active, and contains no schedule. It requires an exact fingerprint, a current-day successful R50 approved package, a dedicated Cloudinary Reel video preset, and protected production credentials.
+- **NO PUBLICATION:** No public Reel has been submitted. The existing daily carousel system on `main` remains unchanged.
+
+### Next implementation work
+
+1. Generate the R50 **fresh, dated** seven-story Reel source package with supporting citations, approved spoken scripts, and real TTS word boundaries, without auto-approving editorial claims.
+2. Complete visual/source QA and obtain explicit release approval for the exact video fingerprint.
+3. Configure `CLOUDINARY_REEL_UPLOAD_PRESET` in `instagram-production` for production-compatible video hosting, with verified signing and permissions.
+4. Only after R50 exists and approval gates pass, review PR #61 and perform one manual controlled public Reel publication, then reconcile Instagram media ID/history.
+5. Separately design and test a weekday (or user-approved daily) schedule using current-day news, fail-closed freshness checks, and duplicate protection.
