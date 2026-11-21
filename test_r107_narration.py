@@ -20,7 +20,8 @@ class NarrationPolishTests(unittest.TestCase):
             "A different unrelated sports result attracted millions of viewers."
         )
         # Relevance is independently checked by the existing headline guard.
-        relevant = lambda h, s: "Nvidia" in s
+        def relevant(h, s):
+            return "Nvidia" in s
         text = additional_source_context(summary, title, relevant)
         self.assertEqual(text, "On Friday the regulators opened an inquiry into Nvidia's disclosures after reports of unusual inventory figures.")
         self.assertIn(text, summary)
