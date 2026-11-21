@@ -1,0 +1,136 @@
+name: MarketRevamp R49 First Approved Reel (Manual Only)
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_run_id:
+        description: 'Successful current-day approved Reel preparation workflow run ID'
+        required: true
+        type: string
+      release_fingerprint:
+        description: 'Exact SHA-256 release fingerprint of reviewed video, text, sources and approvals'
+        required: true
+        type: string
+      confirmation:
+        description: 'Type PUBLISH_ONE_REEL to authorize one public Instagram Reel'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: marketrevamp-instagram-publishing
+  cancel-in-progress: false
+
+jobs:
+  publish-one-reviewed-reel:
+    if: >-
+      github.ref == 'refs/heads/main' &&
+      inputs.confirmation == 'PUBLISH_ONE_REEL'
+    runs-on: ubuntu-latest
+    environment: instagram-production
+    timeout-minutes: 35
+    env:
+      REEL_FIRST_LIVE_ENABLED: 'true'
+      INSTAGRAM_PUBLISH_ENABLED: 'true'
+      REEL_UPLOAD_ENABLED: 'true'
+      INSTAGRAM_PERSISTENCE_READY: 'true'
+      SOURCE_RUN_ID: ${{ inputs.source_run_id }}
+      INSTAGRAM_REEL_APPROVED_FINGERPRINT: ${{ inputs.release_fingerprint }}
+      CLOUDINARY_CLOUD_NAME: ${{ vars.CLOUDINARY_CLOUD_NAME }}
+      CLOUDINARY_REEL_UPLOAD_PRESET: ${{ vars.CLOUDINARY_REEL_UPLOAD_PRESET }}
+      CLOUDINARY_API_KEY: ${{ secrets.CLOUDINARY_API_KEY }}
+      CLOUDINARY_API_SECRET: ${{ secrets.CLOUDINARY_API_SECRET }}
+      INSTAGRAM_ACCESS_TOKEN: ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
+      INSTAGRAM_USER_ID: ${{ vars.INSTAGRAM_USER_ID }}
+    steps:
+      - name: Checkout current protected production publisher
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: main
+      - name: Refuse invalid source run and approval inputs
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python - <<'PY'
+          import os, re
+          assert re.fullmatch(r'[1-9][0-9]*', os.environ['SOURCE_RUN_ID'])
+          assert re.fullmatch(r'[a-f0-9]{64}', os.environ['INSTAGRAM_REEL_APPROVED_FINGERPRINT'])
+          assert os.environ['CLOUDINARY_REEL_UPLOAD_PRESET'], 'Dedicated Reel upload preset is not configured'
+          PY
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$SOURCE_RUN_ID" > /tmp/reel_source_run.json
+          python - <<'PY'
+          import json, os
+          from datetime import datetime
+          from zoneinfo import ZoneInfo
+          run = json.load(open('/tmp/reel_source_run.json', encoding='utf-8'))
+          if (run.get('name') != 'MarketRevamp R50 Approved Reel Preparation'
+                  or run.get('conclusion') != 'success'
+                  or run.get('head_branch') != 'main'
+                  or run.get('repository', {}).get('full_name') != os.environ['GITHUB_REPOSITORY']):
+              raise RuntimeError('Only successful main-branch approved Reel preparation is accepted')
+          source_day=datetime.fromisoformat(run['created_at'].replace('Z','+00:00')).astimezone(
+              ZoneInfo('America/Toronto')).date()
+          if source_day != datetime.now(ZoneInfo('America/Toronto')).date():
+              raise RuntimeError('Stale approved Reel artifact blocked')
+          PY
+      - name: Download exact reviewed MP4 and approval metadata
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh run download "$SOURCE_RUN_ID" --repo "$GITHUB_REPOSITORY" --name marketrevamp-approved-reel --dir approved-reel
+          test -s approved-reel/marketrevamp_reel.mp4
+          test -s approved-reel/reel_release_metadata.json
+          test -s approved-reel/reel_release_stories.json
+      - name: Checkout authoritative publishing history
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: publishing-history
+          path: publishing-history
+          persist-credentials: true
+      - name: Restore history
+        run: cp publishing-history/instagram_publish_history.json instagram_publish_history.json
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+      - name: Install dependencies and MP4 probe
+        run: |
+          pip install -r requirements.lock
+          sudo apt-get update -qq && sudo apt-get install -y ffmpeg
+      - name: Offline R49 approval and irreversible-call tests
+        run: python -m unittest -v test_reel_r46_launch_gate.py test_reel_r49_first_live.py test_reel_r47_container_smoke.py
+      - name: Validate release and publish exactly once
+        run: |
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          from publish_instagram import load_history, save_history
+          from reel_r49_first_live import publish_once
+
+          root=Path('approved-reel')
+          meta=json.loads((root/'reel_release_metadata.json').read_text(encoding='utf-8'))
+          stories=json.loads((root/'reel_release_stories.json').read_text(encoding='utf-8'))
+          result=publish_once(
+              meta, stories, root/'marketrevamp_reel.mp4', load_history(),
+              approved_fingerprint=os.environ['INSTAGRAM_REEL_APPROVED_FINGERPRINT'],
+              cloud=os.environ['CLOUDINARY_CLOUD_NAME'],
+              preset=os.environ['CLOUDINARY_REEL_UPLOAD_PRESET'],
+              api_key=os.environ['CLOUDINARY_API_KEY'],
+              api_secret=os.environ['CLOUDINARY_API_SECRET'],
+              account_id=os.environ['INSTAGRAM_USER_ID'],
+              token=os.environ['INSTAGRAM_ACCESS_TOKEN'],
+              saver=save_history,
+          )
+          print('Published Instagram Reel media ID:', result['instagram_media_id'])
+          (root/'reel_publication_result.json').write_text(json.dumps(result, indent=2)+'\n',encoding='utf-8')
+          PY
+      - name: Save published media evidence
+        if: success()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: marketrevamp-first-reel-publication-result
+          path: approved-reel/reel_publication_result.json
+          retention-days: 14
+          if-no-files-found: error
