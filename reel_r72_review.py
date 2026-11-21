@@ -1,4 +1,4 @@
-"""R72: source-linked, fresh-weekday Reel REVIEW, never a publication workflow.
+"""R72: source-linked, fresh daily Reel REVIEW, never a publication workflow.
 
 The R67 collector is the source of truth for screened article candidates.
 This module revalidates dates, history and source attribution before deriving
@@ -59,8 +59,6 @@ def _complete_context(summary):
 def prepare_stories(package, published_urls, *, now):
     """Derive short source-attributed narration from screened, fresh sources."""
     local = now.astimezone(TORONTO)
-    if local.weekday() >= 5:
-        raise ValueError("R72 refuses weekend or noncurrent news Reel preparation")
     if package.get("status") != "review_only" or package.get("version") != "R67":
         raise ValueError("Input must be an R67 review-only package")
     if package.get("toronto_date") != local.date().isoformat():

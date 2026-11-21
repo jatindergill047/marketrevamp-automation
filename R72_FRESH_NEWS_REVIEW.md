@@ -1,4 +1,4 @@
-# R72 — Fresh weekday Reel review integration
+# R72 — Fresh daily Reel review integration
 
 **Status:** Source-to-template implementation verified by offline GitHub CI;
 **real current-news end-to-end run pending** a weekday source fetch. The
@@ -11,7 +11,7 @@ approved R71 Reel design is unchanged.
    canonical article links already present in `publishing-history` branch.
    The collector now receives the exact authoritative history file path.
 2. **R72 adapter** revalidates the R67 result: it must be from **today in
-   America/Toronto**, weekday-only, within the recent-article window, sourced
+   America/Toronto**, every day including weekends, within the recent-article window, sourced
    from reviewed publisher domains, have at least three topic categories, and
    remain editorially unapproved.
 3. Narration takes exact source headlines with explicit publisher attribution
@@ -52,10 +52,10 @@ python reel_r72_review.py \
   --output-dir r72_review
 ```
 
-This must run on a **weekday** after reading the latest authenticated history
+This must run on any day, including Saturday and Sunday, after reading the latest authenticated history
 from `publishing-history`. The R72 GitHub workflow's **push** event runs
 synthetic/offline safeguards only. Its review job is gated to a manual dispatch
-and a Toronto weekday; a scheduled workflow on a feature-only branch would
+and the current Toronto date; a scheduled workflow on a feature-only branch would
 **not** run from GitHub's default-branch scheduler. A future separately
 reviewed default-branch entry point can enable manually triggered or scheduled
 real-news *review* generation. No production Reel publisher has been activated.

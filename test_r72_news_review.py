@@ -47,9 +47,21 @@ class R72NewsReviewTests(unittest.TestCase):
         self.assertEqual(segments[-1]["narration_text"], FOLLOW_LINE)
         self.assertEqual(len(segments), 9)
 
-    def test_prohibits_weekends_or_wrong_dates(self):
-        with self.assertRaisesRegex(ValueError, "weekend"):
-            prepare_stories(package(), set(), now=NOW-timedelta(days=2))
+    def test_weekend_news_reviews_allowed_but_wrong_dates_still_refused(self):
+        for days_back in (1, 2):  # Sunday and Saturday, Toronto local time
+            when = NOW - timedelta(days=days_back)
+            data = copy.deepcopy(package())
+            data["toronto_date"] = when.date().isoformat()
+            for i, item in enumerate(data["stories"]):
+                item["published_at"] = (
+                    when - timedelta(hours=i + 2)
+                ).isoformat()
+            prepared = prepare_stories(data, set(), now=when)
+            self.assertEqual(len(prepared), 7)
+            self.assertTrue(all(story["editorial_approved"] is False
+                                for story in prepared))
+            self.assertTrue(all(story["source_url"].startswith("https://")
+                                for story in prepared))
         data = package()
         data["toronto_date"] = "2026-11-20"
         with self.assertRaisesRegex(ValueError, "today's Toronto"):

@@ -61,9 +61,19 @@ class R67Tests(unittest.TestCase):
                     "instagram_published", "render_authorized"):
             self.assertIs(value[key], False)
 
-    def test_weekend_refused(self):
-        with self.assertRaisesRegex(ValueError, "weekday-only"):
-            self.review(now=NOW + timedelta(days=1))
+    def test_weekend_reviews_allowed_with_fresh_source_articles(self):
+        for days, hour in ((1, 16), (2, 16)):  # Saturday and Sunday in Toronto
+            when = NOW + timedelta(days=days)
+            data = copy.deepcopy(self.package)
+            for index, item in enumerate(data["selected_stories"]):
+                item["published"] = (
+                    when - timedelta(hours=index+1)
+                ).isoformat()
+            outcome = self.review(data=data, now=when)
+            self.assertEqual(outcome["toronto_date"], when.date().isoformat())
+            self.assertEqual(outcome["story_count"], 7)
+            self.assertFalse(outcome["render_authorized"])
+            self.assertFalse(outcome["instagram_published"])
 
     def test_seven_required(self):
         data=copy.deepcopy(self.package)

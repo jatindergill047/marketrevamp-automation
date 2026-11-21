@@ -1,4 +1,4 @@
-"""R67: fail-closed, weekday-only news candidates for Reel editorial review.
+"""R67: fail-closed, daily news candidates for Reel editorial review.
 
 Reuses the existing source-screened news collector; it never authorizes a render,
 upload, editorial approval, or Instagram publication. Source-backed does not
@@ -57,10 +57,8 @@ def load_published_history(path):
 
 
 def review_package(results, published_urls, *, now):
-    """Reject incomplete, stale, unsupported, duplicate or weekend inputs."""
+    """Reject incomplete, stale, unsupported, or duplicate inputs any day."""
     local = now.astimezone(TORONTO)
-    if local.weekday() >= 5:
-        raise ValueError("R67 weekday-only gate: no Saturday/Sunday review packages")
     if not isinstance(results, dict) or not isinstance(results.get("selected_stories"), list):
         raise ValueError("Missing collector selection")
     stories = results["selected_stories"]
@@ -140,14 +138,12 @@ def review_package(results, published_urls, *, now):
 
 
 def main(argv=None):
-    parser = argparse.ArgumentParser(description="Never-publish R67 weekday collector")
+    parser = argparse.ArgumentParser(description="Never-publish R67 daily collector")
     parser.add_argument("--collector-result", default="news_results.json")
     parser.add_argument("--history", required=True)
     parser.add_argument("--output", default="r67_review/review_sources.json")
     args = parser.parse_args(argv)
     now = datetime.now(TORONTO)
-    if now.weekday() >= 5:
-        raise SystemExit("Weekend: no R67 collection or output")
     published = load_published_history(args.history)
     # Import lazily: do not run network collection for offline review package tests.
     from news_collector import collect_news
