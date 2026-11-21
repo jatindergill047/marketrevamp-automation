@@ -1,0 +1,92 @@
+name: R67 Weekday Reel News Collection Review Only
+
+on:
+  push:
+    branches: [feature/r67-weekday-news-collector-20261121]
+    paths:
+      - 'r67_weekday_news.py'
+      - 'test_r67_weekday_news.py'
+      - '.github/workflows/r67-weekday-review.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  offline-safety-validation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      REEL_ENABLED: 'false'
+      REEL_UPLOAD_ENABLED: 'false'
+      REEL_FIRST_LIVE_ENABLED: 'false'
+      INSTAGRAM_PUBLISH_ENABLED: 'false'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+      - name: Install existing pinned project dependencies
+        run: pip install -r requirements.lock
+      - name: Assert all publication gates remain disabled
+        run: |
+          test "$REEL_ENABLED" = false
+          test "$REEL_UPLOAD_ENABLED" = false
+          test "$REEL_FIRST_LIVE_ENABLED" = false
+          test "$INSTAGRAM_PUBLISH_ENABLED" = false
+      - name: Compile and run R67 fail-closed offline tests
+        run: |
+          python -m py_compile r67_weekday_news.py test_r67_weekday_news.py
+          python -m unittest -v test_r67_weekday_news.py
+      - name: Check critical lint errors
+        run: |
+          python -m pip install ruff==0.14.0
+          ruff check --select E7,E9,F63,F7,F82 r67_weekday_news.py test_r67_weekday_news.py
+
+  weekday-collector-review:
+    if: github.event_name == 'workflow_dispatch'
+    needs: offline-safety-validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      REEL_ENABLED: 'false'
+      REEL_UPLOAD_ENABLED: 'false'
+      REEL_FIRST_LIVE_ENABLED: 'false'
+      INSTAGRAM_PUBLISH_ENABLED: 'false'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Check Toronto weekday before any fetch
+        run: |
+          python - <<'PY'
+          from datetime import datetime
+          from zoneinfo import ZoneInfo
+          assert datetime.now(ZoneInfo('America/Toronto')).weekday() < 5, 'Weekend: R67 news selection disabled'
+          PY
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: publishing-history
+          path: publishing-history
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+      - name: Install pinned collector dependencies
+        run: pip install -r requirements.lock
+      - name: Select and independently screen publisher-source candidate stories
+        run: |
+          python r67_weekday_news.py --history publishing-history/instagram_publish_history.json
+      - name: Assert review-only never-publish artifact
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          x=json.loads(Path('r67_review/review_sources.json').read_text())
+          assert x['story_count']==len(x['stories'])==7
+          assert all(x[k] is False for k in ('editorial_approved','published','cloudinary_uploaded','instagram_published','render_authorized'))
+          print('R67: source-linked seven-story review only')
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: r67-review-only-stories
+          path: r67_review/review_sources.json
+          retention-days: 7
+          if-no-files-found: error
