@@ -48,12 +48,12 @@ class FirstLiveTests(unittest.TestCase):
         return validate_and_fingerprint(metadata(), stories(), self.video, now=NOW)["release_fingerprint"]
 
     def exercise(self, *, approval=None, history=None, uploader=None, request=None, saver=None,
-                 meta=None, story_items=None):
+                 meta=None, story_items=None, api_key="key", api_secret="secret"):
         return publish_once(meta or metadata(), story_items or stories(), self.video,
               {} if history is None else history,
               approved_fingerprint=self.release_fp() if approval is None else approval,
               cloud="staging", preset="reels-staging", account_id="123456789", token="token",
-              api_key="key", api_secret="secret", uploader=uploader or
+              api_key=api_key, api_secret=api_secret, uploader=uploader or
               (lambda *args: {"secure_url": CLOUDINARY_URL}),
               request=request or self.fake_success, saver=saver or (lambda h: None), now=NOW,
               sleep=lambda t: None)
@@ -125,6 +125,25 @@ class FirstLiveTests(unittest.TestCase):
         self.assertEqual(state[self.release_fp()]["status"],"pending")
         self.assertIn("publish_attempted_at",state[self.release_fp()])
         self.assertEqual(len(checkpoints),3)
+
+    def test_unsigned_existing_cloudinary_preset_succeeds_when_fully_gated(self):
+        # The production carousel already uses an unsigned upload preset.
+        # R49 must support it without weakening video approval or history checks.
+        uploaded=[]
+        response=self.exercise(
+            api_key="", api_secret="",
+            uploader=lambda *args: (
+                uploaded.append(args) or {"secure_url": CLOUDINARY_URL}
+            ),
+        )
+        self.assertEqual(response["status"], "published")
+        self.assertEqual(len(uploaded), 1)
+        self.assertEqual(uploaded[0][-2:], ("", ""))
+
+    def test_partial_signed_cloudinary_secret_is_blocked(self):
+        with self.assertRaisesRegex(ReleaseBlocked, "must both be supplied"):
+            self.exercise(api_key="key", api_secret="",
+                          uploader=lambda *args:self.fail("Must not upload"))
 
     def test_unapproved_editorial_rejected(self):
         m=metadata()

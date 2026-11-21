@@ -9,7 +9,7 @@ on:
         type: string
   push:
     branches: [main]
-    paths: ['.github/r50-live-20261120.trigger']
+    paths: ['.github/r50-live-20261120.trigger', '.github/r50-live-20261120.retry.trigger']
 
 permissions:
   contents: write
@@ -146,11 +146,14 @@ jobs:
         run: |
           python - <<'PY'
           import os
-          required=('CLOUDINARY_CLOUD_NAME','CLOUDINARY_UPLOAD_PRESET','CLOUDINARY_API_KEY',
-                    'CLOUDINARY_API_SECRET','INSTAGRAM_ACCESS_TOKEN','INSTAGRAM_USER_ID')
+          required=('CLOUDINARY_CLOUD_NAME','CLOUDINARY_UPLOAD_PRESET',
+                    'INSTAGRAM_ACCESS_TOKEN','INSTAGRAM_USER_ID')
           missing=[n for n in required if not os.environ.get(n)]
           if missing:
-              raise RuntimeError('Production credentials/configuration unavailable: '+','.join(missing))
+              raise RuntimeError('Production configuration unavailable: '+','.join(missing))
+          if bool(os.environ.get('CLOUDINARY_API_KEY')) != bool(os.environ.get('CLOUDINARY_API_SECRET')):
+              raise RuntimeError('Cloudinary signed credential pair is incomplete')
+          print('Cloudinary existing unsigned or complete signed upload mode verified')
           PY
 
       - name: Upload approved video to Cloudinary, publish once and checkpoint history
