@@ -44,6 +44,20 @@ jobs:
         with:
           ref: main
           persist-credentials: false
+      - name: Confirm a successful scheduled source run uploaded the exact R72 draft artifact
+        id: source_artifact
+        if: github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_RUN_ID: ${{ github.event.workflow_run.id }}
+        run: |
+          count=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$SOURCE_RUN_ID/artifacts?name=marketrevamp-r72-fresh-news-draft-not-published" --jq '[.artifacts[] | select(.expired == false)] | length')
+          if [ "$count" -eq 1 ]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Skipped daily Reel release because the source run produced no review artifact."
+          fi
       - name: Enforce first-live and recurring disable switches
         id: policy
         env:
@@ -51,6 +65,7 @@ jobs:
           SOURCE_JOB_ID: ${{ github.event.workflow_run.id }}
           SOURCE_JOB_EVENT: ${{ github.event.workflow_run.event }}
           SOURCE_JOB_CONCLUSION: ${{ github.event.workflow_run.conclusion }}
+          SOURCE_ARTIFACT_VERIFIED: ${{ steps.source_artifact.outputs.available }}
           SOURCE_JOB_BRANCH: ${{ github.event.workflow_run.head_branch }}
           SOURCE_JOB_REPO: ${{ github.event.workflow_run.head_repository.full_name }}
           EXPECTED_REPO: ${{ github.repository }}
