@@ -50,7 +50,7 @@ jobs:
         if: steps.local_day.outputs.run_review == 'true'
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
-          ref: 490783581b6220961128bee70a84701958bd19ec
+          ref: 274a8c0f9df22b1c4ed0a2584f58fc786a88cc26
           persist-credentials: false
       - name: Checkout authoritative publishing history — read only
         if: steps.local_day.outputs.run_review == 'true'
@@ -110,6 +110,8 @@ jobs:
           assert qa['presentation_segments']==9
           assert qa['spoken_hook']=="Here's what's making headlines today."
           assert qa['spoken_follow_cta'].startswith('Follow MarketRevamp')
+          assert qa['synthetic_content'] is False
+          assert qa['real_source_headlines'] is True
           assert qa['not_independently_fact_checked'] is True
           assert qa['history_checked'] is True
           assert qa['caption_font_size_px']==80 and qa['alignment_token_ratio']>=.90
