@@ -731,7 +731,7 @@
   },
   "9c8c64a1adeb321e850f8af34168c3850018ded7263e431e092582d76368f8af": {
     "media_kind": "reel",
-    "status": "pending",
+    "status": "published",
     "toronto_date": "2026-11-21",
     "created_at": 1795296054,
     "release_fingerprint": "9c8c64a1adeb321e850f8af34168c3850018ded7263e431e092582d76368f8af",
@@ -747,7 +747,8 @@
     ],
     "video_url": "https://res.cloudinary.com/y0ln6ixr/video/upload/v1795296049/yiogvfkiwmsqaf4ejxmj.mp4",
     "instagram_container_id": "18135282538801321",
-    "instagram_media_id": null,
-    "publish_attempted_at": 1795296139
+    "instagram_media_id": "18445124020179151",
+    "publish_attempted_at": 1795296139,
+    "published_at": 1795296148
   }
 }
