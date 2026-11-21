@@ -1,0 +1,87 @@
+{
+  "version": "R52",
+  "toronto_date": "2026-11-20",
+  "status": "review_only",
+  "editorial_approved": false,
+  "published": false,
+  "narration_voice": "en-US-AndrewNeural",
+  "stories": [
+    {
+      "id": "ai-security-social-engineering",
+      "category": "AI",
+      "headline": "Experts Warn of Spy Risks in AI Industry",
+      "deck": "Security specialists say AI founders face targeted social engineering.",
+      "narration_text": "Experts speaking to TechCrunch warn that AI founders and staff are vulnerable to sophisticated social engineering. Attackers may use fake professional relationships to obtain confidential company information, including research or customer lists.",
+      "source_url": "https://techcrunch.com/2026/11/20/experts-warn-nearly-everyone-in-ai-is-susceptible-to-a-honey-trap-scheme-right-now/",
+      "published_date": "2026-11-20",
+      "source_name": "TechCrunch",
+      "fact_check_status": "source_supported_pending_editorial_approval"
+    },
+    {
+      "id": "riemann-ai-human-claims",
+      "category": "AI",
+      "headline": "Two Teams Announce Claims on Riemann Hypothesis",
+      "deck": "One AI-assisted formal proof and another human-led effort face scrutiny.",
+      "narration_text": "Two groups have announced approaches to the famous Riemann hypothesis. TechCrunch reports one proof was developed with AI and compiled in Lean, but wider mathematical assessment is still underway.",
+      "source_url": "https://techcrunch.com/2026/11/20/ai-claimed-a-solution-to-the-167-year-old-riemann-hypothesis-and-a-human-did-too/",
+      "published_date": "2026-11-20",
+      "source_name": "TechCrunch",
+      "fact_check_status": "source_supported_pending_editorial_approval"
+    },
+    {
+      "id": "mailchimp-bending-spoons",
+      "category": "TECH",
+      "headline": "Bending Spoons Buys Mailchimp for $3.68B",
+      "deck": "Intuit sells the marketing platform at a much lower price than in 2021.",
+      "narration_text": "Bending Spoons has agreed to acquire Mailchimp from Intuit for three point six eight billion dollars, TechCrunch reports. Intuit bought the email marketing company in twenty twenty-one for roughly twelve billion dollars.",
+      "source_url": "https://techcrunch.com/2026/11/20/bending-spoons-buys-mailchimp-for-3-68-billion/",
+      "published_date": "2026-11-20",
+      "source_name": "TechCrunch",
+      "fact_check_status": "source_supported_pending_editorial_approval"
+    },
+    {
+      "id": "tigerfish-cloud-exposure",
+      "category": "SECURITY",
+      "headline": "Transcription Company Secures Exposed Cloud Files",
+      "deck": "Tigerfish blocked public access after a researcher found sensitive data.",
+      "narration_text": "TechCrunch reports transcription firm Tigerfish left customer materials on publicly accessible cloud storage. The exposed files included law enforcement transcriptions and media. Tigerfish says it has blocked access to the storage bucket.",
+      "source_url": "https://techcrunch.com/2026/11/20/a-transcription-firm-used-by-police-prosecutors-and-tech-giants-exposed-customer-data-online/",
+      "published_date": "2026-11-20",
+      "source_name": "TechCrunch",
+      "fact_check_status": "source_supported_pending_editorial_approval"
+    },
+    {
+      "id": "geothermal-datacenters",
+      "category": "TECH",
+      "headline": "Super-Hot Geothermal Attracts Data Center Deals",
+      "deck": "Google is pursuing geothermal power through a reported Quaise agreement.",
+      "narration_text": "Geothermal startups are testing ways to tap deeper, hotter rock for electricity. TechCrunch reports Google has agreed to purchase fifty megawatts from a planned Quaise project, though commercial scale still faces challenges.",
+      "source_url": "https://techcrunch.com/2026/11/20/super-hot-rock-geothermal-could-end-data-center-energy-woes/",
+      "published_date": "2026-11-20",
+      "source_name": "TechCrunch",
+      "fact_check_status": "source_supported_pending_editorial_approval"
+    },
+    {
+      "id": "hong-kong-crypto-licensing",
+      "category": "BLOCKCHAIN",
+      "headline": "Hong Kong Proposes Wider Crypto Licensing",
+      "deck": "The proposed rules would cover advisers, brokers and custodians.",
+      "narration_text": "Hong Kong has proposed expanding crypto licensing to brokers, advisers, asset managers, and custodians, according to CoinDesk. The bill is not yet law and is scheduled for a legislative reading in December.",
+      "source_url": "https://www.coindesk.com/policy/2026/11/20/hong-kong-moves-to-extend-crypto-licensing-rules-to-brokers-advisers-and-custodians",
+      "published_date": "2026-11-20",
+      "source_name": "CoinDesk",
+      "fact_check_status": "source_supported_pending_editorial_approval"
+    },
+    {
+      "id": "cftc-onchain-trading",
+      "category": "CRYPTO",
+      "headline": "CFTC: Onchain Platforms Need Standard Licenses",
+      "deck": "Hyperliquid-style derivatives would require approval or a licensed partner.",
+      "narration_text": "The United States commodities regulator says blockchain-based derivatives platforms do not get special regulatory exemptions. CoinDesk reports Hyperliquid-style products could serve American traders through the required licenses or registered exchange partners.",
+      "source_url": "https://www.coindesk.com/markets/2026/11/20/cftc-tells-hyperliquid-and-crypto-rivals-no-special-rules-for-onchain-trading",
+      "published_date": "2026-11-20",
+      "source_name": "CoinDesk",
+      "fact_check_status": "source_supported_pending_editorial_approval"
+    }
+  ]
+}
