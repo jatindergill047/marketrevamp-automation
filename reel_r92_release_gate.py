@@ -55,6 +55,7 @@ def gate(env, state, *, trigger=None, now=None):
                  and env.get("SOURCE_JOB_CONCLUSION")=="success"
                  and env.get("SOURCE_JOB_BRANCH")=="main"
                  and env.get("SOURCE_JOB_REPO")==env.get("EXPECTED_REPO")
+                 and env.get("SOURCE_ARTIFACT_VERIFIED")=="true"
                  and bool(source.isdigit()))
         return {"enabled":enabled,"mode":"daily",
                 "source_run_id":source,"approved_sha":""}
