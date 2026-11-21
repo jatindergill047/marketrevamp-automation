@@ -54,11 +54,16 @@ class R92GateTests(unittest.TestCase):
         e={**BASE,"EVENT_NAME":"workflow_run","SOURCE_JOB_ID":"44948095529",
            "SOURCE_JOB_EVENT":"schedule","SOURCE_JOB_BRANCH":"main",
            "SOURCE_JOB_CONCLUSION":"success",
-           "SOURCE_JOB_REPO":BASE["EXPECTED_REPO"]}
+           "SOURCE_JOB_REPO":BASE["EXPECTED_REPO"],
+           "SOURCE_ARTIFACT_VERIFIED":"true"}
         s={**STATE,"daily_enabled":True,
            "verified_first_media_id":"1788000111222333"}
         self.assertTrue(gate(e,s,now=NOW)["enabled"])
         self.assertFalse(gate({**e,"SOURCE_JOB_CONCLUSION":"failure"},
+                              s,now=NOW)["enabled"])
+        self.assertFalse(gate({**e,"SOURCE_ARTIFACT_VERIFIED":"false"},
+                              s,now=NOW)["enabled"])
+        self.assertFalse(gate({**e,"SOURCE_ARTIFACT_VERIFIED":""},
                               s,now=NOW)["enabled"])
         self.assertFalse(gate({**e,"SOURCE_JOB_REPO":"attacker/clone"},
                               s,now=NOW)["enabled"])
