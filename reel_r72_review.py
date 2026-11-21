@@ -25,10 +25,13 @@ from reel_bookends import (HOOK_LINE, FOLLOW_LINE, build_bookends,
                            validate_bookend_timing)
 from reel_r51_design import CAPTION_FONT_SIZE
 from reel_script import clean_text
+from reel_r107_narration import (
+    additional_source_context, readable_subtitle_events, insert_story_pauses,
+)
 from reel_editorial_quality import (same_reel_event, summary_supports_headline,
                                     sentence_supports_headline)
 
-MAX_TOTAL_STORY_WORDS = 180
+MAX_TOTAL_STORY_WORDS = 185
 MIN_TOTAL_STORY_WORDS = 95
 TOPICS = frozenset(("AI", "Technology", "Crypto", "Markets"))
 PUBLISHER_NAMES = {
@@ -50,12 +53,8 @@ def publisher_from_url(url):
 
 
 def _complete_context(summary, headline):
-    """Optional short verbatim extract; never reword or truncate a claim."""
-    sentences = re.split(r"(?<=[.!?])\s+", summary.strip())
-    return next((s.strip() for s in sentences
-                 if 8 <= len(s.split()) <= 22 and s.rstrip().endswith((".", "!", "?"))
-                 and sentence_supports_headline(headline, s)),
-                "")
+    """Optional, relevant verbatim context; never invent or truncate a claim."""
+    return additional_source_context(summary, headline, sentence_supports_headline)
 
 
 def prepare_stories(package, published_urls, *, now):
@@ -106,10 +105,13 @@ def prepare_stories(package, published_urls, *, now):
             raise ValueError("Near-duplicate news event in Reel")
         seen.add(url)
         publisher = publisher_from_url(url)
-        title_spoken = clean_text(title).rstrip(".!?")
+        title_spoken = clean_text(title).strip()
         if not title_spoken or len(title_spoken.split()) > 28:
             raise ValueError("Unusable or excessively long news headline")
-        spoken = f"According to {publisher}, {title_spoken}."
+        # Publisher name remains on the visual card and in the source link.
+        # Avoid seven identical spoken "According to ..." introductions.
+        spoken = (title_spoken if title_spoken.endswith((".", "!", "?"))
+                  else title_spoken + ".")
         stories.append({
             "headline": title.strip(),
             "category": category,
@@ -130,12 +132,11 @@ def prepare_stories(package, published_urls, *, now):
     count = sum(len(s["narration_text"].split()) for s in stories)
     if count > MAX_TOTAL_STORY_WORDS:
         raise ValueError("Narration budget exceeded by headlines")
-    # Add complete extractive sentence context while within a conservative
-    # budget; never slice a quote, paraphrase claims, or invent a consequence.
-    for index in sorted(range(REQUIRED_STORIES), key=lambda k: len(extra[k].split())):
+    # Spend the freed attribution time on useful, source-extracted context.
+    # Prefer short extracts to cover more stories without crossing 90 seconds.
+    for index in sorted(range(REQUIRED_STORIES),
+                        key=lambda k: len(extra[k].split()) or 1000):
         context = extra[index]
-        if count >= 135:
-            break
         if not context:
             continue
         n = len(context.split())
@@ -204,7 +205,10 @@ def render_review(stories, *, output_dir, toronto_date, synthetic=False):
     starts, match, expected_count, actual_count = map_chapters(segments, events)
     if match < 0.90:
         raise RuntimeError("Voice timing drifted from the approved script")
-    raw_length = float(probe(source_audio)["format"]["duration"])
+    spaced_audio = target / "r72_spaced_voice.wav"
+    events = insert_story_pauses(source_audio, spaced_audio, events, starts,
+                                 probe=probe, run=check_call)
+    raw_length = float(probe(spaced_audio)["format"]["duration"])
     if raw_length <= 0 or raw_length > 110:
         raise RuntimeError("Narration is too long for a safe 90-second master")
     tempo = max(1.0, raw_length / 87.0)
@@ -219,7 +223,7 @@ def render_review(stories, *, output_dir, toronto_date, synthetic=False):
         f"atempo={tempo:.6f},loudnorm=I=-16:TP=-1.5:LRA=11,"
         "afade=t=in:d=0.12"
     )
-    check_call(["ffmpeg", "-y", "-loglevel", "error", "-i", str(source_audio),
+    check_call(["ffmpeg", "-y", "-loglevel", "error", "-i", str(spaced_audio),
                 "-af", audio_filter, "-ar", "48000", "-ac", "1",
                 "-c:a", "pcm_s16le", str(mastered)], timeout=180)
     duration = float(probe(mastered)["format"]["duration"])
@@ -233,7 +237,9 @@ def render_review(stories, *, output_dir, toronto_date, synthetic=False):
     lines.append(f"file '{frames[-1].resolve()}'")
     scene_file.write_text("\n".join(lines) + "\n", encoding="utf-8")
     captions_path = target / "r72_subtitles.ass"
-    caption_groups = captions(events, captions_path, scale)
+    caption_groups = captions(readable_subtitle_events(events), captions_path, scale)
+    if re.search(r"an-THROP-ik|Naz-dak", captions_path.read_text(encoding="utf-8"), re.I):
+        raise RuntimeError("Phonetic spelling leaked into viewer subtitles")
     artwork_concat = write_artwork_concat(target, "R72", cuts,
                                           include_bookends=True)
     output = target / "marketrevamp-r72-real-news-review-only.mp4"
@@ -286,6 +292,10 @@ def render_review(stories, *, output_dir, toronto_date, synthetic=False):
         "timing_event_tokens": actual_count,
         "tts_word_boundaries": len(events),
         "caption_groups": caption_groups,
+        "narration_style": "source_headline_and_verbatim_context",
+        "spoken_source_prefixes": 0,
+        "scene_pause_seconds": 0.16,
+        "subtitle_spelling_restored": True,
         "duration_seconds": round(length, 3),
         "dimensions": "1080x1920",
         "video_codec": "h264", "audio_codec": "aac",
