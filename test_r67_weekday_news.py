@@ -1,13 +1,15 @@
 """Offline R67 source selection, history dedupe and never-publish tests."""
 import copy
 import json
+import os
 import tempfile
 import unittest
 from datetime import datetime, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
+from unittest.mock import patch
 
-from r67_weekday_news import load_published_history, review_package
+from r67_weekday_news import load_published_history, review_package, main
 
 NOW = datetime(2026, 11, 20, 16, tzinfo=ZoneInfo("America/Toronto"))
 TOPICS = ("AI", "Technology", "Crypto", "Markets")
@@ -121,6 +123,25 @@ class R67Tests(unittest.TestCase):
         data["feed_status"] = {"AI": {"status": "error"}}
         with self.assertRaisesRegex(ValueError, "No successful"):
             self.review(data)
+
+    def test_live_collector_receives_authoritative_history_as_path(self):
+        # Regression for GitHub run 44942315300: a string made the
+        # collector's published_article_urls(...) crash before any rendering.
+        with tempfile.TemporaryDirectory() as root:
+            before = Path.cwd()
+            try:
+                os.chdir(root)
+                Path("news_results.json").write_text("{}")
+                Path("history.json").write_text("{}")
+                with patch("news_collector.collect_news") as collect, \
+                     patch("r67_weekday_news.review_package",
+                           return_value={"status": "review_only"}):
+                    main(["--history", "history.json", "--output", "output.json"])
+                    collect.assert_called_once_with(history_path=Path("history.json"))
+                    self.assertEqual(json.loads(Path("output.json").read_text()),
+                                     {"status": "review_only"})
+            finally:
+                os.chdir(before)
 
     def test_authoritative_history_parsing_fails_closed(self):
         with tempfile.TemporaryDirectory() as tmp:
