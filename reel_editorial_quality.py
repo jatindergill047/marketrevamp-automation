@@ -34,7 +34,9 @@ def same_reel_event(first, second):
     b = str(second or "").casefold()
     shared_entities = {e for e in ENTITIES if re.search(r"\b"+e+r"\b", a)
                        and re.search(r"\b"+e+r"\b", b)}
-    return bool(shared_entities and event_groups(a) & event_groups(b))
+    # A seven-headline daily brief should not repeat the same named actor,
+    # even when reporters describe its IPO, sell-off and hedging separately.
+    return bool(shared_entities)
 
 
 def sentence_supports_headline(headline, sentence):

@@ -39,8 +39,14 @@ class EditorialGuardTests(unittest.TestCase):
 
     def test_same_named_ipo_identified_despite_different_wording(self):
         self.assertTrue(same_reel_event(IPO_ONE, IPO_TWO))
-        self.assertFalse(same_reel_event("Meta emissions spike as data centers grow",
-                                         "Meta releases a new virtual reality headset"))
+        self.assertTrue(same_reel_event("Meta emissions spike as data centers grow",
+                                        "Meta releases a new virtual reality headset"))
+        self.assertTrue(same_reel_event(
+            "Why Anthropic IPO couldn't escape the stock market correction",
+            "As Anthropic shares tank, investors scramble to hedge. It could be expensive"))
+        self.assertFalse(same_reel_event(
+            "Google Search gets new AI homepage",
+            "Meta reconsiders sustainability goals"))
 
     def test_voice_context_skips_off_topic_first_sentence(self):
         unrelated = "Sake, vodka and Krug Champagne will be served at a private party."
