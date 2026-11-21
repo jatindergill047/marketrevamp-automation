@@ -375,7 +375,8 @@ def published_article_urls(history_path=Path("instagram_publish_history.json")):
     return published
 
 
-def collect_news(history_path=Path("instagram_publish_history.json"), extractor=None):
+def collect_news(history_path=Path("instagram_publish_history.json"), extractor=None,
+                 story_guard=None):
     articles = []
     cutoff = datetime.now(timezone.utc) - timedelta(hours=36)
     feed_status = {}
@@ -458,6 +459,7 @@ def collect_news(history_path=Path("instagram_publish_history.json"), extractor=
         SUMMARY_MIN_WORDS,
         SUMMARY_MAX_WORDS,
         require_quote=(os.environ.get("MARKETREVAMP_QUOTE_FIRST", "").lower() == "true"),
+        story_guard=story_guard,
     )
     if os.environ.get("MARKETREVAMP_QUOTE_FIRST", "").lower() == "true":
         # Explicit live request only: refuse to proceed unless exactly one
