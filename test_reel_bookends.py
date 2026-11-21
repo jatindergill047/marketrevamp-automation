@@ -44,7 +44,7 @@ class SpokenBookendTests(unittest.TestCase):
         corrupt[4]["narration_text"] = ""
         with self.assertRaisesRegex(ValueError, "sourced narration"):
             narration_segments(corrupt)
-        with self.assertRaisesRegex(ValueError, "nine"):
+        with self.assertRaisesRegex(ValueError, "seven stories"):
             joined_narration([{"narration_text": "incomplete"}])
 
     def test_intro_outro_frames_preserve_logo_caption_and_disclaimer_safe_zone(self):
