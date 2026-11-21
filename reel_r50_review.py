@@ -241,11 +241,11 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
             cs=max(2,round((nextstart-event["start_seconds"])*scale*100))
             words.append(r"{\kf"+str(cs)+"}"+escape_ass(event["text"]))
         displayed=' '.join(words)
-        displayed=re.sub(r'\\{\\\\kf(\\d+)\\}I \\{\\\\kf(\\d+)\\}P \\{\\\\kf(\\d+)\\}O\\b',
-                         lambda m:r'{\\kf'+str(sum(map(int,m.groups())))+'}IPO', displayed)
-        displayed=re.sub(r'\\{\\\\kf(\\d+)\\}A \\{\\\\kf(\\d+)\\}I\\b',
-                         lambda m:r'{\\kf'+str(sum(map(int,m.groups())))+'}AI', displayed)
-        lines.append(f"Dialogue: 0,{stamp(start)},{stamp(end)},Words,,0,0,0,,{displayed}\\n")
+        displayed=re.sub(r'\{\\kf(\d+)\}I \{\\kf(\d+)\}P \{\\kf(\d+)\}O\b',
+                         lambda m:r'{\kf'+str(sum(map(int,m.groups())))+'}IPO', displayed)
+        displayed=re.sub(r'\{\\kf(\d+)\}A \{\\kf(\d+)\}I\b',
+                         lambda m:r'{\kf'+str(sum(map(int,m.groups())))+'}AI', displayed)
+        lines.append(f"Dialogue: 0,{stamp(start)},{stamp(end)},Words,,0,0,0,,{displayed}\n")
         i=j
     ass_path.write_text(header+"".join(lines),encoding="utf-8")
     return len(lines)
@@ -348,10 +348,10 @@ def run():
     caption_lines += ["AI-generated voiceover. Headlines summarize the linked reporting.",
                      "Market news is informational only, not financial advice.","",
                      "#MarketRevamp #AI #TechNews #Blockchain #Bitcoin #CryptoNews"]
-    caption="\\n".join(caption_lines)
+    caption="\n".join(caption_lines)
     if len(caption)>2200:
         raise RuntimeError("Instagram caption exceeds 2200 characters")
-    (target/"R50_instagram_caption.txt").write_text(caption+"\\n",encoding="utf-8")
+    (target/"R50_instagram_caption.txt").write_text(caption+"\n",encoding="utf-8")
     (target/"R50_QA.json").write_text(json.dumps(qa,indent=2)+"\n",encoding="utf-8")
     (target/"R50_script_and_sources.json").write_text(json.dumps(data,indent=2)+"\n",encoding="utf-8")
     print("R50_REVIEW_READY",json.dumps({
