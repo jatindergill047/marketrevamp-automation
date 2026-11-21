@@ -3,6 +3,7 @@
 Presentation only: no media uploads, Instagram calls, text or audio changes.
 """
 from pathlib import Path
+import re
 from PIL import Image, ImageDraw, ImageFont
 
 PAPER=(248,247,244)
@@ -82,14 +83,79 @@ def enlarge_subtitles(source_ass, output_ass):
             count+=1
     if count!=1:
         raise ValueError("Expected one Words style")
-    revised="\n".join(rows)+"\n"
-    original_events=[x for x in original.splitlines() if x.startswith("Dialogue:")]
-    new_events=[x for x in revised.splitlines() if x.startswith("Dialogue:")]
-    if not original_events or original_events!=new_events:
-        raise AssertionError("Speech word timing or dialogue was changed")
+    # At 72 px, long five-word captions can overlap Key Detail.
+    # Split visual caption groups while retaining every word's karaoke
+    # centisecond duration and its absolute service-aligned start.
+    def parse_time(value):
+        hrs,mins,sec=value.split(":")
+        return int(hrs)*3600+int(mins)*60+float(sec)
+
+    def ass_time(value):
+        ticks=round(max(0.0,value)*100)
+        return f"{ticks//360000}:{(ticks//6000)%60:02d}:{(ticks//100)%60:02d}.{ticks%100:02d}"
+
+    face=ImageFont.truetype(FONT_BOLD,CAPTION_FONT_SIZE)
+    new_rows=[]
+    original_word_schedule=[]
+    revised_word_schedule=[]
+    original_groups=0
+    for row in rows:
+        if not row.startswith("Dialogue:"):
+            new_rows.append(row)
+            continue
+        original_groups+=1
+        items=row.split(",",9)
+        if len(items)!=10:
+            raise ValueError("Unsupported ASS event schema")
+        start_time=parse_time(items[1])
+        end_time=parse_time(items[2])
+        tokens=re.findall(r"(\{\\kf(\d+)\})([^{}]*?)(?=\{\\kf|$)",items[9])
+        if not tokens:
+            raise ValueError("Missing karaoke word timings")
+        token_data=[]
+        cursor=0
+        for markup,centis,word in tokens:
+            token_data.append((markup,int(centis),word.strip()))
+            original_word_schedule.append((word.strip(),round(start_time+cursor/100,2)))
+            cursor+=int(centis)
+        chunks=[]
+        current=[]
+        for token in token_data:
+            candidate=current+[token]
+            words=" ".join(item[2] for item in candidate)
+            if current and (len(candidate)>3 or face.getlength(words)>820):
+                chunks.append(current)
+                current=[token]
+            else:
+                current=candidate
+        if current:
+            chunks.append(current)
+        cursor=0
+        for chunk in chunks:
+            split_start=start_time+cursor/100
+            span=sum(t[1] for t in chunk)
+            split_end=min(end_time,split_start+span/100)
+            if split_end<=split_start:
+                split_end=split_start+0.05
+            parts=items.copy()
+            parts[1]=ass_time(split_start)
+            parts[2]=ass_time(split_end)
+            parts[9]=" ".join(t[0]+t[2] for t in chunk)
+            new_rows.append(",".join(parts))
+            for markup,centis,word in chunk:
+                revised_word_schedule.append((word,round(start_time+cursor/100,2)))
+                cursor+=centis
+    if original_word_schedule!=revised_word_schedule:
+        raise AssertionError("Word-level karaoke alignment changed")
+    revised="\n".join(new_rows)+"\n"
+    new_groups=sum(line.startswith("Dialogue:") for line in new_rows)
+    if original_groups<1 or new_groups<original_groups:
+        raise AssertionError("Subtitle events lost")
     target=Path(output_ass)
     target.parent.mkdir(parents=True,exist_ok=True)
     target.write_text(revised,encoding="utf-8")
     return {"caption_font_size":CAPTION_FONT_SIZE,
-            "karaoke_events_unchanged":len(original_events),
+            "original_groups":original_groups,
+            "new_groups":new_groups,
+            "word_starts_preserved":len(original_word_schedule),
             "output":str(target)}
