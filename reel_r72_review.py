@@ -12,7 +12,7 @@ from datetime import datetime
 from pathlib import Path
 from urllib.parse import urlsplit
 
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFont
 
 from r67_weekday_news import (TORONTO, REQUIRED_STORIES, MAX_AGE_HOURS,
                               _source, load_published_history)
@@ -148,7 +148,7 @@ def prepare_stories(package, published_urls, *, now):
     return stories
 
 
-def render_review(stories, *, output_dir, toronto_date):
+def render_review(stories, *, output_dir, toronto_date, synthetic=False):
     """Render with R71 visual/audio pipeline. No Cloudinary or Instagram code."""
     if len(stories) != REQUIRED_STORIES:
         raise ValueError("Seven stories are required")
@@ -159,6 +159,18 @@ def render_review(stories, *, output_dir, toronto_date):
     story_frames = draw_frames(stories, target, display_date=label, prefix="R72")
     intro, outro = build_bookends(make_logo(), target, "R72")
     frames = [intro] + story_frames + [outro]
+    if synthetic:
+        # Never let fabricated integration-fixture news look like real reporting.
+        for frame in frames:
+            with Image.open(frame) as img:
+                marked = img.convert("RGB")
+            ImageDraw.Draw(marked).text(
+                (72, 1530), "SYNTHETIC DEMO - NOT NEWS",
+                font=ImageFont.truetype(
+                    "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 26),
+                fill=(172, 32, 44)
+            )
+            marked.save(frame, optimize=True)
     segments = narration_segments(stories)
     script = joined_narration(segments)
     source_audio = target / "r72_voice_source.mp3"
@@ -232,7 +244,8 @@ def render_review(stories, *, output_dir, toronto_date):
     sheet.save(target/"r72_contact_sheet.png")
     qa = {
         "version": "R72", "status": "review_only",
-        "real_source_headlines": True,
+        "synthetic_content": bool(synthetic),
+        "real_source_headlines": not synthetic,
         "not_independently_fact_checked": True,
         "editorial_approved": False,
         "published": False, "cloudinary_uploaded": False,
