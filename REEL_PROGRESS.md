@@ -2,6 +2,22 @@
 
 Opt-in only. The existing carousel and publishing path must remain unchanged until Reel functionality is independently verified.
 
+## Latest R68 design decision (2026-11-21)
+
+**APPROVED FOR VISUAL DESIGN ONLY:** the MarketRevamp 9:16 Reel template uses
+headline/category-aware original 2D artwork from the seven-slide carousel,
+a gentle 8 px animated float, 80 px time-aligned karaoke subtitles **below**
+the artwork, and no Key Details section. The official logo, source credits
+and disclaimer remain in place. See `R68_FINAL_DESIGN.md` and
+`R68_APPROVED_DESIGN.json` for the approved specification and validation
+evidence (PR #68; three successful post-merge review workflows).
+
+**NOT APPROVED FOR PRODUCTION PUBLISHING:** individual dated scripts and video
+fingerprints, live Instagram posting, Cloudinary production upload and
+recurring Reel schedules require separate source/editorial and operational
+gates. Existing `main` carousel publishing is unchanged.
+
+
 | ID | Item | Status | Commit | Notes |
 | --- | --- | --- | --- | --- |
 | R1 | Config, flag, deps | PARTIAL | 10bed773, 1ca46e7 | Config and unit tests committed; pinned edge-tts resolution, requirements.lock regeneration, full suite, and pip-audit blocked by unavailable package-index access. No dependency files modified. |
