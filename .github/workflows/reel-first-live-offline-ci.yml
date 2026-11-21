@@ -1,0 +1,41 @@
+name: MarketRevamp R49 First Live Reel Offline Safety
+
+on:
+  push:
+    branches: [feature/reel-first-live-manual-release]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test-with-publication-disabled:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      REEL_FIRST_LIVE_ENABLED: 'false'
+      REEL_UPLOAD_ENABLED: 'false'
+      INSTAGRAM_PUBLISH_ENABLED: 'false'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+      - name: Install standard production dependencies
+        run: pip install -r requirements.lock
+      - name: Compile and test R49 isolated Reel code
+        run: |
+          python -m compileall -q reel_cloudinary.py reel_r46_launch_gate.py reel_r49_first_live.py
+          python -m unittest -v test_reel_cloudinary.py test_reel_r46_launch_gate.py test_reel_r49_first_live.py
+      - name: Assert no scheduled Reel publication
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          text=Path('.github/workflows/reel-r49-first-live.yml').read_text()
+          assert 'workflow_dispatch:' in text
+          assert 'schedule:' not in text
+          assert '532e450baff8d25b3ed50bc1a21882dba3eaf6c626c0af5066ca3cd74fdefb93' in text
+          assert "PUBLISH_APPROVED_R50" in text
+          assert "github.ref == 'refs/heads/main'" in text
+          print('PASS: first live workflow requires explicit manual confirmation on main')
+          PY

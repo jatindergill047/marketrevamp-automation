@@ -1,0 +1,188 @@
+name: MarketRevamp R50 Approved One-Time Instagram Reel Publication
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: 'Type PUBLISH_APPROVED_R50 for the exact user-approved November 20 video'
+        required: true
+        type: string
+  push:
+    branches: [main]
+    paths: ['.github/r50-live-20261120.trigger']
+
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: marketrevamp-instagram-publishing
+  cancel-in-progress: false
+
+jobs:
+  publish-exact-approved-r50:
+    if: >-
+      github.ref == 'refs/heads/main' &&
+      (github.event_name == 'push' || inputs.confirmation == 'PUBLISH_APPROVED_R50')
+    runs-on: ubuntu-latest
+    environment: instagram-production
+    timeout-minutes: 35
+    env:
+      REEL_FIRST_LIVE_ENABLED: 'true'
+      REEL_UPLOAD_ENABLED: 'true'
+      INSTAGRAM_PUBLISH_ENABLED: 'true'
+      INSTAGRAM_PERSISTENCE_READY: 'true'
+      CLOUDINARY_CLOUD_NAME: ${{ vars.CLOUDINARY_CLOUD_NAME }}
+      CLOUDINARY_UPLOAD_PRESET: ${{ vars.CLOUDINARY_UPLOAD_PRESET }}
+      CLOUDINARY_API_KEY: ${{ secrets.CLOUDINARY_API_KEY }}
+      CLOUDINARY_API_SECRET: ${{ secrets.CLOUDINARY_API_SECRET }}
+      INSTAGRAM_ACCESS_TOKEN: ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
+      INSTAGRAM_USER_ID: ${{ vars.INSTAGRAM_USER_ID }}
+      APPROVED_VIDEO_SHA256: '532e450baff8d25b3ed50bc1a21882dba3eaf6c626c0af5066ca3cd74fdefb93'
+      APPROVED_R50_FINGERPRINT: '815ec5bbb6fac6beb36c9306c1fe08a3ee783781a88e509a9dd580138fbabc33'
+
+    steps:
+      - name: Checkout protected production publisher code
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: main
+
+      - name: Verify Toronto date, explicit user approval and one-time trigger
+        run: |
+          python - <<'PY'
+          import json, os
+          from datetime import datetime
+          from pathlib import Path
+          from zoneinfo import ZoneInfo
+          today=datetime.now(ZoneInfo('America/Toronto')).date().isoformat()
+          if today != '2026-11-20':
+              raise RuntimeError('R50 is a November 20 news reel and cannot publish after that date')
+          if os.environ.get('GITHUB_EVENT_NAME') == 'push':
+              expected={
+                  'toronto_date':'2026-11-20',
+                  'intent':'one-time-user-approved-r50-reel',
+                  'approved_video_sha256':os.environ['APPROVED_VIDEO_SHA256'],
+                  'release_fingerprint':os.environ['APPROVED_R50_FINGERPRINT']
+              }
+              trigger=json.loads(Path('.github/r50-live-20261120.trigger').read_text())
+              if trigger != expected:
+                  raise RuntimeError('R50 trigger payload does not match exact user-approved media')
+          print('Exact R50 release date and explicit approval gate: PASS')
+          PY
+
+      - name: Checkout immutable approved R50 video transfer
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: 7faf79f159a5c1d0547c4c87bef1cba84d79cea7
+          path: approved-transfer
+          persist-credentials: false
+
+      - name: Reassemble and verify exact approved R50 MP4
+        run: |
+          python - <<'PY'
+          import base64, hashlib, json, os, shutil
+          from pathlib import Path
+          base=Path('approved-transfer/approved_r50_video')
+          out=Path('approved-r50')
+          out.mkdir(exist_ok=True)
+          parts=sorted(base.glob('chunk_*.txt'))
+          if len(parts)!=14 or [p.name for p in parts]!=[f'chunk_{i:03d}.txt' for i in range(14)]:
+              raise RuntimeError('Approved R50 video transfer missing a segment')
+          video=out/'marketrevamp_reel.mp4'
+          video.write_bytes(base64.b64decode(''.join(p.read_text(encoding='ascii').strip() for p in parts), validate=True))
+          actual=hashlib.sha256(video.read_bytes()).hexdigest()
+          if actual != os.environ['APPROVED_VIDEO_SHA256']:
+              raise RuntimeError('Exact user-approved video SHA-256 mismatch; publication blocked')
+          shutil.copy2(base/'release_metadata.json',out/'reel_release_metadata.json')
+          shutil.copy2(base/'stories.json',out/'reel_release_stories.json')
+          print('Exact approved R50 media checksum:', actual)
+          PY
+
+      - name: Checkout authoritative Instagram publishing history
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: publishing-history
+          path: publishing-history
+          persist-credentials: true
+
+      - name: Restore publishing history
+        run: cp publishing-history/instagram_publish_history.json instagram_publish_history.json
+
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+
+      - name: Install pinned production API dependencies and FFprobe
+        run: |
+          pip install -r requirements.lock
+          sudo apt-get update -qq && sudo apt-get install -y ffmpeg
+
+      - name: Run offline release and existing carousel safety regression tests
+        run: |
+          python -m unittest -v test_reel_cloudinary.py test_reel_r46_launch_gate.py test_reel_r49_first_live.py
+          python -m unittest -v test_auto_publish_gate.py test_reliability.py test_publish_retry.py
+
+      - name: Verify source-linked video fingerprint before ANY upload
+        run: |
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          from publish_instagram import load_history
+          from reel_r46_launch_gate import validate_and_fingerprint, authorize_publication
+          from reel_r49_first_live import _check_article_reuse
+          root=Path('approved-r50')
+          meta=json.loads((root/'reel_release_metadata.json').read_text())
+          stories=json.loads((root/'reel_release_stories.json').read_text())
+          release=validate_and_fingerprint(meta,stories,root/'marketrevamp_reel.mp4')
+          if release['release_fingerprint']!=os.environ['APPROVED_R50_FINGERPRINT']:
+              raise RuntimeError('Approved R50 fingerprint mismatch')
+          history=load_history()
+          authorize_publication(release,os.environ['APPROVED_R50_FINGERPRINT'],history)
+          _check_article_reuse(stories,history)
+          print('R50 exact content, human approval, date, history and source checks: PASS')
+          PY
+
+      - name: Confirm existing signed Cloudinary and Instagram configuration
+        run: |
+          python - <<'PY'
+          import os
+          required=('CLOUDINARY_CLOUD_NAME','CLOUDINARY_UPLOAD_PRESET','CLOUDINARY_API_KEY',
+                    'CLOUDINARY_API_SECRET','INSTAGRAM_ACCESS_TOKEN','INSTAGRAM_USER_ID')
+          missing=[n for n in required if not os.environ.get(n)]
+          if missing:
+              raise RuntimeError('Production credentials/configuration unavailable: '+','.join(missing))
+          PY
+
+      - name: Upload approved video to Cloudinary, publish once and checkpoint history
+        run: |
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          from publish_instagram import load_history, save_history
+          from reel_r49_first_live import publish_once
+          root=Path('approved-r50')
+          metadata=json.loads((root/'reel_release_metadata.json').read_text())
+          stories=json.loads((root/'reel_release_stories.json').read_text())
+          result=publish_once(
+              metadata, stories, root/'marketrevamp_reel.mp4', load_history(),
+              approved_fingerprint=os.environ['APPROVED_R50_FINGERPRINT'],
+              cloud=os.environ['CLOUDINARY_CLOUD_NAME'],
+              preset=os.environ['CLOUDINARY_UPLOAD_PRESET'],
+              api_key=os.environ['CLOUDINARY_API_KEY'],
+              api_secret=os.environ['CLOUDINARY_API_SECRET'],
+              account_id=os.environ['INSTAGRAM_USER_ID'],
+              token=os.environ['INSTAGRAM_ACCESS_TOKEN'],
+              saver=save_history
+          )
+          (root/'reel_publication_result.json').write_text(json.dumps(result,indent=2)+'\n')
+          print('R50 LIVE INSTAGRAM REEL MEDIA ID:',result['instagram_media_id'])
+          PY
+
+      - name: Upload Instagram publication evidence (media ID)
+        if: success()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: marketrevamp-r50-instagram-publication
+          path: approved-r50/reel_publication_result.json
+          retention-days: 14
+          if-no-files-found: error
