@@ -92,6 +92,10 @@ def should_run(event, now=None, cron=None):
     if cron is None:
         # Tests or manual guard callers can inspect the operating window.
         return True
+    for hour in SCHEDULE_HOURS:
+        intended = local.replace(hour=hour, minute=SCHEDULE_MINUTE, second=0, microsecond=0)
+        if cron.strip() == f'{SCHEDULE_MINUTE} {hour} * * 1-5' and intended <= local <= intended + timedelta(hours=5):
+            return True
     for expected, intended in expected_crons(local):
         if cron.strip() == expected and intended <= local <= intended + timedelta(hours=5):
             return True
