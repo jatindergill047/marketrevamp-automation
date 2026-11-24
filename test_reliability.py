@@ -64,6 +64,16 @@ class ReliabilityTests(unittest.TestCase):
         self.assertFalse(should_run("schedule", summer.replace(hour=23, minute=30),
                                     "13 22 * * 1-5"))
 
+    def test_native_toronto_crons(self):
+        tz = ZoneInfo("America/Toronto")
+        for month in (1, 7):
+            day = datetime(2026, month, 14, 18, 14, tzinfo=tz)
+            self.assertTrue(should_run("schedule", day, "13 18 * * 1-5"))
+            self.assertFalse(should_run("schedule", day, "13 19 * * 1-5"))
+            self.assertTrue(should_run("schedule", day.replace(hour=22), "13 19 * * 1-5"))
+            self.assertFalse(should_run("schedule", day.replace(hour=23, minute=30), "13 18 * * 1-5"))
+        self.assertFalse(should_run("schedule", datetime(2026, 11, 22, 20, tzinfo=tz), "13 18 * * 1-5"))
+
     def test_published_urls(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "history.json"
