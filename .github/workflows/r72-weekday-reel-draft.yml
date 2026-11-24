@@ -6,10 +6,11 @@ on:
     branches: [main]
     paths: ['.github/r78-first-fresh-reel-review.trigger']
   schedule:
-    # Toronto 18:17 (EDT 22:17 UTC, EST 23:17 UTC). One schedule is
-    # discarded by the timezone gate; preview only, never a public post.
-    - cron: '17 22 * * *'
-    - cron: '17 23 * * *'
+    # Toronto-native primary and backup; publisher retains duplicate protection.
+    - cron: '17 18 * * *'
+      timezone: 'America/Toronto'
+    - cron: '17 19 * * *'
+      timezone: 'America/Toronto'
 
 permissions:
   contents: read
@@ -55,7 +56,7 @@ jobs:
                   raise SystemExit("R78 one-time fresh-review trigger mismatch")
               if now.date().isoformat() != payload["toronto_date"]:
                   raise SystemExit("R78 trigger expired; no stale news drafts")
-          if os.environ.get("GITHUB_EVENT_NAME") == "schedule" and now.hour != 18:
+          if os.environ.get("GITHUB_EVENT_NAME") == "schedule" and not (18 <= now.hour <= 22):
               with Path(os.environ["GITHUB_OUTPUT"]).open("a") as handle:
                   handle.write("run_review=false\n")
               print("Timezone duplicate schedule skipped: local hour", now.hour)

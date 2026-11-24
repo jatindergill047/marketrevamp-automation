@@ -10,13 +10,11 @@ on:
       - '.github/marketrevamp-live-20261025.trigger'
       - '.github/marketrevamp-live-20261026.trigger'
   schedule:
-    # Two spaced local opportunities: 18:13 and 19:13 Toronto, Mon–Fri.
-    # EDT: 22:13 and 23:13 UTC (Mon–Fri).
-    # EST: 23:13 UTC Mon–Fri and 00:13 UTC Tue–Sat.
-    # schedule_guard.py rejects the wrong DST offset / out-of-window events.
-    - cron: '13 22 * * 1-5'
-    - cron: '13 23 * * 1-5'
-    - cron: '13 0 * * 2-6'
+    # Toronto-native primary and backup weekday opportunities.
+    - cron: '13 18 * * 1-5'
+      timezone: 'America/Toronto'
+    - cron: '13 19 * * 1-5'
+      timezone: 'America/Toronto'
 
 concurrency:
   group: marketrevamp-instagram-publishing
