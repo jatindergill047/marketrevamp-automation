@@ -6,13 +6,8 @@ on:
     branches: [main]
     paths: ['.github/r78-first-fresh-reel-review.trigger']
   schedule:
-    # Toronto-native primary and backup; publisher retains duplicate protection.
-    - cron: '17 18 * * *'
-      timezone: 'America/Toronto'
-    - cron: '17 19 * * *'
-      timezone: 'America/Toronto'
-    - cron: '17 20 * * *'
-      timezone: 'America/Toronto'
+    # UTC polling; Toronto local guard and durable history decide eligibility.
+    - cron: '17,47 * * * *'
 
 permissions:
   contents: read
