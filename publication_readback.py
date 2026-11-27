@@ -1,11 +1,16 @@
 """Reconcile only exact known Instagram media IDs; never publish or guess."""
 from urllib.parse import urlsplit
 import time
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
 def reconcile(history, request, token):
     changed = False
+    today = datetime.now(ZoneInfo("America/Toronto")).date().isoformat()
     for record in history.values():
         if record.get("status") not in ("pending", "published"):
+            continue
+        if record.get("status") == "published" and record.get("toronto_date") != today:
             continue
         if record.get("instagram_readback_verified") is True:
             continue
